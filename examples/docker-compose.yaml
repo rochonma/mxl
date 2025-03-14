@@ -1,0 +1,23 @@
+name: ebu-dmf-mxl-demo
+
+services:
+  writer-media-function:
+    image: mxl-writer
+    build:
+      context: ..
+      dockerfile: examples/Dockerfile.writer.txt
+    restart: unless-stopped
+    volumes:
+      - domain:/domain  # Maps the named volume "domain" to /domain inside the container, in read-write mode.
+  reader-media-function:
+    image: mxl-reader
+    build:
+      context: ..
+      dockerfile: examples/Dockerfile.reader.txt
+    restart: unless-stopped
+    volumes:
+      - domain:/domain:ro  # Maps the named volume "domain" to /domain inside the container, in read only mode
+    stdin_open: true
+    tty: true
+volumes:
+  domain:  # Defines the named volume "domain"

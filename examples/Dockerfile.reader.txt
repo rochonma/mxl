@@ -1,0 +1,14 @@
+FROM debian:bookworm-slim
+
+WORKDIR /app
+
+RUN apt update && apt-get -y install\
+        procps \
+        patchelf && rm -rf /var/lib/apt/lists/*
+
+COPY build/Linux-Clang-Release/lib/*.so* /app/
+COPY build/Linux-Clang-Release/tools/mxl-info/mxl-info /app/
+
+RUN patchelf --set-rpath /app mxl-info
+
+CMD ["watch", "/app/mxl-gst-info", "-d", "/domain", "-l"]

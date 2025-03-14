@@ -1,0 +1,69 @@
+FROM rockylinux:9
+
+# Configure sysctl parameters
+RUN echo "vm.swappiness=0" >> /etc/sysctl.conf \
+ && echo "kernel.shm_rmid_forced=1" >> /etc/sysctl.conf \
+ && echo "kernel.shmmax=2147483648" >> /etc/sysctl.conf
+
+RUN dnf install -y dnf-plugin-config-manager
+RUN dnf config-manager --set-enabled crb
+
+# Install dependencies
+RUN dnf install -y \
+    wget \
+    zip \
+    unzip \
+    tar \
+    clang \
+    ca-certificates \
+    git \
+    git-lfs \
+    openssh-clients \
+    pkgconf \
+    gcc \
+    gcc-c++ \
+    make \
+    gdb \
+    nasm \
+    doxygen \
+    graphviz \
+    autoconf \
+    automake \
+    libtool \
+    sudo \
+    pip \
+    ninja-build \
+    shadow-utils \
+    rpm-build \
+    libasan \
+    libtsan \
+    libubsan \
+    gstreamer1-devel \
+    gstreamer1-plugins-base-tools \
+    gstreamer1-plugins-base-devel \
+    gstreamer1-plugins-good \
+    gstreamer1-plugins-bad-free \
+    && dnf clean all
+
+RUN pip install --upgrade cmake
+
+# Set default user
+ARG USERNAME=rocky
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+# Create the user
+RUN groupadd --gid $USER_GID $USERNAME \
+ && useradd --uid $USER_UID --gid $USER_GID -m -s /bin/bash $USERNAME \
+ && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
+ && chmod 0440 /etc/sudoers.d/$USERNAME
+
+USER $USERNAME
+WORKDIR /home/$USERNAME
+
+# vcpkg
+RUN git clone https://github.com/microsoft/vcpkg \
+ && ./vcpkg/bootstrap-vcpkg.sh
+
+ENV VCPKG_ROOT=/home/$USERNAME/vcpkg
+

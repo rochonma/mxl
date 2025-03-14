@@ -1,0 +1,54 @@
+# Doxyfile configuration for generating documentation for C, C++, and .h files
+# located in the lib/ and mxlapp/ subdirectories.
+
+# Project settings
+PROJECT_NAME           = "MXL : Media Exchange Layer"
+PROJECT_BRIEF          = "MXL"
+OUTPUT_DIRECTORY       = docs
+OUTPUT_LANGUAGE        = English
+
+# Input settings
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/README.md @CMAKE_CURRENT_SOURCE_DIR@/lib
+FILE_PATTERNS          = *.c *.cpp *.h *.md
+RECURSIVE              = YES
+USE_MDFILE_AS_MAINPAGE = README.md
+
+# Build settings
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_LOCAL_METHODS  = YES
+
+# Source browsing settings
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+
+# Documentation generation format (HTML enabled by default)
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+
+# Optional: Enable LaTeX or other formats as needed
+GENERATE_LATEX         = NO
+GENERATE_XML           = NO
+GENERATE_MAN           = NO
+GENERATE_RTF           = NO
+
+# Warnings and diagnostics
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_NO_PARAMDOC       = YES
+
+# Additional options (optional)
+SHOW_USED_FILES        = YES
+SHOW_FILES             = YES
+SORT_MEMBER_DOCS       = YES
+SORT_BRIEF_DOCS        = YES
+SORT_BY_SCOPE_NAME     = YES
+
+GENERATE_TREEVIEW      = YES 
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+HTML_EXTRA_STYLESHEET  = @AWESOME_CSS_DIR@/doxygen-awesome.css
+HTML_COLORSTYLE        = LIGHT 
+GENERATE_TODOLIST      = YES
