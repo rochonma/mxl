@@ -58,8 +58,6 @@ DomainWatcher::DomainWatcher( const std::filesystem::path &in_domain, Callback i
 
 DomainWatcher::~DomainWatcher()
 {
-    std::lock_guard<std::mutex> lock( _mutex );
-
     _running = false;
     if ( _watchThread.joinable() )
     {
