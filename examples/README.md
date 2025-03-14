@@ -1,0 +1,46 @@
+# Docker Compose Example
+
+This example launches two containers simulating two different media functions executing in separate containers.
+- Writer container: The docker volume named "domain" is mounted in read-write mode in the writer media function container.  The writer process generates a test pattern with burnt in time of day.
+- Reader container: The docker volume named "domain" is mounted in read-only mode in the reader media function. At the moment the reader media function container is idling.  To use it you need to exec into it: 
+
+    ```bash
+    docker exec -it ebu-dmf-mxl-demo-reader-media-function-1 /app/mxl-info -d /domain -f 5fbec3b1-1b0f-417d-9059-8b94a47197ed
+    ```
+
+
+## Building 
+
+Compile the whole MXL library and tools using the ```Linux-Clang-Release``` preset by invoking ```ninja all``` in the ```build/Linux-Clang-Release```  directory.  Then, in the "examples" directory, run:
+
+```bash
+docker-compose build
+```
+
+## Running
+
+In the "examples" directory run:
+
+```bash
+docker-compose up
+```
+
+
+# Kubernetes Example
+    Note: Tested on Docker Desktop Environment which as the correct default storageclass "HostPath" which has a host path provisioner. Therefore its unlikely to work in managed k8s environments without changes
+
+Follow the same steps above to build the container images and then run this command to deploy the kubernetes resources
+``` bash
+kubectl create -f kube-deployment.yaml
+```
+
+To check the pods are running use this command, once both the reader and writer are running, grab the name name of the reader pod
+``` bash
+kubectl get pod -w
+```
+
+Now execute the following command
+
+``` bash
+kubectl exec -it <reader-pod-name> -- /app/mxl-info -d /domain -f 5fbec3b1-1b0f-417d-9059-8b94a47197ed
+```

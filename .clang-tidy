@@ -1,0 +1,6 @@
+Checks: '-*,modernize-*,-modernize-use-trailing-return-type'
+HeaderFileExtensions:         ['', 'h','hpp']
+ImplementationFileExtensions: ['cpp']
+CheckOptions:
+  modernize-use-using.IgnoreExternC: 'true'
+  modernize-use-using.IgnoreMacros: 'true'
