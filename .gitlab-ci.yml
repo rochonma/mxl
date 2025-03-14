@@ -1,11 +1,10 @@
 stages:
   - build
-  - test
 
 variables:
   DOCKER_DRIVER: overlay2
 
-build:
+build_ubuntu_2204:
   image: docker:28.0.0
   stage: build
   services:
@@ -18,7 +17,32 @@ build:
     DOCKER_BUILDKIT: '1'    
     CI_PIPELINE_IID: $CI_PIPELINE_IID
   script:
-    - docker build /builds/dmf/mxl/.devcontainer/ -t mxl_build_container
+    - docker build --build-arg BASE_IMAGE_VERSION=22.04 /builds/dmf/mxl/.devcontainer/ -t mxl_build_container
+    - docker run --mount src=/builds/dmf/mxl/,target=/workspace/mxl,type=bind -i mxl_build_container:latest cmake -S /workspace/mxl -B /workspace/mxl/build/Linux-Clang-Release --preset Linux-Clang-Release -DMXL_BUILD_NUMBER=$CI_PIPELINE_IID
+    - docker run --mount src=/builds/dmf/mxl/,target=/workspace/mxl,type=bind -i mxl_build_container:latest cmake --build /workspace/mxl/build/Linux-Clang-Release -t all doc install package
+    - docker run --mount src=/builds/dmf/mxl/,target=/workspace/mxl,type=bind -i mxl_build_container:latest bash -c "cd /workspace/mxl/build/Linux-Clang-Release && ctest --output-junit test-results.xml"
+    - docker run --mount src=/builds/dmf/mxl/,target=/workspace/mxl,type=bind -i mxl_build_container:latest bash -c "cp /workspace/mxl/build/Linux-Clang-Release/test-results.xml /workspace/mxl/"
+  artifacts:
+    paths:
+      - install/Linux-Clang-Release/
+      - build/Linux-Clang-Release/*.deb
+    reports:
+      junit: test-results.xml
+
+build_ubuntu_2004:
+  image: docker:28.0.0
+  stage: build
+  services:
+    - docker:dind
+  tags:
+    - dind  
+  before_script:
+    - apk add bash
+  variables:
+    DOCKER_BUILDKIT: '1'    
+    CI_PIPELINE_IID: $CI_PIPELINE_IID
+  script:
+    - docker build --build-arg BASE_IMAGE_VERSION=20.04 /builds/dmf/mxl/.devcontainer/ -t mxl_build_container
     - docker run --mount src=/builds/dmf/mxl/,target=/workspace/mxl,type=bind -i mxl_build_container:latest cmake -S /workspace/mxl -B /workspace/mxl/build/Linux-Clang-Release --preset Linux-Clang-Release -DMXL_BUILD_NUMBER=$CI_PIPELINE_IID
     - docker run --mount src=/builds/dmf/mxl/,target=/workspace/mxl,type=bind -i mxl_build_container:latest cmake --build /workspace/mxl/build/Linux-Clang-Release -t all doc install package
     - docker run --mount src=/builds/dmf/mxl/,target=/workspace/mxl,type=bind -i mxl_build_container:latest bash -c "cd /workspace/mxl/build/Linux-Clang-Release && ctest --output-junit test-results.xml"
