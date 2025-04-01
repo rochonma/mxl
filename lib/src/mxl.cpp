@@ -7,9 +7,10 @@
 #include "internal/Instance.hpp"
 #include "internal/Logging.hpp"
 
-using namespace std;
 using namespace mxl::lib;
 
+extern "C"
+MXL_EXPORT
 int8_t
 mxlGetVersion(mxlVersionType* out_version)
 {
@@ -27,6 +28,7 @@ mxlGetVersion(mxlVersionType* out_version)
     }
 }
 
+extern "C"
 MXL_EXPORT
 mxlInstance
 mxlCreateInstance(char const* in_mxlDomain, char const* in_options)
@@ -49,6 +51,7 @@ mxlCreateInstance(char const* in_mxlDomain, char const* in_options)
     }
 }
 
+extern "C"
 MXL_EXPORT
 mxlStatus
 mxlDestroyInstance(mxlInstance in_instance)

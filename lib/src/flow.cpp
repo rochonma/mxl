@@ -9,6 +9,8 @@
 
 using namespace mxl::lib;
 
+extern "C"
+MXL_EXPORT
 mxlStatus
 mxlCreateFlow(mxlInstance in_instance, char const* in_flowDef, char const* /*in_options*/, FlowInfo* out_flowInfo)
 {
@@ -44,6 +46,8 @@ mxlCreateFlow(mxlInstance in_instance, char const* in_flowDef, char const* /*in_
     }
 }
 
+extern "C"
+MXL_EXPORT
 mxlStatus
 mxlDestroyFlow(mxlInstance in_instance, char const* in_flowId)
 {
@@ -81,6 +85,8 @@ mxlDestroyFlow(mxlInstance in_instance, char const* in_flowId)
     }
 }
 
+extern "C"
+MXL_EXPORT
 mxlStatus
 mxlCreateFlowReader(mxlInstance in_instance, char const* in_flowId, char const* /*in_options*/, mxlFlowReader* out_reader)
 {
@@ -123,6 +129,8 @@ mxlCreateFlowReader(mxlInstance in_instance, char const* in_flowId, char const* 
     }
 }
 
+extern "C"
+MXL_EXPORT
 mxlStatus
 mxlDestroyFlowReader(mxlInstance in_instance, mxlFlowReader in_reader)
 {
@@ -154,6 +162,8 @@ mxlDestroyFlowReader(mxlInstance in_instance, mxlFlowReader in_reader)
     }
 }
 
+extern "C"
+MXL_EXPORT
 mxlStatus
 mxlCreateFlowWriter(mxlInstance in_instance, char const* in_flowId, char const* in_options, mxlFlowWriter* out_writer)
 {
@@ -205,6 +215,8 @@ mxlCreateFlowWriter(mxlInstance in_instance, char const* in_flowId, char const* 
     }
 }
 
+extern "C"
+MXL_EXPORT
 mxlStatus
 mxlDestroyFlowWriter(mxlInstance in_instance, mxlFlowWriter in_writer)
 {
@@ -236,6 +248,8 @@ mxlDestroyFlowWriter(mxlInstance in_instance, mxlFlowWriter in_writer)
     }
 }
 
+extern "C"
+MXL_EXPORT
 mxlStatus
 mxlFlowReaderGetInfo(mxlInstance in_instance, mxlFlowReader in_reader, FlowInfo* out_info)
 {
@@ -268,6 +282,8 @@ mxlFlowReaderGetInfo(mxlInstance in_instance, mxlFlowReader in_reader, FlowInfo*
     }
 }
 
+extern "C"
+MXL_EXPORT
 mxlStatus
 mxlFlowReaderGetGrain(
     mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, uint16_t in_timeoutMs, GrainInfo* out_grainInfo, uint8_t** out_payload)
@@ -300,6 +316,8 @@ mxlFlowReaderGetGrain(
     }
 }
 
+extern "C"
+MXL_EXPORT
 mxlStatus
 mxlFlowWriterOpenGrain(mxlInstance in_instance, mxlFlowWriter in_writer, uint64_t in_index, GrainInfo* out_grainInfo, uint8_t** out_payload)
 {
@@ -331,6 +349,8 @@ mxlFlowWriterOpenGrain(mxlInstance in_instance, mxlFlowWriter in_writer, uint64_
     }
 }
 
+extern "C"
+MXL_EXPORT
 mxlStatus
 mxlFlowWriterCancel(mxlInstance in_instance, mxlFlowWriter in_writer)
 {
@@ -361,6 +381,8 @@ mxlFlowWriterCancel(mxlInstance in_instance, mxlFlowWriter in_writer)
     }
 }
 
+extern "C"
+MXL_EXPORT
 mxlStatus
 mxlFlowWriterCommit(mxlInstance in_instance, mxlFlowWriter in_writer, GrainInfo const* in_grainInfo)
 {

@@ -14,6 +14,8 @@
 
 #define TAI_LEAP_SECONDS 37 // For platforms that do not have a CLOCK_TAI.
 
+extern "C"
+MXL_EXPORT
 void
 mxlGetTime(timespec* out_ts)
 {
@@ -24,6 +26,8 @@ mxlGetTime(timespec* out_ts)
     }
 }
 
+extern "C"
+MXL_EXPORT
 uint64_t
 mxlGetCurrentGrainIndex(Rational const* in_editRate)
 {
@@ -49,6 +53,8 @@ mxlGetCurrentGrainIndex(Rational const* in_editRate)
     }
 }
 
+extern "C"
+MXL_EXPORT
 uint64_t
 mxlTimeSpecToGrainIndex(Rational const* in_editRate, timespec const* in_timespec)
 {
@@ -62,6 +68,7 @@ mxlTimeSpecToGrainIndex(Rational const* in_editRate, timespec const* in_timespec
     return totalNs / grainDurationNs;
 }
 
+extern "C"
 MXL_EXPORT
 uint64_t
 mxlGetNsUntilGrainIndex(uint64_t in_index, Rational const* in_editRate)
@@ -105,6 +112,8 @@ mxlGetNsUntilGrainIndex(uint64_t in_index, Rational const* in_editRate)
     }
 }
 
+extern "C"
+MXL_EXPORT
 void
 mxlSleepForNs(uint64_t in_ns)
 {
