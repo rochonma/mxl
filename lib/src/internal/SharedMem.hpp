@@ -2,6 +2,7 @@
 
 #include "Logging.hpp"
 
+#include <array>
 #include <cerrno>
 #include <cstddef>
 #include <cstdint>
@@ -80,13 +81,13 @@ void
 SharedMem<T>::touch()
 {
     // Update the file times
-    struct timespec times[2];
+    std::array<timespec, 2> times;
     times[0].tv_sec = 0; // Set access time to current time
     times[0].tv_nsec = UTIME_NOW;
     times[1].tv_sec = 0; // Set modification time to current time
     times[1].tv_nsec = UTIME_NOW;
 
-    if ( futimens( _fd, times ) == -1 )
+    if ( ::futimens( _fd, times.data() ) == -1 )
     {
         MXL_ERROR( "Failed to update file times" );
     }

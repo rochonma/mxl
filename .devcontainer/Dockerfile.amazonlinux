@@ -38,6 +38,8 @@ RUN dnf install -y \
     libasan \
     libtsan \
     libubsan \
+    bison \
+    flex \
     && dnf clean all
 
 RUN pip install --upgrade cmake

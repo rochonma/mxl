@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-set(mxl_VERSION 0.1.0)
+set(mxl_VERSION 0.2.0)
 
 if(DEFINED MXL_BUILD_NUMBER)
     string(APPEND mxl_VERSION ".${MXL_BUILD_NUMBER}")
@@ -10,7 +10,7 @@ endif()
 
 project(mxl
     VERSION ${mxl_VERSION}
-    LANGUAGES CXX
+    LANGUAGES CXX C 
 )
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)

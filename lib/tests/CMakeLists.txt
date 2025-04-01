@@ -3,6 +3,7 @@ find_package(stduuid CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(picojson REQUIRED)
+find_package(PcapPlusPlus REQUIRED)
 
 # Add the test executable
 add_executable(mxl-tests
@@ -24,7 +25,7 @@ add_executable(mxl-tests
 target_include_directories(mxl-tests PRIVATE ${PROJECT_SOURCE_DIR}/lib/include)
 
 # Link the test executable with the library and Catch2
-target_link_libraries(mxl-tests PRIVATE mxl stduuid Catch2::Catch2WithMain spdlog::spdlog fmt::fmt picojson::picojson)
+target_link_libraries(mxl-tests PRIVATE mxl stduuid Catch2::Catch2WithMain spdlog::spdlog fmt::fmt picojson::picojson PcapPlusPlus::Pcap++)
 
 # Enable testing using CTest
 include(CTest)

@@ -32,7 +32,9 @@ RUN apt-get update \
     automake \
     libtool \
     pkg-config \
-    htop 
+    htop \
+    bison \
+    flex
 
 RUN apt-get update || true \
  && apt-get -y install libgstreamer1.0-dev \
