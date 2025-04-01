@@ -18,7 +18,7 @@
 #include <uuid.h>
 #include <vector>
 
-using namespace mxl::lib;
+namespace mxl::lib {
 
 namespace fs = std::filesystem;
 
@@ -247,4 +247,6 @@ FlowManager::listFlows() const
 FlowManager::~FlowManager()
 {
     MXL_TRACE( "~FlowManager" );
+}
+
 }

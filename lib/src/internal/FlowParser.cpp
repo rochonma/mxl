@@ -8,7 +8,7 @@
 #include <string>
 #include <uuid.h>
 
-using namespace mxl::lib;
+namespace mxl::lib {
 
 FlowParser::FlowParser( const std::string &in_flowDef )
 {
@@ -97,4 +97,6 @@ FlowParser::getPayloadSize() const
     }
 
     return payloadSize;
+}
+
 }

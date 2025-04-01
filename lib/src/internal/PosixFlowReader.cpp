@@ -21,7 +21,8 @@
 #include <unistd.h>
 #include <uuid.h>
 
-using namespace mxl::lib;
+namespace mxl::lib {
+
 namespace fs = std::filesystem;
 
 PosixFlowReader::PosixFlowReader( FlowManager::ptr in_manager ) : _manager{ in_manager }, _accessFileFd{ -1 } {}
@@ -139,4 +140,6 @@ void
 PosixFlowReader::grainAvailable()
 {
     _grainCV.notify_all();
+}
+
 }
