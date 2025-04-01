@@ -9,8 +9,10 @@
 #include <ostream>
 #include <uuid.h>
 
-using namespace mxl::lib;
 
+namespace mxl::lib {
+
+namespace {
 std::ostream &
 operator<<( std::ostream &os, const timespec &ts )
 {
@@ -19,6 +21,7 @@ operator<<( std::ostream &os, const timespec &ts )
     gmtime_r( &sec, &tm );
     os << std::put_time( &tm, "%Y-%m-%d %H:%M:%S UTC" ) << " +" << std::setw( 9 ) << std::setfill( '0' ) << ts.tv_nsec << "ns";
     return os;
+}
 }
 
 std::ostream &
@@ -53,4 +56,5 @@ operator<<( std::ostream &os, const Grain &grain )
     os << "\tpayload size  : " << grain.info.grainSize << std::endl;
 
     return os;
+}
 }
