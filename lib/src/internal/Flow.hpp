@@ -15,9 +15,11 @@ struct Flow
     FlowInfo info;
 };
 
+std::ostream &operator<<( std::ostream &os, const Flow &obj );
+
 /// The first 8KiB of a grain are reserved for the GrainInfo structure, including user data.  Ample padding is provided
 /// between the header and the payload.  Payload is page aligned AND AVX512 (64 bytes) aligned.
-const uint64_t MXL_GRAIN_PAYLOAD_OFFSET = 8192;
+constexpr auto const MXL_GRAIN_PAYLOAD_OFFSET = std::uint64_t{8192};
 
 ///
 /// Internal Grain structure stored in shared memory
@@ -33,8 +35,7 @@ struct Grain
     GrainInfo info;
 };
 
+std::ostream &operator<<( std::ostream &os, const Grain &obj );
+
 } // namespace mxl::lib
 
-std::ostream &operator<<( std::ostream &os, const mxl::lib::Flow &obj );
-
-std::ostream &operator<<( std::ostream &os, const mxl::lib::Grain &obj );

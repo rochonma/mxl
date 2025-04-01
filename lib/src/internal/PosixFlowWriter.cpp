@@ -14,7 +14,7 @@
 #include <sys/stat.h>
 #include <uuid.h>
 
-using namespace mxl::lib;
+namespace mxl::lib {
 
 PosixFlowWriter::PosixFlowWriter( FlowManager::ptr in_manager ) : _manager{ in_manager } {}
 
@@ -121,4 +121,6 @@ PosixFlowWriter::commit( const GrainInfo *in_grainInfo )
 PosixFlowWriter::~PosixFlowWriter()
 {
     PosixFlowWriter::close();
+}
+
 }

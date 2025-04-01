@@ -26,7 +26,7 @@
 #include <string>
 #include <uuid.h>
 
-using namespace mxl::lib;
+namespace mxl::lib {
 
 namespace {
 
@@ -247,7 +247,7 @@ Instance::deleteFlow( const uuids::uuid &in_id )
 }
 
 Instance *
-mxl::lib::to_Instance( mxlInstance in_instance )
+to_Instance( mxlInstance in_instance )
 {
     if ( !in_instance )
     {
@@ -259,13 +259,15 @@ mxl::lib::to_Instance( mxlInstance in_instance )
 }
 
 FlowReaderId
-mxl::lib::to_FlowReaderId( mxlFlowReader in_reader )
+to_FlowReaderId( mxlFlowReader in_reader )
 {
     return static_cast<FlowReaderId>( reinterpret_cast<uintptr_t>( in_reader ) );
 }
 
 FlowWriterId
-mxl::lib::to_FlowWriterId( mxlFlowWriter in_writer )
+to_FlowWriterId( mxlFlowWriter in_writer )
 {
     return static_cast<FlowWriterId>( reinterpret_cast<uintptr_t>( in_writer ) );
+}
+
 }

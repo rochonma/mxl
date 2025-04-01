@@ -25,9 +25,6 @@ typedef struct FlowInfo
     /// The flow uuid.  This should be identical to the {flowId} path component described above.
     uint8_t id[16];
 
-    /// no flags defined yet.
-    uint32_t flags;
-
     /// The current head index of the ringbuffer
     uint64_t headIndex;
 
@@ -37,7 +34,10 @@ typedef struct FlowInfo
 
     /// How many grains in the ring buffer. This should be identical to the number of entries in the {mxlDomain}/{flowId}/grains/ folder.
     /// Accessing the shared memory section for that specific grain should be predictable
-    uint16_t grainCount;
+    uint32_t grainCount;
+
+    /// no flags defined yet.
+    uint32_t flags;
 
     /// The last time a producer wrote to the flow
     struct timespec lastWriteTime;
@@ -46,7 +46,7 @@ typedef struct FlowInfo
     struct timespec lastReadTime;
 
     /// User data space
-    uint8_t userData[4096];
+    uint8_t userData[4008];
 } FlowInfo;
 
 /*
@@ -81,7 +81,7 @@ typedef struct GrainInfo
     /// Size of the grain payload.
     uint32_t grainSize;
     /// User data space
-    uint8_t userData[4096];
+    uint8_t userData[4072];
 } GrainInfo;
 
 typedef struct mxlFlowReader_t *mxlFlowReader;
