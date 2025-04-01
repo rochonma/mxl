@@ -26,12 +26,8 @@
       "version>=": "2.4.2#1"
     },
     {
-      "name": "minizip-ng",
-      "version>=": "4.0.7",
-      "default-features": false,
-      "features": [
-        "zlib"
-      ]
+      "name": "pcapplusplus",
+      "version>=": "24.9#0"
     }
   ],
   "builtin-baseline": "d5ec528843d29e3a52d745a64b469f810b2cedbf"

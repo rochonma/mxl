@@ -43,6 +43,8 @@ RUN dnf install -y \
     gstreamer1-plugins-base-devel \
     gstreamer1-plugins-good \
     gstreamer1-plugins-bad-free \
+    bison \
+    flex \
     && dnf clean all
 
 RUN pip install --upgrade cmake

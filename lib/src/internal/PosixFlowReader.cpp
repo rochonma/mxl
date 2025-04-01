@@ -6,10 +6,12 @@
 #include "SharedMem.hpp"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <cstdio>
+#include <ctime>
 #include <fcntl.h>
 #include <filesystem>
 #include <mutex>
@@ -93,11 +95,15 @@ PosixFlowReader::getGrain( uint64_t in_index, uint16_t in_timeoutMs, GrainInfo *
 
     if ( _flowData )
     {
-        char dummy = 0;
-        ::lseek( _accessFileFd, 0, SEEK_SET );
-        if ( write( _accessFileFd, &dummy, 1 ) != 1 )
+        // Update the file times
+        std::array<timespec, 2> times;
+        times[0].tv_sec = 0; // Set access time to current time
+        times[0].tv_nsec = UTIME_NOW;
+        times[1].tv_sec = 0; // Set modification time to current time
+        times[1].tv_nsec = UTIME_NOW;
+        if ( ::futimens( _accessFileFd, times.data() ) == -1 )
         {
-            MXL_ERROR( "failed to update the readfile" );
+            MXL_ERROR( "Failed to update access file times" );
         }
 
         auto flow = _flowData->flow->get();
