@@ -10,7 +10,7 @@ endif()
 
 project(mxl
     VERSION ${mxl_VERSION}
-    LANGUAGES CXX C 
+    LANGUAGES CXX C
 )
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -41,6 +41,7 @@ configure_file(
 find_package(Doxygen)
 
 find_program(ccache_executable ccache)
+
 if(ccache_executable)
     message(STATUS "Using ccache from '${ccache_executable}'")
     set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
@@ -62,6 +63,7 @@ enable_testing()
 if(APPLE)
     # Add the official GStreamer framework paths to the PKG_CONFIG_PATH
     set(ENV{PKG_CONFIG_PATH} "/Library/Frameworks/GStreamer.framework/Versions/1.0/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+
     # Configure threads
     set(CMAKE_THREAD_LIBS_INIT "-lpthread")
     set(CMAKE_HAVE_THREADS_LIBRARY 1)
@@ -87,35 +89,34 @@ if(DOXYGEN_FOUND)
     install(DIRECTORY "${CMAKE_BINARY_DIR}/docs/html"
         DESTINATION share/doc/mxl
         FILES_MATCHING PATTERN "*")
-
 endif()
 
-
-if (EXISTS "/etc/os-release")
+if(EXISTS "/etc/os-release")
     file(STRINGS "/etc/os-release" OS_RELEASE_CONTENTS)
-    
+
     set(IS_DEBIAN FALSE)
     set(IS_RPM FALSE)
 
-    foreach (LINE IN LISTS OS_RELEASE_CONTENTS)
-        if (LINE MATCHES "^ID=(.*)")
+    foreach(LINE IN LISTS OS_RELEASE_CONTENTS)
+        if(LINE MATCHES "^ID=(.*)")
             set(DISTRO_ID "${CMAKE_MATCH_1}")
         endif()
     endforeach()
 
-    if (DISTRO_ID MATCHES "ubuntu|debian")
+    if(DISTRO_ID MATCHES "ubuntu|debian")
         set(IS_DEBIAN TRUE)
-    elseif (DISTRO_ID MATCHES "amzn|rocky|rhel|fedora|centos")
+    elseif(DISTRO_ID MATCHES "amzn|rocky|rhel|fedora|centos")
         set(IS_RPM TRUE)
     endif()
 
-    if (IS_DEBIAN)
+    if(IS_DEBIAN)
         set(CPACK_GENERATOR "DEB")
-        set(CPACK_DEBIAN_PACKAGE_DEPENDS "gstreamer1.0-x, gstreamer1.0-plugins-good")  
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS "gstreamer1.0-x, gstreamer1.0-plugins-good")
         set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
         set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
-    elseif (IS_RPM)
+    elseif(IS_RPM)
         set(CPACK_GENERATOR "RPM")
+
         # Not adding gstreamer as a dependency since some rpm based platforms do not provide the required packages (amazon linux 2023)
         # set(CPACK_RPM_PACKAGE_REQUIRES "")
     endif()

@@ -1,12 +1,15 @@
 #include "../src/internal/Time.hpp"
 #include "Utils.hpp"
 
+#ifndef __APPLE__
 #include <Device.h>
 #include <Packet.h>
 #include <PcapFileDevice.h>
 #include <ProtocolType.h>
 #include <RawPacket.h>
 #include <UdpLayer.h>
+#endif
+
 #include <catch2/catch_test_macros.hpp>
 #include <chrono>
 #include <cstdint>
@@ -41,7 +44,8 @@ TEST_CASE( "Video Flow : Create/Destroy", "[mxl flows]" )
     auto instanceWriter = mxlCreateInstance( domain.string().c_str(), opts );
     REQUIRE( instanceWriter != nullptr );
 
-    REQUIRE( mxlCreateFlow( instanceWriter, flowDef.c_str(), opts ) == MXL_STATUS_OK );
+    FlowInfo fInfo;
+    REQUIRE( mxlCreateFlow( instanceWriter, flowDef.c_str(), opts, &fInfo ) == MXL_STATUS_OK );
 
     mxlFlowReader reader;
     REQUIRE( mxlCreateFlowReader( instanceReader, flowId, "", &reader ) == MXL_STATUS_OK );
@@ -50,7 +54,7 @@ TEST_CASE( "Video Flow : Create/Destroy", "[mxl flows]" )
     REQUIRE( mxlCreateFlowWriter( instanceWriter, flowId, "", &writer ) == MXL_STATUS_OK );
 
     /// Compute the grain index for the flow rate and current TAI time.
-    Rational rate{ 30000, 1001 };
+    Rational rate{ 60000, 1001 };
     timespec ts;
     mxlGetTime( &ts );
     uint64_t index = mxlTimeSpecToGrainIndex( &rate, &ts );
@@ -127,6 +131,8 @@ TEST_CASE( "Invalid flow definitions", "[mxl flows]" )
     auto noId = mxl::tests::readFile( "data/no_id.json" );
     auto noMediaType = mxl::tests::readFile( "data/no_media_type.json" );
     auto malformed = mxl::tests::readFile( "data/malformed.json" );
+    auto invalidInterlaced = mxl::tests::readFile( "data/invalid_interlaced_rate.json" );
+    auto invalidInterlacedHeight = mxl::tests::readFile( "data/invalid_interlaced_height.json" );
 
     const char *homeDir = getenv( "HOME" );
     REQUIRE( homeDir != nullptr );
@@ -138,13 +144,18 @@ TEST_CASE( "Invalid flow definitions", "[mxl flows]" )
     auto instance = mxlCreateInstance( domain.string().c_str(), opts );
     REQUIRE( instance != nullptr );
 
-    REQUIRE( mxlCreateFlow( instance, noGrainRate.c_str(), opts ) != MXL_STATUS_OK );
-    REQUIRE( mxlCreateFlow( instance, noId.c_str(), opts ) != MXL_STATUS_OK );
-    REQUIRE( mxlCreateFlow( instance, noMediaType.c_str(), opts ) != MXL_STATUS_OK );
-    REQUIRE( mxlCreateFlow( instance, malformed.c_str(), opts ) != MXL_STATUS_OK );
+    FlowInfo fInfo;
+    REQUIRE( mxlCreateFlow( instance, noGrainRate.c_str(), opts, &fInfo ) != MXL_STATUS_OK );
+    REQUIRE( mxlCreateFlow( instance, noId.c_str(), opts, &fInfo ) != MXL_STATUS_OK );
+    REQUIRE( mxlCreateFlow( instance, noMediaType.c_str(), opts, &fInfo ) != MXL_STATUS_OK );
+    REQUIRE( mxlCreateFlow( instance, malformed.c_str(), opts, &fInfo ) != MXL_STATUS_OK );
+    REQUIRE( mxlCreateFlow( instance, invalidInterlaced.c_str(), opts, &fInfo ) != MXL_STATUS_OK );
+    REQUIRE( mxlCreateFlow( instance, invalidInterlacedHeight.c_str(), opts, &fInfo ) != MXL_STATUS_OK );
 
     mxlDestroyInstance( instance );
 }
+
+#ifndef __APPLE__
 
 TEST_CASE( "Data Flow : Create/Destroy", "[mxl flows]" )
 {
@@ -185,7 +196,8 @@ TEST_CASE( "Data Flow : Create/Destroy", "[mxl flows]" )
     auto instanceWriter = mxlCreateInstance( domain.string().c_str(), opts );
     REQUIRE( instanceWriter != nullptr );
 
-    REQUIRE( mxlCreateFlow( instanceWriter, flowDef.c_str(), opts ) == MXL_STATUS_OK );
+    FlowInfo fInfo;
+    REQUIRE( mxlCreateFlow( instanceWriter, flowDef.c_str(), opts, &fInfo ) == MXL_STATUS_OK );
 
     mxlFlowReader reader;
     REQUIRE( mxlCreateFlowReader( instanceReader, flowId, "", &reader ) == MXL_STATUS_OK );
@@ -194,7 +206,7 @@ TEST_CASE( "Data Flow : Create/Destroy", "[mxl flows]" )
     REQUIRE( mxlCreateFlowWriter( instanceWriter, flowId, "", &writer ) == MXL_STATUS_OK );
 
     /// Compute the grain index for the flow rate and current TAI time.
-    Rational rate{ 30000, 1001 };
+    Rational rate{ 60000, 1001 };
     timespec ts;
     mxlGetTime( &ts );
     uint64_t index = mxlTimeSpecToGrainIndex( &rate, &ts );
@@ -261,3 +273,5 @@ TEST_CASE( "Data Flow : Create/Destroy", "[mxl flows]" )
     mxlDestroyInstance( instanceReader );
     mxlDestroyInstance( instanceWriter );
 }
+
+#endif
