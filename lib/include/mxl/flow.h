@@ -93,7 +93,9 @@ typedef struct mxlFlowWriter_t *mxlFlowWriter;
 /// \param in_instance The mxl instance created using mxlCreateInstance
 /// \param in_flowDef A flow definition in the NMOS Flow json format.  The flow ID is read from the <id> field of this json object.
 /// \param in_options Additional options (undefined). \todo Specify and used the additional options.
-MXL_EXPORT mxlStatus mxlCreateFlow( mxlInstance in_instance, const char *in_flowDef, const char *in_options );
+/// \param out_info A pointer to a FlowInfo structure.  If not nullptr, this structure will be updated with the flow information after the flow is
+/// created.
+MXL_EXPORT mxlStatus mxlCreateFlow( mxlInstance in_instance, const char *in_flowDef, const char *in_options, FlowInfo *out_info );
 
 MXL_EXPORT mxlStatus mxlDestroyFlow( mxlInstance in_instance, const char *in_flowId );
 

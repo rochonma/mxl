@@ -8,10 +8,7 @@
     {
       "name": "stduuid",
       "version>=": "1.2.3",
-      "features": [
-        "system-gen",
-        "gsl-span"
-      ]
+      "features": ["system-gen", "gsl-span"]
     },
     {
       "name": "spdlog",
@@ -27,7 +24,8 @@
     },
     {
       "name": "pcapplusplus",
-      "version>=": "24.9#0"
+      "version>=": "24.9#0",
+      "platform": "linux"
     }
   ],
   "builtin-baseline": "d5ec528843d29e3a52d745a64b469f810b2cedbf"

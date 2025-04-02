@@ -31,10 +31,9 @@ TEST_CASE( "Flow Manager", "[flow manager]" )
     auto manager = std::make_shared<FlowManager>( domain );
 
     FlowData::ptr flowData;
-    // This should throw since the flow definition is invalid.
-    REQUIRE_THROWS( [&]() { flowData = manager->createFlow( flowId, "{}", 5, 1024 ); }() );
+    Rational grainRate{ 60000, 1001 };
 
-    flowData = manager->createFlow( flowId, flowDef, 5, 1024 );
+    flowData = manager->createFlow( flowId, flowDef, 5, grainRate, 1024 );
 
     REQUIRE( flowData != nullptr );
     REQUIRE( flowData->flow != nullptr );
@@ -58,7 +57,7 @@ TEST_CASE( "Flow Manager", "[flow manager]" )
     REQUIRE( grainCount == 5 );
 
     // This should throw since the flow metadata will already exist.
-    REQUIRE_THROWS( [&]() { manager->createFlow( flowId, "{}", 5, 1024 ); }() );
+    REQUIRE_THROWS( [&]() { manager->createFlow( flowId, flowDef, 5, grainRate, 1024 ); }() );
 
     REQUIRE( manager->listFlows().size() == 1 );
 

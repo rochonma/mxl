@@ -276,7 +276,8 @@ main( int argc, char **argv )
     }
 
     // Create the flow
-    ret = mxlCreateFlow( instance, flow_descriptor.c_str(), "" );
+    FlowInfo fInfo;
+    ret = mxlCreateFlow( instance, flow_descriptor.c_str(), nullptr, &fInfo );
     if ( ret != MXL_STATUS_OK )
     {
         MXL_ERROR( "Failed to create flow with status '{}'", static_cast<int>( ret ) );

@@ -1,7 +1,6 @@
 #include "FlowManager.hpp"
 
 #include "Flow.hpp"
-#include "FlowParser.hpp"
 #include "Logging.hpp"
 #include "SharedMem.hpp"
 
@@ -32,13 +31,11 @@ FlowManager::FlowManager( const std::filesystem::path &in_mxlDomain ) : _mxlDoma
 }
 
 FlowData::ptr
-FlowManager::createFlow( const uuids::uuid &in_flowId, const std::string &in_flowDef, size_t in_grainCount, size_t in_grainPayloadSize )
+FlowManager::createFlow(
+    const uuids::uuid &in_flowId, const std::string &in_flowDef, size_t in_grainCount, const Rational &in_grainRate, size_t in_grainPayloadSize )
 {
     auto uuid = uuids::to_string( in_flowId );
     MXL_DEBUG( "Create flow. id: {}, grainCount: {}, grain payload size: {}", uuid, in_grainCount, in_grainPayloadSize );
-
-    // Parse the flow early.  if the flow is invalid it will throw.
-    FlowParser parser{ in_flowDef };
 
     auto flowFile = _mxlDomain / uuid;
     if ( fs::exists( flowFile ) )
@@ -93,7 +90,7 @@ FlowManager::createFlow( const uuids::uuid &in_flowId, const std::string &in_flo
     auto &info = flowData->flow->get()->info;
     info.version = 1;
     info.size = sizeof( FlowInfo );
-    info.grainRate = parser.getGrainRate();
+    info.grainRate = in_grainRate;
     info.grainCount = in_grainCount;
 
     auto idSpan = in_flowId.as_bytes();
@@ -249,4 +246,4 @@ FlowManager::~FlowManager()
     MXL_TRACE( "~FlowManager" );
 }
 
-}
+} // namespace mxl::lib

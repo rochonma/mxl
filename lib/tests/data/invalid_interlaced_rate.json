@@ -1,18 +1,18 @@
 {
-  "description": "MXL Test Flow, 1080p29",
+  "description": "MXL Test File",
   "id": "5fbec3b1-1b0f-417d-9059-8b94a47197ed",
   "tags": {},
   "format": "urn:x-nmos:format:video",
-  "label": "MXL Test Flow, 1080p29",
+  "label": "MXL Test File",
   "parents": [],
   "media_type": "video/v210",
   "grain_rate": {
-    "numerator": 30000,
+    "numerator": 60000,
     "denominator": 1001
   },
   "frame_width": 1920,
   "frame_height": 1080,
-  "interlace_mode": "progressive",
+  "interlace_mode": "interlaced_tff",
   "colorspace": "BT709",
   "components": [
     {

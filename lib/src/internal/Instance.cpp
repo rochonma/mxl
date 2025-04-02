@@ -221,7 +221,7 @@ Instance::createFlow( const std::string &in_flowDef )
     size_t grainCount = _historyDuration / ( 1000 * grainRate.denominator / grainRate.numerator );
 
     // Create the flow using the flow manager
-    auto flowData = _flowManager->createFlow( id, in_flowDef, grainCount, parser.getPayloadSize() );
+    auto flowData = _flowManager->createFlow( id, in_flowDef, grainCount, grainRate, parser.getPayloadSize() );
     auto info = flowData->flow->get()->info;
 
     // Populate the flowinfo structure. This structure will be visible through the C api.
@@ -270,4 +270,4 @@ to_FlowWriterId( mxlFlowWriter in_writer )
     return static_cast<FlowWriterId>( reinterpret_cast<uintptr_t>( in_writer ) );
 }
 
-}
+} // namespace mxl::lib

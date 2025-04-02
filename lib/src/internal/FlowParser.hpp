@@ -54,8 +54,15 @@ public:
     [[nodiscard]] size_t getPayloadSize() const;
 
 private:
+    /// The flow id read from the 'id' field
     uuids::uuid _id;
-
+    /// The flow format read from the 'format' field
+    std::string _format;
+    /// True if video and interlaced. false otherwise
+    bool _interlaced = false;
+    /// The flow grain rate, if defined.  0/1 if undefined.
+    Rational _grainRate{ 0, 1 };
+    /// The parsed flow object
     picojson::object _root;
 };
 

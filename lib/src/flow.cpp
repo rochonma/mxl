@@ -11,7 +11,7 @@
 using namespace mxl::lib;
 
 mxlStatus
-mxlCreateFlow( mxlInstance in_instance, const char *in_flowDef, const char * /*in_options*/ )
+mxlCreateFlow( mxlInstance in_instance, const char *in_flowDef, const char * /*in_options*/, FlowInfo *out_flowInfo )
 {
     try
     {
@@ -31,7 +31,11 @@ mxlCreateFlow( mxlInstance in_instance, const char *in_flowDef, const char * /*i
             return MXL_ERR_INVALID_ARG;
         }
 
-        instance->createFlow( in_flowDef );
+        if ( out_flowInfo != nullptr )
+        {
+            auto flowData = instance->createFlow( in_flowDef );
+            *out_flowInfo = flowData->flow->get()->info;
+        }
         return MXL_STATUS_OK;
     }
     catch ( std::exception &e )

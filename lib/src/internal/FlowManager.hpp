@@ -71,11 +71,13 @@ public:
     /// Create a new Flow and associated grains. Opens it in read-write mode
     ///
     /// \param in_flowId The id of the flow.
-    /// \param in_flowDef The json definition of the flow (NMOS Resource format)
+    /// \param in_flowDef The json definition of the flow (NMOS Resource format).  The flow is not parsed or validated. It is written as is.
     /// \param in_grainCount How many individual grains to create
+    /// \param in_grainRate The grain rate.
     /// \param in_grainPayloadSize Size of the grain in host memory.  0 if the grain payload lives in device memory.
     ///
-    FlowData::ptr createFlow( const uuids::uuid &in_flowId, const std::string &in_flowDef, size_t grainCount, size_t grainPayloadSize );
+    FlowData::ptr createFlow(
+        const uuids::uuid &in_flowId, const std::string &in_flowDef, size_t grainCount, const Rational &in_grainRate, size_t grainPayloadSize );
 
     ///
     /// Open an existing flow by id.
