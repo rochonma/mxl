@@ -4,11 +4,10 @@
 #include "FlowManager.hpp"
 #include "Logging.hpp"
 #include "SharedMem.hpp"
+#include "Sync.hpp"
 
 #include <algorithm>
 #include <array>
-#include <chrono>
-#include <condition_variable>
 #include <cstdint>
 #include <cstdio>
 #include <ctime>
@@ -123,8 +122,7 @@ PosixFlowReader::getGrain( uint64_t in_index, uint16_t in_timeoutMs, GrainInfo *
         }
         else
         {
-            std::unique_lock lk( _grainMutex );
-            if ( _grainCV.wait_for( lk, std::chrono::milliseconds{ in_timeoutMs } ) == std::cv_status::no_timeout )
+            if ( waitUntilChanged( &flow->info.syncCounter, in_timeoutMs, flow->info.syncCounter ) )
             {
                 uint32_t offset = in_index % flow->info.grainCount;
                 auto grain = _flowData->grains.at( offset )->get();
@@ -142,10 +140,4 @@ PosixFlowReader::getGrain( uint64_t in_index, uint16_t in_timeoutMs, GrainInfo *
     return status;
 }
 
-void
-PosixFlowReader::grainAvailable()
-{
-    _grainCV.notify_all();
-}
-
-}
+} // namespace mxl::lib

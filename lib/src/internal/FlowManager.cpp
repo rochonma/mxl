@@ -11,6 +11,7 @@
 #include <ios>
 #include <memory>
 #include <mxl/flow.h>
+#include <mxl/mxl.h>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -92,6 +93,7 @@ FlowManager::createFlow(
     info.size = sizeof( FlowInfo );
     info.grainRate = in_grainRate;
     info.grainCount = in_grainCount;
+    info.syncCounter = 0;
 
     auto idSpan = in_flowId.as_bytes();
     std::memcpy( info.id, idSpan.data(), idSpan.size() );

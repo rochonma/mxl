@@ -72,15 +72,8 @@ Instance::fileChangedCallback( const uuids::uuid &in_flowId, WatcherType in_type
         std::lock_guard<std::mutex> lock( _mutex );
 
         // Someone wrote to the flow. let the readers know.
-        if ( in_type == WatcherType::READER )
-        {
-            auto found = _readersByUUID.find( in_flowId );
-            if ( found != _readersByUUID.end() )
-            {
-                found->second->grainAvailable();
-            }
-        }
-        else
+        if ( in_type == WatcherType::WRITER )
+
         {
             // Someone read the grain and touched the ".access" file.  let update the last read count.
             auto found = _writersByUUID.find( in_flowId );

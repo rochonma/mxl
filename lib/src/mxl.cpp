@@ -1,4 +1,5 @@
 #include "internal/Instance.hpp"
+#include "internal/Logging.hpp"
 
 #include <cstdint>
 #include <exception>
@@ -36,8 +37,14 @@ mxlCreateInstance( const char *in_mxlDomain, const char *in_options )
         auto tmp = new InstanceInternal{ std::make_unique<Instance>( in_mxlDomain, opts ) };
         return reinterpret_cast<mxlInstance>( tmp );
     }
-    catch ( std::exception & )
+    catch ( std::exception &e )
     {
+        MXL_ERROR( "Failed to create instance : {}", e.what() );
+        return nullptr;
+    }
+    catch ( ... )
+    {
+        MXL_ERROR( "Failed to create instance" );
         return nullptr;
     }
 }

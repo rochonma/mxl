@@ -3,11 +3,33 @@
 
 #include <CLI/CLI.hpp>
 #include <csignal>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
 #include <fstream>
+#include <glib-object.h>
+#include <glibconfig.h>
 #include <gst/gst.h>
+#include <gst/gstbin.h>
+#include <gst/gstbuffer.h>
+#include <gst/gstcaps.h>
+#include <gst/gstelement.h>
+#include <gst/gstelementfactory.h>
+#include <gst/gstformat.h>
+#include <gst/gstmemory.h>
+#include <gst/gstobject.h>
+#include <gst/gstpad.h>
+#include <gst/gstpipeline.h>
+#include <gst/gstutils.h>
+#include <gst/gstvalue.h>
+#include <iterator>
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
 #include <mxl/time.h>
+#include <stdexcept>
+#include <string>
 
 #ifdef __APPLE__
 #include <TargetConditionals.h>
@@ -261,9 +283,16 @@ real_main( int argc, char **argv )
         if ( ret != MXL_STATUS_OK )
         {
             // Missed a grain. resync.
+            MXL_ERROR( "Missed grain {}, err : {}", grain_index, (int)ret );
             grain_index = mxlGetCurrentGrainIndex( &flow_info.grainRate );
             continue;
         }
+        else if ( grain_info.commitedSize != grain_info.grainSize )
+        {
+            // we don't need partial grains. wait for the grain to be complete.
+            continue;
+        }
+
         grain_index++;
 
         if ( !gst_buffer )

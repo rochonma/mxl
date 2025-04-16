@@ -11,11 +11,6 @@
 using namespace mxl::lib;
 namespace fs = std::filesystem;
 
-void
-fileChangedCallback( const uuids::uuid & /*in_flowId*/, WatcherType /*in_type*/ )
-{
-}
-
 TEST_CASE( "Directory Watcher", "[directory watcher]" )
 {
     const char *homeDir = getenv( "HOME" );
@@ -23,7 +18,7 @@ TEST_CASE( "Directory Watcher", "[directory watcher]" )
     fs::path domain{ std::string{ homeDir } + "/mxl_domain" }; // Remove that path if it exists.
     fs::remove_all( domain );
 
-    DomainWatcher watcher{ domain.string(), fileChangedCallback };
+    DomainWatcher watcher{ domain.string(), nullptr };
 
     fs::create_directories( domain );
 
