@@ -41,10 +41,6 @@ public:
     ///
     virtual FlowInfo getFlowInfo() = 0;
 
-    /// Invoked when a new grain is available.
-    /// This will signal readers waiting for the next grain.
-    virtual void grainAvailable() = 0;
-
     ///
     /// Accessor for a specific grain at a specific index.
     /// The index must be >= FlowInfo.tailIndex.

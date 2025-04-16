@@ -19,6 +19,7 @@ add_executable(mxl-tests
     ../src/internal/FlowParser.cpp
     ../src/internal/PosixFlowReader.cpp
     ../src/internal/Time.cpp
+    ../src/internal/Sync.cpp
 )
 
 # Specify the include directories for the test executable to find the library headers

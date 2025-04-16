@@ -3,6 +3,7 @@
 #include "Flow.hpp"
 #include "FlowManager.hpp"
 #include "SharedMem.hpp"
+#include "Sync.hpp"
 
 #include <cstdint>
 #include <cstring>
@@ -109,11 +110,16 @@ PosixFlowWriter::commit( const GrainInfo *in_grainInfo )
     auto dst = &_flowData->grains.at( offset )->get()->info;
     std::memcpy( dst, in_grainInfo, sizeof( GrainInfo ) );
     mxlGetTime( &flow->info.lastWriteTime );
-    _currentIndex = MXL_UNDEFINED_OFFSET;
 
-    // Let readers know that the head has moved.
-    // This will trigger an inotify event, which will wake up the readers.
-    _flowData->flow->touch();
+    // If the grain is complete, reset the current index of the flow writer.
+    if ( in_grainInfo->grainSize == in_grainInfo->commitedSize )
+    {
+        _currentIndex = MXL_UNDEFINED_OFFSET;
+    }
+
+    // Let readers know that the head has moved or that new data is available in a partial grain
+    _flowData->flow->get()->info.syncCounter++;
+    wakeAll( &_flowData->flow->get()->info.syncCounter );
 
     return MXL_STATUS_OK;
 }
@@ -123,4 +129,4 @@ PosixFlowWriter::~PosixFlowWriter()
     PosixFlowWriter::close();
 }
 
-}
+} // namespace mxl::lib

@@ -24,6 +24,8 @@ add_library(mxl SHARED
     src/internal/PosixFlowWriter.cpp
     src/internal/SharedMem.hpp
     src/internal/SharedMem.cpp
+    src/internal/Sync.hpp
+    src/internal/Sync.cpp
     src/internal/Time.hpp
     src/internal/Time.cpp
 )

@@ -38,9 +38,6 @@ public:
     ///
     virtual FlowInfo getFlowInfo() override;
 
-    /// \see FlowManager::grainAvailable
-    virtual void grainAvailable() override;
-
     ///
     /// Accessor for a specific grain at a specific index.
     /// The index must be >= FlowInfo.tailIndex.

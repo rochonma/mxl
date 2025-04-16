@@ -274,4 +274,86 @@ TEST_CASE( "Data Flow : Create/Destroy", "[mxl flows]" )
     mxlDestroyInstance( instanceWriter );
 }
 
+TEST_CASE( "Video Flow : Slices", "[mxl flows]" )
+{
+    const char *opts = "{}";
+    auto flowDef = mxl::tests::readFile( "data/v210_flow.json" );
+    const char *flowId = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
+
+    const char *homeDir = getenv( "HOME" );
+    REQUIRE( homeDir != nullptr );
+    fs::path domain{ homeDir }; // Remove that path if it exists.
+    domain /= "mxl_domain";
+    fs::remove_all( domain );
+
+    std::filesystem::create_directories( domain );
+    auto instanceReader = mxlCreateInstance( domain.string().c_str(), opts );
+    REQUIRE( instanceReader != nullptr );
+
+    auto instanceWriter = mxlCreateInstance( domain.string().c_str(), opts );
+    REQUIRE( instanceWriter != nullptr );
+
+    FlowInfo fInfo;
+    REQUIRE( mxlCreateFlow( instanceWriter, flowDef.c_str(), opts, &fInfo ) == MXL_STATUS_OK );
+
+    mxlFlowReader reader;
+    REQUIRE( mxlCreateFlowReader( instanceReader, flowId, "", &reader ) == MXL_STATUS_OK );
+
+    mxlFlowWriter writer;
+    REQUIRE( mxlCreateFlowWriter( instanceWriter, flowId, "", &writer ) == MXL_STATUS_OK );
+
+    /// Compute the grain index for the flow rate and current TAI time.
+    Rational rate{ 60000, 1001 };
+    timespec ts;
+    mxlGetTime( &ts );
+    uint64_t index = mxlTimeSpecToGrainIndex( &rate, &ts );
+    REQUIRE( index != MXL_UNDEFINED_OFFSET );
+
+    /// Open the grain.
+    GrainInfo gInfo;
+    uint8_t *buffer = nullptr;
+    REQUIRE( mxlFlowWriterOpenGrain( instanceWriter, writer, index, &gInfo, &buffer ) == MXL_STATUS_OK );
+
+    /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
+    FlowInfo fInfo1;
+    REQUIRE( mxlFlowReaderGetInfo( instanceReader, reader, &fInfo1 ) == MXL_STATUS_OK );
+    REQUIRE( fInfo1.headIndex == 0 );
+
+    const size_t maxSlice = 8;
+    auto sliceSize = gInfo.grainSize / maxSlice;
+    for ( size_t slice = 0; slice < maxSlice; slice++ )
+    {
+        /// Write a slice to the grain.
+        gInfo.commitedSize += sliceSize;
+        REQUIRE( mxlFlowWriterCommit( instanceWriter, writer, &gInfo ) == MXL_STATUS_OK );
+
+        FlowInfo sliceFlowInfo;
+        REQUIRE( mxlFlowReaderGetInfo( instanceReader, reader, &sliceFlowInfo ) == MXL_STATUS_OK );
+        REQUIRE( sliceFlowInfo.headIndex == index );
+
+        // We commited data to a grain. This should have increased the lastWriteTime field.
+        REQUIRE( sliceFlowInfo.lastWriteTime > fInfo1.lastWriteTime );
+
+        /// Read back the partial grain using the flow reader.
+        REQUIRE( mxlFlowReaderGetGrain( instanceReader, reader, index, 8, &gInfo, &buffer ) == MXL_STATUS_OK );
+
+        // Validate the commited size
+        REQUIRE( gInfo.commitedSize == sliceSize * ( slice + 1 ) );
+
+        // Give some time to the inotify message to reach the directorywatcher.
+        std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+
+        // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
+        REQUIRE( mxlFlowReaderGetInfo( instanceReader, reader, &sliceFlowInfo ) == MXL_STATUS_OK );
+        REQUIRE( sliceFlowInfo.lastReadTime > fInfo1.lastReadTime );
+    }
+
+    REQUIRE( mxlDestroyFlowReader( instanceReader, reader ) == MXL_STATUS_OK );
+    REQUIRE( mxlDestroyFlowWriter( instanceWriter, writer ) == MXL_STATUS_OK );
+    REQUIRE( mxlDestroyFlow( instanceWriter, flowId ) == MXL_STATUS_OK );
+    REQUIRE( mxlDestroyFlow( instanceWriter, flowId ) == MXL_ERR_FLOW_NOT_FOUND );
+    REQUIRE( mxlDestroyInstance( instanceReader ) == MXL_STATUS_OK );
+    REQUIRE( mxlDestroyInstance( instanceWriter ) == MXL_STATUS_OK );
+}
+
 #endif
