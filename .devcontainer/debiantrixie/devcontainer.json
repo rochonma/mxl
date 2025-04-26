@@ -3,8 +3,7 @@
     "build": {
         "dockerfile": "../Dockerfile.debiantrixie",
         "context": "../",
-        "args": {
-        }
+        "args": {}
     },
     "runArgs": [
         "--security-opt",
@@ -29,7 +28,8 @@
                 "ms-vscode.cpptools-extension-pack",
                 "mhutchie.git-graph",
                 "matepek.vscode-catch2-test-adapter",
-                "llvm-vs-code-extensions.vscode-clangd"
+                "llvm-vs-code-extensions.vscode-clangd",
+                "xaver.clang-format"
             ],
             "settings": {
                 "C_Cpp.intelliSenseEngine": "disabled",
@@ -37,7 +37,7 @@
                 "cmake.copyCompileCommands": "${workspaceFolder}/build/compile_commands.json",
                 "editor.formatOnSave": true,
                 "[cpp]": {
-                    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+                    "editor.defaultFormatter": "xaver.clang-format"
                 }
             }
         }

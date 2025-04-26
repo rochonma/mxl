@@ -48,6 +48,9 @@ RUN apt-get update || true \
 ARG CLANG_VERSION=19
 RUN wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- ${CLANG_VERSION}
 
+RUN apt-get update || true \
+ && apt-get -y install clang-format-${CLANG_VERSION}
+
 # Install CMake
 ARG CMAKE_VERSION=3.31.0
 RUN wget -O - https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz \
