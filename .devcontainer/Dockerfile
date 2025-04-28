@@ -75,8 +75,8 @@ ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
 # Create the user
-RUN groupadd --gid $USER_GID $USERNAME \
- && useradd --uid $USER_UID --gid $USER_GID -m -s /bin/bash $USERNAME \
+RUN getent group $USERNAME || groupadd --gid $USER_GID $USERNAME \
+ && getent passwd $USERNAME || useradd --uid $USER_UID --gid $USER_GID -m -s /bin/bash $USERNAME \
  && apt-get install -y sudo \
  && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
  && chmod 0440 /etc/sudoers.d/$USERNAME
@@ -91,5 +91,5 @@ RUN git clone https://github.com/microsoft/vcpkg \
 ENV VCPKG_ROOT=/home/$USERNAME/vcpkg
 
 # Make the selected clang version the default alternative
-COPY register-clang-version.sh ./register-clang-version.sh 
-RUN sudo ./register-clang-version.sh ${CLANG_VERSION} 100 && rm ./register-clang-version.sh
+COPY register-clang-version.sh /home/$USERNAME/register-clang-version.sh 
+RUN sudo /home/$USERNAME/register-clang-version.sh ${CLANG_VERSION} 100 && rm /home/$USERNAME/register-clang-version.sh

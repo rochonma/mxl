@@ -3,16 +3,19 @@
   "dependencies": [
     {
       "name": "catch2",
-      "version>=": "3.8.0"
+      "version>=": "3.8.1#0"
     },
     {
       "name": "stduuid",
       "version>=": "1.2.3",
-      "features": ["system-gen", "gsl-span"]
+      "features": [
+        "system-gen",
+        "gsl-span"
+      ]
     },
     {
       "name": "spdlog",
-      "version>=": "1.15.1#0"
+      "version>=": "1.15.2#0"
     },
     {
       "name": "picojson",
@@ -20,7 +23,7 @@
     },
     {
       "name": "cli11",
-      "version>=": "2.4.2#1"
+      "version>=": "2.5.0#0"
     },
     {
       "name": "pcapplusplus",
@@ -28,5 +31,5 @@
       "platform": "linux"
     }
   ],
-  "builtin-baseline": "d5ec528843d29e3a52d745a64b469f810b2cedbf"
+  "builtin-baseline": "bc994510d2eb11aac7b43b03f67a7751d5bfe0e4"
 }
