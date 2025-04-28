@@ -14,9 +14,7 @@ namespace fs = std::filesystem;
 
 TEST_CASE( "Flow Manager", "[flow manager]" )
 {
-    const char *homeDir = getenv( "HOME" );
-    REQUIRE( homeDir != nullptr );
-    fs::path domain{ std::string{ homeDir } + "/mxl_domain" }; // Remove that path if it exists.
+    fs::path domain{ "/dev/shm/mxl_domain" }; // Remove that path if it exists.
     fs::remove_all( domain );
 
     auto flowDef = mxl::tests::readFile( "data/v210_flow.json" );

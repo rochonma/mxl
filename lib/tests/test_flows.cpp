@@ -31,10 +31,7 @@ TEST_CASE( "Video Flow : Create/Destroy", "[mxl flows]" )
     auto flowDef = mxl::tests::readFile( "data/v210_flow.json" );
     const char *flowId = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
 
-    const char *homeDir = getenv( "HOME" );
-    REQUIRE( homeDir != nullptr );
-    fs::path domain{ homeDir }; // Remove that path if it exists.
-    domain /= "mxl_domain";
+    fs::path domain{ "/dev/shm/mxl_domain" }; // Remove that path if it exists.
     fs::remove_all( domain );
 
     std::filesystem::create_directories( domain );
@@ -183,10 +180,7 @@ TEST_CASE( "Data Flow : Create/Destroy", "[mxl flows]" )
     auto flowDef = mxl::tests::readFile( "data/data_flow.json" );
     const char *flowId = "db3bd465-2772-484f-8fac-830b0471258b";
 
-    const char *homeDir = getenv( "HOME" );
-    REQUIRE( homeDir != nullptr );
-    fs::path domain{ homeDir }; // Remove that path if it exists.
-    domain /= "mxl_domain";
+    fs::path domain{ "/dev/shm/mxl_domain" }; // Remove that path if it exists.
     fs::remove_all( domain );
 
     std::filesystem::create_directories( domain );

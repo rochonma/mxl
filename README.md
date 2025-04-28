@@ -1,4 +1,8 @@
 # MXL : Media Exchange Layer
+[![Build Pipeline](https://github.com/vt-tv/xyz/actions/workflows/build.yml/badge.svg)](https://github.com/vt-tv/xyz/actions/workflows/build.yml)
+[![GitHub release](https://img.shields.io/github/v/release/vt-tv/xyz)](https://github.com/vt-tv/xyz/releases)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE.txt)
+[![Issues](https://img.shields.io/github/issues/vt-tv/xyz)](https://github.com/vt-tv/xyz/issues)
 
 ## Overview
 

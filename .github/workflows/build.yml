@@ -1,0 +1,129 @@
+name: Build and Test the MXL Project
+
+#
+# A few ideas for improvements:
+# - Avoid rebuilding the image if it already exists (test if exists, if not build it and push it to the github registry, if it does, pull it)
+# - This workflow tries to leverage binary caching of vcpkg artefacts. unfortunalely there is a known issue with the 'gha' provider (github actions).
+#   See : https://github.com/microsoft/vcpkg/issues/45116#issuecomment-2829014919
+#
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:  # manual trigger support
+
+permissions:
+  contents: read
+  issues: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  build:
+    name: Build on Ubuntu ${{ matrix.ubuntu_version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ubuntu_version: [24.04, 22.04, 20.04]
+    env:
+      DOCKER_BUILDKIT: 1
+
+    steps:
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize Git Submodules (if needed)
+        run: git submodule update --init --recursive
+
+      - name: Get runner UID and GID
+        id: vars
+        run: |
+          echo "uid=$(id -u)" >> $GITHUB_OUTPUT
+          echo "gid=$(id -g)" >> $GITHUB_OUTPUT
+          mkdir -p ${{ github.workspace }}/build
+          chmod 777 ${{ github.workspace }}/build
+          chmod g+s ${{ github.workspace }}/build
+
+      - name: Set workspace permissions for access in the devcontainer
+        run: |
+          mkdir -p ${{ github.workspace }}/build
+          chmod 777 ${{ github.workspace }}/build
+          chmod g+s ${{ github.workspace }}/build
+          mkdir -p ${{ github.workspace }}/install
+          chmod 777 ${{ github.workspace }}/install
+          chmod g+s ${{ github.workspace }}/install
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg BASE_IMAGE_VERSION=${{ matrix.ubuntu_version }} \
+            --build-arg USER_UID=${{ steps.vars.outputs.uid }} \
+            --build-arg USER_GID=${{ steps.vars.outputs.gid }} \
+            -t mxl_build_container_with_source \
+            -f .devcontainer/Dockerfile \
+            .devcontainer
+
+      - name: Configure CMake
+        env:
+          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+          VCPKG_FEATURE_FLAGS: binarycaching          
+        run: |
+          docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
+            -e VCPKG_BINARY_SOURCES \
+            -e ACTIONS_CACHE_URL \
+            -e ACTIONS_RUNTIME_TOKEN \
+            -e VCPKG_FEATURE_FLAGS \
+            -i mxl_build_container_with_source \
+            bash -c "
+              cmake -S /workspace/mxl -B /workspace/mxl/build/Linux-Clang-Release \
+                --preset Linux-Clang-Release \
+                -DMXL_BUILD_NUMBER=${{ github.run_number }} \
+                -DCMAKE_INSTALL_PREFIX=/workspace/mxl/install
+            "
+
+      - name: Build Project
+        env:
+          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"          
+        run: |
+          docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
+            -e VCPKG_BINARY_SOURCES \
+            -e ACTIONS_CACHE_URL \
+            -e ACTIONS_RUNTIME_TOKEN \
+            -i mxl_build_container_with_source \
+            bash -c "
+              cmake --build /workspace/mxl/build/Linux-Clang-Release -t all doc install package
+            "
+
+      - name: Run Tests
+        run: |
+          docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
+            -i mxl_build_container_with_source \
+            bash -c "
+              cd /workspace/mxl/build/Linux-Clang-Release && \
+              ctest --output-junit test-results.xml
+            "
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            **/test-results.xml
+
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-ubuntu-${{ matrix.ubuntu_version }}-artifacts
+          path: |
+            ${{ github.workspace }}/build/Linux-Clang-Release/*.deb
+            ${{ github.workspace }}/install/
