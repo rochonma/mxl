@@ -3,8 +3,9 @@
 #include <filesystem>
 #include <string>
 
-namespace mxl::tests {
+namespace mxl::tests
+{
 
-std::string readFile( const std::filesystem::path &filepath );
+    std::string readFile(std::filesystem::path const& filepath);
 
 } // namespace mxl::tests

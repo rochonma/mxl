@@ -2,14 +2,14 @@
 
 #include <ctime>
 
-bool operator==( const timespec &lhs, const timespec &rhs );
+bool operator==(timespec const& lhs, timespec const& rhs);
 
-bool operator!=( const timespec &lhs, const timespec &rhs );
+bool operator!=(timespec const& lhs, timespec const& rhs);
 
-bool operator<( const timespec &lhs, const timespec &rhs );
+bool operator<(timespec const& lhs, timespec const& rhs);
 
-bool operator<=( const timespec &lhs, const timespec &rhs );
+bool operator<=(timespec const& lhs, timespec const& rhs);
 
-bool operator>( const timespec &lhs, const timespec &rhs );
+bool operator>(timespec const& lhs, timespec const& rhs);
 
-bool operator>=( const timespec &lhs, const timespec &rhs );
+bool operator>=(timespec const& lhs, timespec const& rhs);

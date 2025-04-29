@@ -1,5 +1,4 @@
 #include "Utils.hpp"
-
 #include <filesystem>
 #include <fstream>
 #include <ios>
@@ -8,12 +7,12 @@
 #include <string>
 
 std::string
-mxl::tests::readFile( const std::filesystem::path &filepath )
+mxl::tests::readFile(std::filesystem::path const& filepath)
 {
-    std::ifstream file( filepath, std::ios::in | std::ios::binary );
-    if ( !file )
+    std::ifstream file(filepath, std::ios::in | std::ios::binary);
+    if (!file)
     {
-        throw std::runtime_error( "Failed to open file: " + filepath.string() );
+        throw std::runtime_error("Failed to open file: " + filepath.string());
     }
-    return { std::istreambuf_iterator<char>( file ), std::istreambuf_iterator<char>() };
+    return {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
 }

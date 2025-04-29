@@ -2,15 +2,14 @@
 #include "Utils.hpp"
 
 #ifndef __APPLE__
-#include <Device.h>
-#include <Packet.h>
-#include <PcapFileDevice.h>
-#include <ProtocolType.h>
-#include <RawPacket.h>
-#include <UdpLayer.h>
+#   include <Device.h>
+#   include <Packet.h>
+#   include <PcapFileDevice.h>
+#   include <ProtocolType.h>
+#   include <RawPacket.h>
+#   include <UdpLayer.h>
 #endif
 
-#include <catch2/catch_test_macros.hpp>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
@@ -18,50 +17,51 @@
 #include <ctime>
 #include <filesystem>
 #include <memory>
+#include <thread>
+#include <catch2/catch_test_macros.hpp>
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
 #include <mxl/time.h>
-#include <thread>
 
 namespace fs = std::filesystem;
 
-TEST_CASE( "Video Flow : Create/Destroy", "[mxl flows]" )
+TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
 {
-    const char *opts = "{}";
-    auto flowDef = mxl::tests::readFile( "data/v210_flow.json" );
-    const char *flowId = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
+    char const* opts = "{}";
+    auto flowDef = mxl::tests::readFile("data/v210_flow.json");
+    char const* flowId = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
 
-    fs::path domain{ "/dev/shm/mxl_domain" }; // Remove that path if it exists.
-    fs::remove_all( domain );
+    fs::path domain{"/dev/shm/mxl_domain"}; // Remove that path if it exists.
+    fs::remove_all(domain);
 
-    std::filesystem::create_directories( domain );
-    auto instanceReader = mxlCreateInstance( domain.string().c_str(), opts );
-    REQUIRE( instanceReader != nullptr );
+    std::filesystem::create_directories(domain);
+    auto instanceReader = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instanceReader != nullptr);
 
-    auto instanceWriter = mxlCreateInstance( domain.string().c_str(), opts );
-    REQUIRE( instanceWriter != nullptr );
+    auto instanceWriter = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instanceWriter != nullptr);
 
     FlowInfo fInfo;
-    REQUIRE( mxlCreateFlow( instanceWriter, flowDef.c_str(), opts, &fInfo ) == MXL_STATUS_OK );
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
 
     mxlFlowReader reader;
-    REQUIRE( mxlCreateFlowReader( instanceReader, flowId, "", &reader ) == MXL_STATUS_OK );
+    REQUIRE(mxlCreateFlowReader(instanceReader, flowId, "", &reader) == MXL_STATUS_OK);
 
     mxlFlowWriter writer;
-    REQUIRE( mxlCreateFlowWriter( instanceWriter, flowId, "", &writer ) == MXL_STATUS_OK );
+    REQUIRE(mxlCreateFlowWriter(instanceWriter, flowId, "", &writer) == MXL_STATUS_OK);
 
     /// Compute the grain index for the flow rate and current TAI time.
-    Rational rate{ 60000, 1001 };
+    Rational rate{60000, 1001};
     timespec ts;
-    mxlGetTime( &ts );
-    uint64_t index = mxlTimeSpecToGrainIndex( &rate, &ts );
-    REQUIRE( index != MXL_UNDEFINED_OFFSET );
+    mxlGetTime(&ts);
+    uint64_t index = mxlTimeSpecToGrainIndex(&rate, &ts);
+    REQUIRE(index != MXL_UNDEFINED_OFFSET);
 
     /// Open the grain.
     GrainInfo gInfo;
-    uint8_t *buffer = nullptr;
+    uint8_t* buffer = nullptr;
     /// Open the grain for writing.
-    REQUIRE( mxlFlowWriterOpenGrain( instanceWriter, writer, index, &gInfo, &buffer ) == MXL_STATUS_OK );
+    REQUIRE(mxlFlowWriterOpenGrain(instanceWriter, writer, index, &gInfo, &buffer) == MXL_STATUS_OK);
 
     /// Set a mark at the beginning and the end of the grain payload.
     buffer[0] = 0xCA;
@@ -69,285 +69,285 @@ TEST_CASE( "Video Flow : Create/Destroy", "[mxl flows]" )
 
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
     FlowInfo fInfo1;
-    REQUIRE( mxlFlowReaderGetInfo( instanceReader, reader, &fInfo1 ) == MXL_STATUS_OK );
-    REQUIRE( fInfo1.headIndex == 0 );
+    REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &fInfo1) == MXL_STATUS_OK);
+    REQUIRE(fInfo1.headIndex == 0);
 
     /// Mark the grain as invalid
     gInfo.flags |= GRAIN_FLAG_INVALID;
-    REQUIRE( mxlFlowWriterCommit( instanceWriter, writer, &gInfo ) == MXL_STATUS_OK );
+    REQUIRE(mxlFlowWriterCommit(instanceWriter, writer, &gInfo) == MXL_STATUS_OK);
 
     /// Create back the grain using a flow reader.
-    REQUIRE( mxlFlowReaderGetGrain( instanceReader, reader, index, 16, &gInfo, &buffer ) == MXL_STATUS_OK );
+    REQUIRE(mxlFlowReaderGetGrain(instanceReader, reader, index, 16, &gInfo, &buffer) == MXL_STATUS_OK);
 
     // Give some time to the inotify message to reach the directorywatcher.
-    std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
     /// Confirm that the flags are preserved.
-    REQUIRE( gInfo.flags == GRAIN_FLAG_INVALID );
+    REQUIRE(gInfo.flags == GRAIN_FLAG_INVALID);
 
     /// Confirm that the marks are still present.
-    REQUIRE( buffer[0] == 0xCA );
-    REQUIRE( buffer[gInfo.grainSize - 1] == 0xFE );
+    REQUIRE(buffer[0] == 0xCA);
+    REQUIRE(buffer[gInfo.grainSize - 1] == 0xFE);
 
     /// Get the updated flow info
     FlowInfo fInfo2;
-    REQUIRE( mxlFlowReaderGetInfo( instanceReader, reader, &fInfo2 ) == MXL_STATUS_OK );
+    REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &fInfo2) == MXL_STATUS_OK);
 
     /// Confirm that that head has moved.
-    REQUIRE( fInfo2.headIndex == index );
+    REQUIRE(fInfo2.headIndex == index);
 
     // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
-    REQUIRE( fInfo2.lastReadTime > fInfo1.lastReadTime );
+    REQUIRE(fInfo2.lastReadTime > fInfo1.lastReadTime);
 
     // We commited a new grain. This should have increased the lastWriteTime field.
-    REQUIRE( fInfo2.lastWriteTime > fInfo1.lastWriteTime );
+    REQUIRE(fInfo2.lastWriteTime > fInfo1.lastWriteTime);
 
     /// Delete the reader
-    REQUIRE( mxlDestroyFlowReader( instanceReader, reader ) == MXL_STATUS_OK );
+    REQUIRE(mxlDestroyFlowReader(instanceReader, reader) == MXL_STATUS_OK);
 
     // Use the writer after closing the reader.
     buffer = nullptr;
-    REQUIRE( mxlFlowWriterOpenGrain( instanceWriter, writer, index++, &gInfo, &buffer ) == MXL_STATUS_OK );
+    REQUIRE(mxlFlowWriterOpenGrain(instanceWriter, writer, index++, &gInfo, &buffer) == MXL_STATUS_OK);
     /// Set a mark at the beginning and the end of the grain payload.
     buffer[0] = 0xCA;
     buffer[gInfo.grainSize - 1] = 0xFE;
 
-    REQUIRE( mxlDestroyFlowWriter( instanceWriter, writer ) == MXL_STATUS_OK );
-    REQUIRE( mxlDestroyFlow( instanceWriter, flowId ) == MXL_STATUS_OK );
+    REQUIRE(mxlDestroyFlowWriter(instanceWriter, writer) == MXL_STATUS_OK);
+    REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_STATUS_OK);
     // This should be gone from the filesystem.
-    REQUIRE( mxlDestroyFlow( instanceWriter, flowId ) == MXL_ERR_FLOW_NOT_FOUND );
+    REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_ERR_FLOW_NOT_FOUND);
 
-    mxlDestroyInstance( instanceReader );
-    mxlDestroyInstance( instanceWriter );
+    mxlDestroyInstance(instanceReader);
+    mxlDestroyInstance(instanceWriter);
 }
 
-TEST_CASE( "Invalid flow definitions", "[mxl flows]" )
+TEST_CASE("Invalid flow definitions", "[mxl flows]")
 {
-    const char *opts = "{}";
-    auto noGrainRate = mxl::tests::readFile( "data/no_grain_rate.json" );
-    auto noId = mxl::tests::readFile( "data/no_id.json" );
-    auto noMediaType = mxl::tests::readFile( "data/no_media_type.json" );
-    auto malformed = mxl::tests::readFile( "data/malformed.json" );
-    auto invalidInterlaced = mxl::tests::readFile( "data/invalid_interlaced_rate.json" );
-    auto invalidInterlacedHeight = mxl::tests::readFile( "data/invalid_interlaced_height.json" );
+    char const* opts = "{}";
+    auto noGrainRate = mxl::tests::readFile("data/no_grain_rate.json");
+    auto noId = mxl::tests::readFile("data/no_id.json");
+    auto noMediaType = mxl::tests::readFile("data/no_media_type.json");
+    auto malformed = mxl::tests::readFile("data/malformed.json");
+    auto invalidInterlaced = mxl::tests::readFile("data/invalid_interlaced_rate.json");
+    auto invalidInterlacedHeight = mxl::tests::readFile("data/invalid_interlaced_height.json");
 
-    const char *homeDir = getenv( "HOME" );
-    REQUIRE( homeDir != nullptr );
-    fs::path domain{ homeDir }; // Remove that path if it exists.
+    char const* homeDir = getenv("HOME");
+    REQUIRE(homeDir != nullptr);
+    fs::path domain{homeDir}; // Remove that path if it exists.
     domain /= "mxl_domain";
-    fs::remove_all( domain );
+    fs::remove_all(domain);
 
-    std::filesystem::create_directories( domain );
-    auto instance = mxlCreateInstance( domain.string().c_str(), opts );
-    REQUIRE( instance != nullptr );
+    std::filesystem::create_directories(domain);
+    auto instance = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instance != nullptr);
 
     FlowInfo fInfo;
-    REQUIRE( mxlCreateFlow( instance, noGrainRate.c_str(), opts, &fInfo ) != MXL_STATUS_OK );
-    REQUIRE( mxlCreateFlow( instance, noId.c_str(), opts, &fInfo ) != MXL_STATUS_OK );
-    REQUIRE( mxlCreateFlow( instance, noMediaType.c_str(), opts, &fInfo ) != MXL_STATUS_OK );
-    REQUIRE( mxlCreateFlow( instance, malformed.c_str(), opts, &fInfo ) != MXL_STATUS_OK );
-    REQUIRE( mxlCreateFlow( instance, invalidInterlaced.c_str(), opts, &fInfo ) != MXL_STATUS_OK );
-    REQUIRE( mxlCreateFlow( instance, invalidInterlacedHeight.c_str(), opts, &fInfo ) != MXL_STATUS_OK );
+    REQUIRE(mxlCreateFlow(instance, noGrainRate.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, noId.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, noMediaType.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, malformed.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, invalidInterlaced.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, invalidInterlacedHeight.c_str(), opts, &fInfo) != MXL_STATUS_OK);
 
-    mxlDestroyInstance( instance );
+    mxlDestroyInstance(instance);
 }
 
 #ifndef __APPLE__
 
-TEST_CASE( "Data Flow : Create/Destroy", "[mxl flows]" )
+TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
 {
     // Read some 2110-40 packets from a pcap file downloaded from https://github.com/NEOAdvancedTechnology/ST2110_pcap_zoo
-    std::unique_ptr<pcpp::IFileReaderDevice> pcapReader( pcpp::IFileReaderDevice::getReader( "data/ST2110-40-Closed_Captions.cap" ) );
-    REQUIRE( pcapReader != nullptr );
-    REQUIRE( pcapReader->open() );
+    std::unique_ptr<pcpp::IFileReaderDevice> pcapReader(pcpp::IFileReaderDevice::getReader("data/ST2110-40-Closed_Captions.cap"));
+    REQUIRE(pcapReader != nullptr);
+    REQUIRE(pcapReader->open());
 
     // We know that in the pcap file the first packet is an empty packet with a marker bit. Skip it and read the second one.
     pcpp::RawPacketVector rawPackets;
-    REQUIRE( pcapReader->getNextPackets( rawPackets, 2 ) == 2 );
-    pcpp::Packet parsedPacket( rawPackets.at( 1 ) );
+    REQUIRE(pcapReader->getNextPackets(rawPackets, 2) == 2);
+    pcpp::Packet parsedPacket(rawPackets.at(1));
 
     auto udpLayer = parsedPacket.getLayerOfType<pcpp::UdpLayer>();
-    auto *rtpData = udpLayer->getLayerPayload();
-    REQUIRE( rtpData != nullptr );
+    auto* rtpData = udpLayer->getLayerPayload();
+    REQUIRE(rtpData != nullptr);
     auto rtpSize = udpLayer->getLayerPayloadSize();
-    REQUIRE( rtpSize > 12 );
+    REQUIRE(rtpSize > 12);
     rtpData += 12; // skip rtp headers.  hard coded. could be smarter.
     rtpSize -= 12;
     uint8_t ancCount = rtpData[4];
-    REQUIRE( ancCount == 1 );
+    REQUIRE(ancCount == 1);
 
-    const char *opts = "{}";
-    auto flowDef = mxl::tests::readFile( "data/data_flow.json" );
-    const char *flowId = "db3bd465-2772-484f-8fac-830b0471258b";
+    char const* opts = "{}";
+    auto flowDef = mxl::tests::readFile("data/data_flow.json");
+    char const* flowId = "db3bd465-2772-484f-8fac-830b0471258b";
 
-    fs::path domain{ "/dev/shm/mxl_domain" }; // Remove that path if it exists.
-    fs::remove_all( domain );
+    fs::path domain{"/dev/shm/mxl_domain"}; // Remove that path if it exists.
+    fs::remove_all(domain);
 
-    std::filesystem::create_directories( domain );
-    auto instanceReader = mxlCreateInstance( domain.string().c_str(), opts );
-    REQUIRE( instanceReader != nullptr );
+    std::filesystem::create_directories(domain);
+    auto instanceReader = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instanceReader != nullptr);
 
-    auto instanceWriter = mxlCreateInstance( domain.string().c_str(), opts );
-    REQUIRE( instanceWriter != nullptr );
+    auto instanceWriter = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instanceWriter != nullptr);
 
     FlowInfo fInfo;
-    REQUIRE( mxlCreateFlow( instanceWriter, flowDef.c_str(), opts, &fInfo ) == MXL_STATUS_OK );
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
 
     mxlFlowReader reader;
-    REQUIRE( mxlCreateFlowReader( instanceReader, flowId, "", &reader ) == MXL_STATUS_OK );
+    REQUIRE(mxlCreateFlowReader(instanceReader, flowId, "", &reader) == MXL_STATUS_OK);
 
     mxlFlowWriter writer;
-    REQUIRE( mxlCreateFlowWriter( instanceWriter, flowId, "", &writer ) == MXL_STATUS_OK );
+    REQUIRE(mxlCreateFlowWriter(instanceWriter, flowId, "", &writer) == MXL_STATUS_OK);
 
     /// Compute the grain index for the flow rate and current TAI time.
-    Rational rate{ 60000, 1001 };
+    Rational rate{60000, 1001};
     timespec ts;
-    mxlGetTime( &ts );
-    uint64_t index = mxlTimeSpecToGrainIndex( &rate, &ts );
-    REQUIRE( index != MXL_UNDEFINED_OFFSET );
+    mxlGetTime(&ts);
+    uint64_t index = mxlTimeSpecToGrainIndex(&rate, &ts);
+    REQUIRE(index != MXL_UNDEFINED_OFFSET);
 
     /// Open the grain.
     GrainInfo gInfo;
-    uint8_t *buffer = nullptr;
+    uint8_t* buffer = nullptr;
     /// Open the grain for writing.
-    REQUIRE( mxlFlowWriterOpenGrain( instanceWriter, writer, index, &gInfo, &buffer ) == MXL_STATUS_OK );
+    REQUIRE(mxlFlowWriterOpenGrain(instanceWriter, writer, index, &gInfo, &buffer) == MXL_STATUS_OK);
 
     /// ANC Grains are always 4KiB
-    REQUIRE( gInfo.grainSize == 4096 );
+    REQUIRE(gInfo.grainSize == 4096);
 
     // Copy the 2110-40 packet in the grain
-    memcpy( buffer, rtpData, rtpSize );
+    memcpy(buffer, rtpData, rtpSize);
 
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
     FlowInfo fInfo1;
-    REQUIRE( mxlFlowReaderGetInfo( instanceReader, reader, &fInfo1 ) == MXL_STATUS_OK );
-    REQUIRE( fInfo1.headIndex == 0 );
+    REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &fInfo1) == MXL_STATUS_OK);
+    REQUIRE(fInfo1.headIndex == 0);
 
     /// Mark the grain as invalid
     gInfo.flags |= GRAIN_FLAG_INVALID;
-    REQUIRE( mxlFlowWriterCommit( instanceWriter, writer, &gInfo ) == MXL_STATUS_OK );
+    REQUIRE(mxlFlowWriterCommit(instanceWriter, writer, &gInfo) == MXL_STATUS_OK);
 
     /// Create back the grain using a flow reader.
-    REQUIRE( mxlFlowReaderGetGrain( instanceReader, reader, index, 16, &gInfo, &buffer ) == MXL_STATUS_OK );
+    REQUIRE(mxlFlowReaderGetGrain(instanceReader, reader, index, 16, &gInfo, &buffer) == MXL_STATUS_OK);
 
     /// Confirm that the flags are preserved.
-    REQUIRE( gInfo.flags == GRAIN_FLAG_INVALID );
+    REQUIRE(gInfo.flags == GRAIN_FLAG_INVALID);
 
     /// Confirm that our original -40 packet is still there
-    REQUIRE( 0 == memcmp( buffer, rtpData, reinterpret_cast<size_t>( rtpSize ) ) );
+    REQUIRE(0 == memcmp(buffer, rtpData, reinterpret_cast<size_t>(rtpSize)));
 
     // Give some time to the inotify message to reach the directorywatcher.
-    std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
     /// Get the updated flow info
     FlowInfo fInfo2;
-    REQUIRE( mxlFlowReaderGetInfo( instanceReader, reader, &fInfo2 ) == MXL_STATUS_OK );
+    REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &fInfo2) == MXL_STATUS_OK);
 
     /// Confirm that that head has moved.
-    REQUIRE( fInfo2.headIndex == index );
+    REQUIRE(fInfo2.headIndex == index);
 
     // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
-    REQUIRE( fInfo2.lastReadTime > fInfo1.lastReadTime );
+    REQUIRE(fInfo2.lastReadTime > fInfo1.lastReadTime);
 
     // We commited a new grain. This should have increased the lastWriteTime field.
-    REQUIRE( fInfo2.lastWriteTime > fInfo1.lastWriteTime );
+    REQUIRE(fInfo2.lastWriteTime > fInfo1.lastWriteTime);
 
     /// Delete the reader
-    REQUIRE( mxlDestroyFlowReader( instanceReader, reader ) == MXL_STATUS_OK );
+    REQUIRE(mxlDestroyFlowReader(instanceReader, reader) == MXL_STATUS_OK);
 
     // Use the writer after closing the reader.
-    uint8_t *buffer2 = nullptr;
-    REQUIRE( mxlFlowWriterOpenGrain( instanceWriter, writer, index++, &gInfo, &buffer2 ) == MXL_STATUS_OK );
+    uint8_t* buffer2 = nullptr;
+    REQUIRE(mxlFlowWriterOpenGrain(instanceWriter, writer, index++, &gInfo, &buffer2) == MXL_STATUS_OK);
 
-    REQUIRE( mxlDestroyFlowWriter( instanceWriter, writer ) == MXL_STATUS_OK );
-    REQUIRE( mxlDestroyFlow( instanceWriter, flowId ) == MXL_STATUS_OK );
+    REQUIRE(mxlDestroyFlowWriter(instanceWriter, writer) == MXL_STATUS_OK);
+    REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_STATUS_OK);
     // This should be gone from the filesystem.
-    REQUIRE( mxlDestroyFlow( instanceWriter, flowId ) == MXL_ERR_FLOW_NOT_FOUND );
+    REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_ERR_FLOW_NOT_FOUND);
 
-    mxlDestroyInstance( instanceReader );
-    mxlDestroyInstance( instanceWriter );
+    mxlDestroyInstance(instanceReader);
+    mxlDestroyInstance(instanceWriter);
 }
 
-TEST_CASE( "Video Flow : Slices", "[mxl flows]" )
+TEST_CASE("Video Flow : Slices", "[mxl flows]")
 {
-    const char *opts = "{}";
-    auto flowDef = mxl::tests::readFile( "data/v210_flow.json" );
-    const char *flowId = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
+    char const* opts = "{}";
+    auto flowDef = mxl::tests::readFile("data/v210_flow.json");
+    char const* flowId = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
 
-    const char *homeDir = getenv( "HOME" );
-    REQUIRE( homeDir != nullptr );
-    fs::path domain{ homeDir }; // Remove that path if it exists.
+    char const* homeDir = getenv("HOME");
+    REQUIRE(homeDir != nullptr);
+    fs::path domain{homeDir}; // Remove that path if it exists.
     domain /= "mxl_domain";
-    fs::remove_all( domain );
+    fs::remove_all(domain);
 
-    std::filesystem::create_directories( domain );
-    auto instanceReader = mxlCreateInstance( domain.string().c_str(), opts );
-    REQUIRE( instanceReader != nullptr );
+    std::filesystem::create_directories(domain);
+    auto instanceReader = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instanceReader != nullptr);
 
-    auto instanceWriter = mxlCreateInstance( domain.string().c_str(), opts );
-    REQUIRE( instanceWriter != nullptr );
+    auto instanceWriter = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instanceWriter != nullptr);
 
     FlowInfo fInfo;
-    REQUIRE( mxlCreateFlow( instanceWriter, flowDef.c_str(), opts, &fInfo ) == MXL_STATUS_OK );
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
 
     mxlFlowReader reader;
-    REQUIRE( mxlCreateFlowReader( instanceReader, flowId, "", &reader ) == MXL_STATUS_OK );
+    REQUIRE(mxlCreateFlowReader(instanceReader, flowId, "", &reader) == MXL_STATUS_OK);
 
     mxlFlowWriter writer;
-    REQUIRE( mxlCreateFlowWriter( instanceWriter, flowId, "", &writer ) == MXL_STATUS_OK );
+    REQUIRE(mxlCreateFlowWriter(instanceWriter, flowId, "", &writer) == MXL_STATUS_OK);
 
     /// Compute the grain index for the flow rate and current TAI time.
-    Rational rate{ 60000, 1001 };
+    Rational rate{60000, 1001};
     timespec ts;
-    mxlGetTime( &ts );
-    uint64_t index = mxlTimeSpecToGrainIndex( &rate, &ts );
-    REQUIRE( index != MXL_UNDEFINED_OFFSET );
+    mxlGetTime(&ts);
+    uint64_t index = mxlTimeSpecToGrainIndex(&rate, &ts);
+    REQUIRE(index != MXL_UNDEFINED_OFFSET);
 
     /// Open the grain.
     GrainInfo gInfo;
-    uint8_t *buffer = nullptr;
-    REQUIRE( mxlFlowWriterOpenGrain( instanceWriter, writer, index, &gInfo, &buffer ) == MXL_STATUS_OK );
+    uint8_t* buffer = nullptr;
+    REQUIRE(mxlFlowWriterOpenGrain(instanceWriter, writer, index, &gInfo, &buffer) == MXL_STATUS_OK);
 
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
     FlowInfo fInfo1;
-    REQUIRE( mxlFlowReaderGetInfo( instanceReader, reader, &fInfo1 ) == MXL_STATUS_OK );
-    REQUIRE( fInfo1.headIndex == 0 );
+    REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &fInfo1) == MXL_STATUS_OK);
+    REQUIRE(fInfo1.headIndex == 0);
 
-    const size_t maxSlice = 8;
+    size_t const maxSlice = 8;
     auto sliceSize = gInfo.grainSize / maxSlice;
-    for ( size_t slice = 0; slice < maxSlice; slice++ )
+    for (size_t slice = 0; slice < maxSlice; slice++)
     {
         /// Write a slice to the grain.
         gInfo.commitedSize += sliceSize;
-        REQUIRE( mxlFlowWriterCommit( instanceWriter, writer, &gInfo ) == MXL_STATUS_OK );
+        REQUIRE(mxlFlowWriterCommit(instanceWriter, writer, &gInfo) == MXL_STATUS_OK);
 
         FlowInfo sliceFlowInfo;
-        REQUIRE( mxlFlowReaderGetInfo( instanceReader, reader, &sliceFlowInfo ) == MXL_STATUS_OK );
-        REQUIRE( sliceFlowInfo.headIndex == index );
+        REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &sliceFlowInfo) == MXL_STATUS_OK);
+        REQUIRE(sliceFlowInfo.headIndex == index);
 
         // We commited data to a grain. This should have increased the lastWriteTime field.
-        REQUIRE( sliceFlowInfo.lastWriteTime > fInfo1.lastWriteTime );
+        REQUIRE(sliceFlowInfo.lastWriteTime > fInfo1.lastWriteTime);
 
         /// Read back the partial grain using the flow reader.
-        REQUIRE( mxlFlowReaderGetGrain( instanceReader, reader, index, 8, &gInfo, &buffer ) == MXL_STATUS_OK );
+        REQUIRE(mxlFlowReaderGetGrain(instanceReader, reader, index, 8, &gInfo, &buffer) == MXL_STATUS_OK);
 
         // Validate the commited size
-        REQUIRE( gInfo.commitedSize == sliceSize * ( slice + 1 ) );
+        REQUIRE(gInfo.commitedSize == sliceSize * (slice + 1));
 
         // Give some time to the inotify message to reach the directorywatcher.
-        std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
         // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
-        REQUIRE( mxlFlowReaderGetInfo( instanceReader, reader, &sliceFlowInfo ) == MXL_STATUS_OK );
-        REQUIRE( sliceFlowInfo.lastReadTime > fInfo1.lastReadTime );
+        REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &sliceFlowInfo) == MXL_STATUS_OK);
+        REQUIRE(sliceFlowInfo.lastReadTime > fInfo1.lastReadTime);
     }
 
-    REQUIRE( mxlDestroyFlowReader( instanceReader, reader ) == MXL_STATUS_OK );
-    REQUIRE( mxlDestroyFlowWriter( instanceWriter, writer ) == MXL_STATUS_OK );
-    REQUIRE( mxlDestroyFlow( instanceWriter, flowId ) == MXL_STATUS_OK );
-    REQUIRE( mxlDestroyFlow( instanceWriter, flowId ) == MXL_ERR_FLOW_NOT_FOUND );
-    REQUIRE( mxlDestroyInstance( instanceReader ) == MXL_STATUS_OK );
-    REQUIRE( mxlDestroyInstance( instanceWriter ) == MXL_STATUS_OK );
+    REQUIRE(mxlDestroyFlowReader(instanceReader, reader) == MXL_STATUS_OK);
+    REQUIRE(mxlDestroyFlowWriter(instanceWriter, writer) == MXL_STATUS_OK);
+    REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_STATUS_OK);
+    REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_ERR_FLOW_NOT_FOUND);
+    REQUIRE(mxlDestroyInstance(instanceReader) == MXL_STATUS_OK);
+    REQUIRE(mxlDestroyInstance(instanceWriter) == MXL_STATUS_OK);
 }
 
 #endif
