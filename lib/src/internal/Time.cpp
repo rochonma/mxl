@@ -1,43 +1,46 @@
 #include "Time.hpp"
-
 #include <ctime>
 
 bool
-operator==( const timespec &lhs, const timespec &rhs )
+operator==(timespec const& lhs, timespec const& rhs)
 {
-    return ( lhs.tv_sec == rhs.tv_sec ) && ( lhs.tv_nsec == rhs.tv_nsec );
+    return (lhs.tv_sec == rhs.tv_sec) && (lhs.tv_nsec == rhs.tv_nsec);
 }
 
 bool
-operator!=( const timespec &lhs, const timespec &rhs )
+operator!=(timespec const& lhs, timespec const& rhs)
 {
-    return !( lhs == rhs );
+    return !(lhs == rhs);
 }
 
 bool
-operator<( const timespec &lhs, const timespec &rhs )
+operator<(timespec const& lhs, timespec const& rhs)
 {
-    if ( lhs.tv_sec < rhs.tv_sec )
+    if (lhs.tv_sec < rhs.tv_sec)
+    {
         return true;
-    if ( lhs.tv_sec > rhs.tv_sec )
+    }
+    if (lhs.tv_sec > rhs.tv_sec)
+    {
         return false;
+    }
     return lhs.tv_nsec < rhs.tv_nsec;
 }
 
 bool
-operator<=( const timespec &lhs, const timespec &rhs )
+operator<=(timespec const& lhs, timespec const& rhs)
 {
-    return ( lhs < rhs ) || ( lhs == rhs );
+    return (lhs < rhs) || (lhs == rhs);
 }
 
 bool
-operator>( const timespec &lhs, const timespec &rhs )
+operator>(timespec const& lhs, timespec const& rhs)
 {
-    return !( lhs <= rhs );
+    return !(lhs <= rhs);
 }
 
 bool
-operator>=( const timespec &lhs, const timespec &rhs )
+operator>=(timespec const& lhs, timespec const& rhs)
 {
-    return !( lhs < rhs );
+    return !(lhs < rhs);
 }
