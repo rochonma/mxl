@@ -1,5 +1,11 @@
 #pragma once
 
+#ifdef __cplusplus
+#  include <cstdint>
+#else
+#  include <stdint.h>
+#endif
+
 #if defined(__GNUC__) || defined(__clang__)
 #   define MXL_EXPORT __attribute__((visibility("default")))
 #else
@@ -10,8 +16,6 @@
 extern "C"
 {
 #endif
-
-#include <stdint.h>
 
 #define MXL_UNDEFINED_OFFSET UINT64_MAX
 
