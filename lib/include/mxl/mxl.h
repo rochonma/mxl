@@ -6,11 +6,7 @@
 #   include <stdint.h>
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
-#   define MXL_EXPORT __attribute__((visibility("default")))
-#else
-#   define MXL_EXPORT
-#endif
+#include <mxl/platform.h>
 
 #ifdef __cplusplus
 extern "C"
