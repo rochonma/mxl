@@ -41,6 +41,7 @@ target_sources(mxl
             src/internal/SharedMem.cpp
             src/internal/Sync.cpp
             src/internal/Time.cpp
+            src/internal/Timing.cpp
         )
 
 find_package(stduuid CONFIG REQUIRED)
