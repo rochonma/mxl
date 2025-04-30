@@ -13,32 +13,7 @@ project(mxl
     LANGUAGES CXX C
 )
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
-include(FetchContent)
-FetchContent_Declare(
-    doxygen-awesome-css
-    URL https://github.com/jothepro/doxygen-awesome-css/archive/refs/heads/main.zip
-)
-FetchContent_MakeAvailable(doxygen-awesome-css)
-
-# Save the location the files were cloned into
-# This allows us to get the path to doxygen-awesome.css
-FetchContent_GetProperties(doxygen-awesome-css SOURCE_DIR AWESOME_CSS_DIR)
-
-# Generate the Doxyfile
-set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
-set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
-configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
-
-# Configure the version.h header file base on the current project version
-configure_file(
-    ${mxl_SOURCE_DIR}/lib/include/mxl/version.h.in
-    ${mxl_BINARY_DIR}/mxl/version.h
-    @ONLY
-)
-
-find_package(Doxygen)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 find_program(ccache_executable ccache)
 
@@ -75,7 +50,27 @@ endif()
 add_subdirectory(lib)
 add_subdirectory(tools)
 
+
+find_package(Doxygen)
+
 if(DOXYGEN_FOUND)
+    include(FetchContent)
+
+    FetchContent_Declare(
+        doxygen-awesome-css
+        URL https://github.com/jothepro/doxygen-awesome-css/archive/refs/heads/main.zip
+    )
+    FetchContent_MakeAvailable(doxygen-awesome-css)
+
+    # Save the location the files were cloned into
+    # This allows us to get the path to doxygen-awesome.css
+    FetchContent_GetProperties(doxygen-awesome-css SOURCE_DIR AWESOME_CSS_DIR)
+
+    # Generate the Doxyfile
+    set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
+    set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+    configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
+
     set(DOXYGEN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/docs")
 
     add_custom_target(doc
