@@ -46,8 +46,8 @@ namespace mxl::lib
     {
         std::call_once(loggingFlag, [&]() { initializeLogging(); });
         _flowManager = std::make_shared<FlowManager>(in_mxlDomain);
-        _watcher =
-            std::make_shared<DomainWatcher>(in_mxlDomain, [this](auto const& in_uuid, auto in_type) { fileChangedCallback(in_uuid, in_type); });
+        _watcher = std::make_shared<DomainWatcher>(in_mxlDomain,
+            [this](auto const& in_uuid, auto in_type) { fileChangedCallback(in_uuid, in_type); });
         MXL_DEBUG("Instance created. MXL Domain: {}", in_mxlDomain.string());
     }
 

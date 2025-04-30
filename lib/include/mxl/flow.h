@@ -1,11 +1,11 @@
 #pragma once
 
 #ifdef __cplusplus
-#  include <cstdint>
-#  include <ctime>
+#   include <cstdint>
+#   include <ctime>
 #else
-#  include <stdint.h>
-#  include <time.h>
+#   include <stdint.h>
+#   include <time.h>
 #endif
 
 #include <mxl/mxl.h>
@@ -150,8 +150,8 @@ MXL_EXPORT
      * \return The result code. \see mxlStatus
      */
 MXL_EXPORT
-    mxlStatus mxlFlowReaderGetGrain(
-        mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, uint16_t in_timeoutMs, GrainInfo* out_grain, uint8_t** out_payload);
+    mxlStatus mxlFlowReaderGetGrain(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, uint16_t in_timeoutMs, GrainInfo* out_grain,
+        uint8_t** out_payload);
 
     /**
      * Open a grain for mutation.  The flow writer will remember which index is currently opened. Before opening a new grain
@@ -165,8 +165,8 @@ MXL_EXPORT
      * \return The result code. \see mxlStatus
      */
 MXL_EXPORT
-    mxlStatus mxlFlowWriterOpenGrain(
-        mxlInstance in_instance, mxlFlowWriter in_writer, uint64_t in_index, GrainInfo* out_grainInfo, uint8_t** out_payload);
+    mxlStatus mxlFlowWriterOpenGrain(mxlInstance in_instance, mxlFlowWriter in_writer, uint64_t in_index, GrainInfo* out_grainInfo,
+        uint8_t** out_payload);
 
     /**
      *

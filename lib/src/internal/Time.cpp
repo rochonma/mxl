@@ -1,20 +1,17 @@
 #include "Time.hpp"
 #include <ctime>
 
-bool
-operator==(timespec const& lhs, timespec const& rhs)
+bool operator==(timespec const& lhs, timespec const& rhs)
 {
     return (lhs.tv_sec == rhs.tv_sec) && (lhs.tv_nsec == rhs.tv_nsec);
 }
 
-bool
-operator!=(timespec const& lhs, timespec const& rhs)
+bool operator!=(timespec const& lhs, timespec const& rhs)
 {
     return !(lhs == rhs);
 }
 
-bool
-operator<(timespec const& lhs, timespec const& rhs)
+bool operator<(timespec const& lhs, timespec const& rhs)
 {
     if (lhs.tv_sec < rhs.tv_sec)
     {
@@ -27,20 +24,17 @@ operator<(timespec const& lhs, timespec const& rhs)
     return lhs.tv_nsec < rhs.tv_nsec;
 }
 
-bool
-operator<=(timespec const& lhs, timespec const& rhs)
+bool operator<=(timespec const& lhs, timespec const& rhs)
 {
     return (lhs < rhs) || (lhs == rhs);
 }
 
-bool
-operator>(timespec const& lhs, timespec const& rhs)
+bool operator>(timespec const& lhs, timespec const& rhs)
 {
     return !(lhs <= rhs);
 }
 
-bool
-operator>=(timespec const& lhs, timespec const& rhs)
+bool operator>=(timespec const& lhs, timespec const& rhs)
 {
     return !(lhs < rhs);
 }

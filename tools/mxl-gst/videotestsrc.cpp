@@ -11,8 +11,7 @@
 
 std::sig_atomic_t volatile g_exit_requested = 0;
 
-void
-signal_handler(int)
+void signal_handler(int)
 {
     g_exit_requested = 1;
 }
@@ -217,8 +216,7 @@ private:
     GstElement* _pipeline{nullptr};
 };
 
-int
-main(int argc, char** argv)
+int main(int argc, char** argv)
 {
     std::signal(SIGINT, &signal_handler);
     std::signal(SIGTERM, &signal_handler);

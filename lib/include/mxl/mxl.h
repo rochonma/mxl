@@ -1,9 +1,9 @@
 #pragma once
 
 #ifdef __cplusplus
-#  include <cstdint>
+#   include <cstdint>
 #else
-#  include <stdint.h>
+#   include <stdint.h>
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)

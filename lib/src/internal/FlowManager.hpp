@@ -76,8 +76,8 @@ namespace mxl::lib
         /// \param in_grainRate The grain rate.
         /// \param in_grainPayloadSize Size of the grain in host memory.  0 if the grain payload lives in device memory.
         ///
-        FlowData::ptr createFlow(
-            uuids::uuid const& in_flowId, std::string const& in_flowDef, size_t grainCount, Rational const& in_grainRate, size_t grainPayloadSize);
+        FlowData::ptr createFlow(uuids::uuid const& in_flowId, std::string const& in_flowDef, size_t grainCount, Rational const& in_grainRate,
+            size_t grainPayloadSize);
 
         ///
         /// Open an existing flow by id.

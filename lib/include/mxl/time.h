@@ -1,11 +1,11 @@
 #pragma once
 
 #ifdef __cplusplus
-#  include <cstdint>
-#  include <ctime>
+#   include <cstdint>
+#   include <ctime>
 #else
-#  include <stdint.h>
-#  include <time.h>
+#   include <stdint.h>
+#   include <time.h>
 #endif
 
 #include <mxl/mxl.h>
@@ -14,7 +14,6 @@
 extern "C"
 {
 #endif
-
 
     /**
      * Get the current grain index based on the current system TAI time

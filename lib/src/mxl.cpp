@@ -9,8 +9,7 @@
 
 extern "C"
 MXL_EXPORT
-int8_t
-mxlGetVersion(mxlVersionType* out_version)
+int8_t mxlGetVersion(mxlVersionType* out_version)
 {
     if (out_version != nullptr)
     {
@@ -27,8 +26,7 @@ mxlGetVersion(mxlVersionType* out_version)
 }
 
 extern "C" MXL_EXPORT
-mxlInstance
-mxlCreateInstance(char const* in_mxlDomain, char const* in_options)
+mxlInstance mxlCreateInstance(char const* in_mxlDomain, char const* in_options)
 {
     try
     {
@@ -50,8 +48,7 @@ mxlCreateInstance(char const* in_mxlDomain, char const* in_options)
 
 extern "C"
 MXL_EXPORT
-mxlStatus
-mxlDestroyInstance(mxlInstance in_instance)
+mxlStatus mxlDestroyInstance(mxlInstance in_instance)
 {
     try
     {
