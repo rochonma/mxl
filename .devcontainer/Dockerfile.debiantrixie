@@ -30,6 +30,8 @@ RUN apt-get update \
     automake \
     libtool \
     pkg-config \
+    bison \
+    flex \
     htop 
 
 ARG CLANG_VERSION=19
