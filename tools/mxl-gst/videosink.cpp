@@ -39,8 +39,7 @@
 
 std::sig_atomic_t volatile g_exit_requested = 0;
 
-void
-signal_handler(int)
+void signal_handler(int)
 {
     g_exit_requested = 1;
 }
@@ -193,8 +192,7 @@ private:
     GstElement* _pipeline{nullptr};
 };
 
-int
-real_main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
     std::signal(SIGINT, &signal_handler);
     std::signal(SIGTERM, &signal_handler);
@@ -319,8 +317,7 @@ mxl_cleanup:
     return exit_status;
 }
 
-int
-main(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 #if defined(__APPLE__) && TARGET_OS_MAC && !TARGET_OS_IPHONE
     // macOS needs an NSApp event loop.  This gst function sets it up.

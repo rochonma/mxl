@@ -16,8 +16,7 @@
 
 extern "C"
 MXL_EXPORT
-void
-mxlGetTime(timespec* out_ts)
+void mxlGetTime(timespec* out_ts)
 {
     ::clock_gettime(MXL_CLOCK, out_ts);
     if (MXL_CLOCK == CLOCK_REALTIME)
@@ -28,8 +27,7 @@ mxlGetTime(timespec* out_ts)
 
 extern "C"
 MXL_EXPORT
-uint64_t
-mxlGetCurrentGrainIndex(Rational const* in_editRate)
+uint64_t mxlGetCurrentGrainIndex(Rational const* in_editRate)
 {
     if (in_editRate == nullptr || in_editRate->denominator == 0 || in_editRate->numerator == 0)
     {
@@ -55,8 +53,7 @@ mxlGetCurrentGrainIndex(Rational const* in_editRate)
 
 extern "C"
 MXL_EXPORT
-uint64_t
-mxlTimeSpecToGrainIndex(Rational const* in_editRate, timespec const* in_timespec)
+uint64_t mxlTimeSpecToGrainIndex(Rational const* in_editRate, timespec const* in_timespec)
 {
     if (in_editRate == nullptr || in_editRate->denominator == 0 || in_editRate->numerator == 0 || in_timespec == nullptr)
     {
@@ -70,8 +67,7 @@ mxlTimeSpecToGrainIndex(Rational const* in_editRate, timespec const* in_timespec
 
 extern "C"
 MXL_EXPORT
-uint64_t
-mxlGetNsUntilGrainIndex(uint64_t in_index, Rational const* in_editRate)
+uint64_t mxlGetNsUntilGrainIndex(uint64_t in_index, Rational const* in_editRate)
 {
     // Validate the edit rate
     if (in_editRate == nullptr || in_editRate->denominator == 0 || in_editRate->numerator == 0)
@@ -114,8 +110,7 @@ mxlGetNsUntilGrainIndex(uint64_t in_index, Rational const* in_editRate)
 
 extern "C"
 MXL_EXPORT
-void
-mxlSleepForNs(uint64_t in_ns)
+void mxlSleepForNs(uint64_t in_ns)
 {
     timespec ts;
     ts.tv_sec = in_ns / 1000000000;

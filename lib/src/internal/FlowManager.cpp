@@ -31,8 +31,8 @@ namespace mxl::lib
         }
     }
 
-    FlowData::ptr FlowManager::createFlow(
-        uuids::uuid const& in_flowId, std::string const& in_flowDef, size_t in_grainCount, Rational const& in_grainRate, size_t in_grainPayloadSize)
+    FlowData::ptr FlowManager::createFlow(uuids::uuid const& in_flowId, std::string const& in_flowDef, size_t in_grainCount,
+        Rational const& in_grainRate, size_t in_grainPayloadSize)
     {
         auto uuid = uuids::to_string(in_flowId);
         MXL_DEBUG("Create flow. id: {}, grainCount: {}, grain payload size: {}", uuid, in_grainCount, in_grainPayloadSize);
