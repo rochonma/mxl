@@ -22,11 +22,26 @@ permissions:
 
 jobs:
   build:
-    name: Build on Ubuntu ${{ matrix.ubuntu_version }}
+    name: Build on Ubuntu ${{ matrix.ubuntu_version }} - ${{ matrix.architecture }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ubuntu_version: [24.04, 22.04, 20.04]
+        include:
+          - ubuntu_version: 22.04
+            runner: ubuntu-latest
+            architecture: x86_64
+
+          - ubuntu_version: 20.04
+            runner: ubuntu-latest
+            architecture: x86_64
+
+          - ubuntu_version: 24.04
+            runner: ubuntu-latest
+            architecture: x86_64
+
+          - ubuntu_version: 24.04
+            runner: ubuntu-24.04
+            architecture: arm64
     env:
       DOCKER_BUILDKIT: 1
 
@@ -75,7 +90,7 @@ jobs:
       - name: Configure CMake
         env:
           VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
-          VCPKG_FEATURE_FLAGS: binarycaching          
+          VCPKG_FEATURE_FLAGS: binarycaching
         run: |
           docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
             -e VCPKG_BINARY_SOURCES \
@@ -123,7 +138,7 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-ubuntu-${{ matrix.ubuntu_version }}-artifacts
+          name: build-ubuntu-${{ matrix.ubuntu_version }}-${{ matrix.architecture }}-artifacts
           path: |
             ${{ github.workspace }}/build/Linux-Clang-Release/*.deb
             ${{ github.workspace }}/install/
