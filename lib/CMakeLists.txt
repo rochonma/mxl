@@ -40,6 +40,7 @@ target_sources(mxl
             src/internal/PosixFlowWriter.cpp
             src/internal/SharedMem.cpp
             src/internal/Sync.cpp
+            src/internal/Thread.cpp
             src/internal/Time.cpp
             src/internal/Timing.cpp
         )
