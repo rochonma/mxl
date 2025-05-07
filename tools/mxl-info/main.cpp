@@ -2,12 +2,10 @@
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
-#include <iomanip>
-#include <ios>
 #include <iostream>
-#include <ostream>
 #include <sstream>
 #include <string>
+#include <fmt/format.h>
 #include <uuid.h>
 #include <CLI/CLI.hpp>
 #include <gsl/span>
@@ -19,22 +17,23 @@ namespace fs = std::filesystem;
 
 std::ostream& operator<<(std::ostream& os, FlowInfo const& info)
 {
-    auto span = gsl::span<uint8_t, 16>(const_cast<uint8_t*>(info.id), sizeof(info.id));
+    auto span = gsl::span<std::uint8_t, 16>(const_cast<std::uint8_t*>(info.id), sizeof(info.id));
     auto id = uuids::uuid(span);
     os << "- Flow [" << uuids::to_string(id) << ']' << '\n'
-       << '\t' << std::setw(18) << "version" << ": " << info.version << '\n'
-       << '\t' << std::setw(18) << "struct size" << ": " << info.size << '\n'
-       << '\t' << std::setw(18) << "flags" << ": " << "0x" << std::setw(32) << std::setfill('0') << std::hex << info.flags << std::dec << '\n'
-       << '\t' << std::setw(18) << "head index" << ": " << info.headIndex << '\n'
-       << '\t' << std::setw(18) << "grain rate" << ": " << info.grainRate.numerator << '/' << info.grainRate.denominator << '\n'
-       << '\t' << std::setw(18) << "grain count" << ": " << info.grainCount << '\n'
-       << '\t' << std::setw(18) << "last write time" << ": " << info.lastWriteTime << '\n'
-       << '\t' << std::setw(18) << "last read time" << ": " << info.lastReadTime << std::endl;
+       << '\t' << fmt::format("{: >18}: {}", "Version", info.version) << '\n'
+       << '\t' << fmt::format("{: >18}: {}", "Struct size", info.size) << '\n'
+       << '\t' << fmt::format("{: >18}: {:0>8x}", "Flags", info.flags) << '\n'
+       << '\t' << fmt::format("{: >18}: {}", "Head index", info.headIndex) << '\n'
+       << '\t' << fmt::format("{: >18}: {}/{}", "Grain rate", info.grainRate.numerator, info.grainRate.denominator) << '\n'
+       << '\t' << fmt::format("{: >18}: {}", "Grain count", info.grainCount) << '\n'
+       << '\t' << fmt::format("{: >18}: {}", "Last write time", info.lastWriteTime) << '\n'
+       << '\t' << fmt::format("{: >18}: {}", "Last read time", info.lastReadTime)
+       << std::endl;
 
     auto const now = mxlGetTime();
     auto currentIndex = mxlTimestampToGrainIndex(&info.grainRate, now);
-    os << '\t' << std::setw(18) << "Latency (grains)" << ": " << (currentIndex - info.headIndex) << '\n'
-       << '\t' << std::setw(18) << "Latency (ms)" << ": " << std::fixed << std::setprecision(3) << (now - info.lastWriteTime)
+    os << '\t' << fmt::format("{: >18}: {}", "Latency (grains)", currentIndex - info.headIndex) << '\n'
+       << '\t' << fmt::format("{: >18}: {}", "Latency (ns)", now - info.lastWriteTime)
        << std::endl;
 
     return os;
