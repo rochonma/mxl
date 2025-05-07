@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ctime>
+#include "../Timing.hpp"
 
 namespace mxl::lib::detail
 {
@@ -27,6 +28,22 @@ namespace mxl::lib::detail
 
             default:
                 return CLOCK_REALTIME;
+        }
+    }
+
+    constexpr Duration getClockOffset(Clock clock) noexcept
+    {
+        [[maybe_unused]] constexpr auto const ZERO_SECONDS = fromSeconds(0.0);
+        [[maybe_unused]] constexpr auto const TAI_LEAP_SECONDS = fromSeconds(37.0);
+
+        switch (clock)
+        {
+#if !defined(CLOCK_TAI)
+            case Clock::TAI:
+                return TAI_LEAP_SECONDS;
+#endif
+            default:
+                return ZERO_SECONDS;
         }
     }
 }

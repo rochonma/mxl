@@ -10,7 +10,7 @@ namespace mxl::lib
         std::timespec ts;
         if (::clock_gettime(detail::clockToId(clock), &ts) == 0)
         {
-            result = asTimepoint(ts);
+            result = asTimepoint(ts) + detail::getClockOffset(clock);
         }
         return result;
     }
