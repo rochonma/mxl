@@ -31,14 +31,14 @@ uint64_t mxlGetCurrentGrainIndex(Rational const* in_editRate)
 {
     if (in_editRate == nullptr || in_editRate->denominator == 0 || in_editRate->numerator == 0)
     {
-        return MXL_UNDEFINED_OFFSET;
+        return MXL_UNDEFINED_INDEX;
     }
 
     timespec ts;
     auto res = ::clock_gettime(MXL_CLOCK, &ts);
     if (0 != res)
     {
-        return MXL_UNDEFINED_OFFSET;
+        return MXL_UNDEFINED_INDEX;
     }
     else
     {
@@ -57,7 +57,7 @@ uint64_t mxlTimeSpecToGrainIndex(Rational const* in_editRate, timespec const* in
 {
     if (in_editRate == nullptr || in_editRate->denominator == 0 || in_editRate->numerator == 0 || in_timespec == nullptr)
     {
-        return MXL_UNDEFINED_OFFSET;
+        return MXL_UNDEFINED_INDEX;
     }
 
     uint64_t totalNs = in_timespec->tv_sec * 1000000000ULL + in_timespec->tv_nsec;
@@ -72,7 +72,7 @@ uint64_t mxlGetNsUntilGrainIndex(uint64_t in_index, Rational const* in_editRate)
     // Validate the edit rate
     if (in_editRate == nullptr || in_editRate->denominator == 0 || in_editRate->numerator == 0)
     {
-        return MXL_UNDEFINED_OFFSET;
+        return MXL_UNDEFINED_INDEX;
     }
 
     // Read the current TAI time
@@ -80,7 +80,7 @@ uint64_t mxlGetNsUntilGrainIndex(uint64_t in_index, Rational const* in_editRate)
     auto res = clock_gettime(MXL_CLOCK, &now);
     if (0 != res)
     {
-        return MXL_UNDEFINED_OFFSET;
+        return MXL_UNDEFINED_INDEX;
     }
 
     if (MXL_CLOCK == CLOCK_REALTIME)

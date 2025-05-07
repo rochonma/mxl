@@ -55,7 +55,7 @@ TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
     timespec ts;
     mxlGetTime(&ts);
     uint64_t index = mxlTimeSpecToGrainIndex(&rate, &ts);
-    REQUIRE(index != MXL_UNDEFINED_OFFSET);
+    REQUIRE(index != MXL_UNDEFINED_INDEX);
 
     /// Open the grain.
     GrainInfo gInfo;
@@ -204,7 +204,7 @@ TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
     timespec ts;
     mxlGetTime(&ts);
     uint64_t index = mxlTimeSpecToGrainIndex(&rate, &ts);
-    REQUIRE(index != MXL_UNDEFINED_OFFSET);
+    REQUIRE(index != MXL_UNDEFINED_INDEX);
 
     /// Open the grain.
     GrainInfo gInfo;
@@ -301,7 +301,7 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
     timespec ts;
     mxlGetTime(&ts);
     uint64_t index = mxlTimeSpecToGrainIndex(&rate, &ts);
-    REQUIRE(index != MXL_UNDEFINED_OFFSET);
+    REQUIRE(index != MXL_UNDEFINED_INDEX);
 
     /// Open the grain.
     GrainInfo gInfo;

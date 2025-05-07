@@ -13,8 +13,6 @@ extern "C"
 {
 #endif
 
-#define MXL_UNDEFINED_OFFSET UINT64_MAX
-
     typedef enum mxlStatus
     {
         MXL_STATUS_OK = 0,

@@ -11,9 +11,9 @@ TEST_CASE("Invalid Times", "[time]")
     timespec ts;
     mxlGetTime(&ts);
 
-    REQUIRE(mxlTimeSpecToGrainIndex(nullptr, nullptr) == MXL_UNDEFINED_OFFSET);
-    REQUIRE(mxlTimeSpecToGrainIndex(&rate, nullptr) == MXL_UNDEFINED_OFFSET);
-    REQUIRE(mxlTimeSpecToGrainIndex(&rate, &ts) != MXL_UNDEFINED_OFFSET);
+    REQUIRE(mxlTimeSpecToGrainIndex(nullptr, nullptr) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimeSpecToGrainIndex(&rate, nullptr) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimeSpecToGrainIndex(&rate, &ts) != MXL_UNDEFINED_INDEX);
 }
 
 TEST_CASE("Grain 0 and 1", "[time]")
