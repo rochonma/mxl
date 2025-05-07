@@ -1,68 +1,40 @@
-#include <mxl/time.h>
-#include <cstdint>
-#include <time.h>
-#include <mxl/mxl.h>
-
-#ifdef __APPLE__
-#   define MXL_CLOCK CLOCK_REALTIME
-#elif __linux__
-#   include <bits/time.h>
-#   define MXL_CLOCK CLOCK_TAI
-#else
-#   pragma GCC error "Unsupported platform"
-#endif
-
-#define TAI_LEAP_SECONDS 37 // For platforms that do not have a CLOCK_TAI.
+#include "mxl/time.h"
+#include "internal/Thread.hpp"
+#include "internal/Timing.hpp"
 
 extern "C"
 MXL_EXPORT
-void mxlGetTime(timespec* out_ts)
+uint64_t mxlGetTime()
 {
-    ::clock_gettime(MXL_CLOCK, out_ts);
-    if (MXL_CLOCK == CLOCK_REALTIME)
-    {
-        out_ts->tv_sec += TAI_LEAP_SECONDS;
-    }
+    return currentTime(mxl::lib::Clock::TAI).value;
 }
 
 extern "C"
 MXL_EXPORT
 uint64_t mxlGetCurrentGrainIndex(Rational const* in_editRate)
 {
-    if (in_editRate == nullptr || in_editRate->denominator == 0 || in_editRate->numerator == 0)
+    if ((in_editRate == nullptr) || (in_editRate->denominator == 0) || (in_editRate->numerator == 0))
     {
         return MXL_UNDEFINED_INDEX;
     }
 
-    timespec ts;
-    auto res = ::clock_gettime(MXL_CLOCK, &ts);
-    if (0 != res)
-    {
-        return MXL_UNDEFINED_INDEX;
-    }
-    else
-    {
-        if (MXL_CLOCK == CLOCK_REALTIME)
-        {
-            ts.tv_sec += TAI_LEAP_SECONDS;
-        }
-
-        return mxlTimeSpecToGrainIndex(in_editRate, &ts);
-    }
+    auto const now = currentTime(mxl::lib::Clock::TAI);
+    return now
+        ? mxlTimestampToGrainIndex(in_editRate, now.value)
+        : MXL_UNDEFINED_INDEX;
 }
 
 extern "C"
 MXL_EXPORT
-uint64_t mxlTimeSpecToGrainIndex(Rational const* in_editRate, timespec const* in_timespec)
+uint64_t mxlTimestampToGrainIndex(Rational const* in_editRate, uint64_t in_timestamp)
 {
-    if (in_editRate == nullptr || in_editRate->denominator == 0 || in_editRate->numerator == 0 || in_timespec == nullptr)
+    if ((in_editRate == nullptr) || (in_editRate->denominator == 0) || (in_editRate->numerator == 0))
     {
         return MXL_UNDEFINED_INDEX;
     }
 
-    uint64_t totalNs = in_timespec->tv_sec * 1000000000ULL + in_timespec->tv_nsec;
-    uint64_t grainDurationNs = in_editRate->denominator * 1000000000ULL / in_editRate->numerator;
-    return totalNs / grainDurationNs;
+    auto const grainDurationNs = in_editRate->denominator * 1'000'000'000ULL / in_editRate->numerator;
+    return in_timestamp / grainDurationNs;
 }
 
 extern "C"
@@ -70,57 +42,26 @@ MXL_EXPORT
 uint64_t mxlGetNsUntilGrainIndex(uint64_t in_index, Rational const* in_editRate)
 {
     // Validate the edit rate
-    if (in_editRate == nullptr || in_editRate->denominator == 0 || in_editRate->numerator == 0)
+    if ((in_editRate == nullptr) || (in_editRate->denominator == 0) || (in_editRate->numerator == 0))
     {
         return MXL_UNDEFINED_INDEX;
     }
-
-    // Read the current TAI time
-    timespec now;
-    auto res = clock_gettime(MXL_CLOCK, &now);
-    if (0 != res)
-    {
-        return MXL_UNDEFINED_INDEX;
-    }
-
-    if (MXL_CLOCK == CLOCK_REALTIME)
-    {
-        now.tv_sec += TAI_LEAP_SECONDS;
-    }
-
-    // Convert the current TAI time to nanosec.
-    uint64_t nowTotalNs = now.tv_sec * 1000000000ULL + now.tv_nsec;
 
     // Compute how many nanoseconds a grain lasts
-    uint64_t grainDurationNs = in_editRate->denominator * 1000000000ULL / in_editRate->numerator;
+    auto const grainDurationNs = in_editRate->denominator * 1'000'000'000ULL / in_editRate->numerator;
 
     // Compute the total nanosecond value since the epoch of the target grain
-    auto targetGrainNs = in_index * grainDurationNs;
+    auto const targetGrainNs = in_index * grainDurationNs;
 
-    if (targetGrainNs > nowTotalNs)
-    {
-        return targetGrainNs - nowTotalNs;
-    }
-    else
-    {
-        // we are past the target grain.
-        return 0;
-    }
+    auto const nowNs = static_cast<std::uint64_t>(currentTime(mxl::lib::Clock::TAI).value);
+    return ((nowNs != 0ULL) && (targetGrainNs >= nowNs))
+        ? targetGrainNs - nowNs
+        : 0ULL;
 }
 
 extern "C"
 MXL_EXPORT
 void mxlSleepForNs(uint64_t in_ns)
 {
-    timespec ts;
-    ts.tv_sec = in_ns / 1000000000;
-    ts.tv_nsec = in_ns % 1000000000;
-
-#ifdef __linux__
-    ::clock_nanosleep(MXL_CLOCK, 0, &ts, nullptr);
-#elif __APPLE__
-    ::nanosleep(&ts, nullptr);
-#else
-#   pragma GCC error Unsupported platform
-#endif
+    mxl::lib::this_thread::sleep(mxl::lib::Duration(in_ns), mxl::lib::Clock::TAI);
 }

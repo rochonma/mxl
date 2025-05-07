@@ -219,8 +219,8 @@ namespace mxl::lib
         info.grainRate = grainRate;
         info.grainCount = grainCount;
 
-        mxlGetTime(&info.lastWriteTime);
-        mxlGetTime(&info.lastReadTime);
+        info.lastWriteTime = mxlGetTime();
+        info.lastReadTime = info.lastWriteTime;
 
         return flowData;
     }

@@ -1,28 +1,13 @@
 #include "Flow.hpp"
 #include <cstdint>
 #include <ctime>
-#include <iomanip>
+#include <format>
 #include <ostream>
 #include <uuid.h>
 #include <mxl/flow.h>
 
 namespace mxl::lib
 {
-
-    namespace
-    {
-        std::ostream& operator<<(std::ostream& os, timespec const& ts)
-        {
-            auto sec = ts.tv_sec;
-            auto tm = std::tm{};
-
-            ::gmtime_r(&sec, &tm);
-            // TODO: Altering IOS state as part of the output is problematic
-            os << std::put_time(&tm, "%Y-%m-%d %H:%M:%S UTC") << " +" << std::setw(9) << std::setfill('0') << ts.tv_nsec << "ns";
-            return os;
-        }
-    }
-
     std::ostream& operator<<(std::ostream& os, Flow const& flow)
     {
         auto const span = uuids::span<std::uint8_t, sizeof flow.info.id>{const_cast<std::uint8_t*>(flow.info.id), sizeof flow.info.id};

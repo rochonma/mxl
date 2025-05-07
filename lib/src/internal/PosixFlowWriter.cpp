@@ -87,7 +87,7 @@ namespace mxl::lib
         if (_flowData && _flowData->flow)
         {
             auto flow = _flowData->flow->get();
-            mxlGetTime(&flow->info.lastReadTime);
+            flow->info.lastReadTime = mxlGetTime();
         }
     }
 
@@ -104,7 +104,7 @@ namespace mxl::lib
         uint32_t offset = _currentIndex % flow->info.grainCount;
         auto dst = &_flowData->grains.at(offset)->get()->info;
         std::memcpy(dst, in_grainInfo, sizeof(GrainInfo));
-        mxlGetTime(&flow->info.lastWriteTime);
+        flow->info.lastWriteTime = mxlGetTime();
 
         // If the grain is complete, reset the current index of the flow writer.
         if (in_grainInfo->grainSize == in_grainInfo->commitedSize)

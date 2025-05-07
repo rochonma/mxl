@@ -2,10 +2,8 @@
 
 #ifdef __cplusplus
 #   include <cstdint>
-#   include <ctime>
 #else
 #   include <stdint.h>
-#   include <time.h>
 #endif
 
 #include <mxl/rational.h>
@@ -46,11 +44,13 @@ extern "C"
         /// no flags defined yet.
         uint32_t flags;
 
-        /// The last time a producer wrote to the flow
-        struct timespec lastWriteTime;
+        /// The last time a producer wrote to the flow in nanoseconds since the
+        /// epoch.
+        uint64_t lastWriteTime;
 
-        /// The last time a consumer read from the flow
-        struct timespec lastReadTime;
+        /// The last time a consumer read from the flow in nanoseconds since the
+        /// epoch.
+        uint64_t lastReadTime;
 
         /// 32 bit word used syncronization between a writer and multiple readers.  This value can be used by futexes.
         // When a FlowWriter commits some data (a grain, a slice, etc) it will increment this value and then wake all FlowReaders waiting on this
@@ -58,7 +58,7 @@ extern "C"
         uint32_t syncCounter;
 
         /// User data space
-        uint8_t userData[4004];
+        uint8_t userData[4020];
     } FlowInfo;
 
 /*

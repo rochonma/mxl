@@ -51,10 +51,9 @@ TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
     REQUIRE(mxlCreateFlowWriter(instanceWriter, flowId, "", &writer) == MXL_STATUS_OK);
 
     /// Compute the grain index for the flow rate and current TAI time.
-    Rational rate{60000, 1001};
-    timespec ts;
-    mxlGetTime(&ts);
-    uint64_t index = mxlTimeSpecToGrainIndex(&rate, &ts);
+    auto const rate = Rational{60000, 1001};
+    auto const now = mxlGetTime();
+    uint64_t index = mxlTimestampToGrainIndex(&rate, now);
     REQUIRE(index != MXL_UNDEFINED_INDEX);
 
     /// Open the grain.
@@ -200,10 +199,9 @@ TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
     REQUIRE(mxlCreateFlowWriter(instanceWriter, flowId, "", &writer) == MXL_STATUS_OK);
 
     /// Compute the grain index for the flow rate and current TAI time.
-    Rational rate{60000, 1001};
-    timespec ts;
-    mxlGetTime(&ts);
-    uint64_t index = mxlTimeSpecToGrainIndex(&rate, &ts);
+    auto const rate = Rational{60000, 1001};
+    auto const now = mxlGetTime();
+    uint64_t index = mxlTimestampToGrainIndex(&rate, now);
     REQUIRE(index != MXL_UNDEFINED_INDEX);
 
     /// Open the grain.
@@ -297,10 +295,9 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
     REQUIRE(mxlCreateFlowWriter(instanceWriter, flowId, "", &writer) == MXL_STATUS_OK);
 
     /// Compute the grain index for the flow rate and current TAI time.
-    Rational rate{60000, 1001};
-    timespec ts;
-    mxlGetTime(&ts);
-    uint64_t index = mxlTimeSpecToGrainIndex(&rate, &ts);
+    auto const rate = Rational{60000, 1001};
+    auto const now = mxlGetTime();
+    uint64_t index = mxlTimestampToGrainIndex(&rate, now);
     REQUIRE(index != MXL_UNDEFINED_INDEX);
 
     /// Open the grain.

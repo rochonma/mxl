@@ -2,10 +2,8 @@
 
 #ifdef __cplusplus
 #   include <cstdint>
-#   include <ctime>
 #else
 #   include <stdint.h>
-#   include <time.h>
 #endif
 
 #include <mxl/platform.h>
@@ -46,7 +44,7 @@ MXL_EXPORT
      * \return The grain index or MXL_UNDEFINED_INDEX if in_grainRate is null or invalid (0 denominator, 0/1, etc.)
      */
 MXL_EXPORT
-    uint64_t mxlTimeSpecToGrainIndex(Rational const* in_editRate, const struct timespec* in_timespec);
+    uint64_t mxlTimestampToGrainIndex(Rational const* in_editRate, uint64_t in_timestamp);
 
     /**
      * Sleep for a specific amount of time.
@@ -56,12 +54,12 @@ MXL_EXPORT
     void mxlSleepForNs(uint64_t in_ns);
 
     /**
-     * Get the current time using the most appropriate clock for the platform
+     * Get the current time using the most appropriate clock for the platform.
      *
-     * \param out_ts The current time.
+     * \return The current time in nanoseconds since the epoch.
      */
 MXL_EXPORT
-    void mxlGetTime(struct timespec* out_ts);
+    uint64_t mxlGetTime();
 
 #ifdef __cplusplus
 }
