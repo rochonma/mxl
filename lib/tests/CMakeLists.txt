@@ -18,7 +18,9 @@ add_executable(mxl-tests
     ../src/internal/FlowManager.cpp
     ../src/internal/FlowParser.cpp
     ../src/internal/PosixFlowReader.cpp
+    ../src/internal/Thread.cpp
     ../src/internal/Time.cpp
+    ../src/internal/Timing.cpp
     ../src/internal/Sync.cpp
 )
 

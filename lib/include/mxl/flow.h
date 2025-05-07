@@ -145,13 +145,13 @@ MXL_EXPORT
      * \param in_instance A valid mxl instance
      * \param in_reader A valid flow reader
      * \param in_index The index of the grain to obtain
-     * \param in_timeoutMs How long should we wait for the grain (in milliseconds)
+     * \param in_timeoutNs How long should we wait for the grain (in nanoseconds)
      * \param out_grain The requested GrainInfo structure.
      * \param out_payload The requested grain payload.
      * \return The result code. \see mxlStatus
      */
 MXL_EXPORT
-    mxlStatus mxlFlowReaderGetGrain(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, uint16_t in_timeoutMs, GrainInfo* out_grain,
+    mxlStatus mxlFlowReaderGetGrain(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, uint64_t in_timeoutNs, GrainInfo* out_grain,
         uint8_t** out_payload);
 
     /**

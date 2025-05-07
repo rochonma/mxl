@@ -2,77 +2,89 @@
 #include <cerrno>
 #include <climits>
 #include <cstdint>
-#include <ctime>
-#include <time.h>
 #include <unistd.h>
-#include <bits/time.h>
-#include <fmt/format.h>
-#include <linux/futex.h>
-#include <sys/syscall.h>
+#if defined(__linux__)
+#   include <bits/time.h>
+#   include <linux/futex.h>
+#   include <sys/syscall.h>
+#elif defined(__APPLE__)
+#   include <os/os_sync_wait_on_address.h>
+#endif
 #include "Logging.hpp"
 
 namespace mxl::lib
 {
-
-    namespace details
+    namespace
     {
-
-#ifdef __linux__
-
-        static inline int futex_wait(const uint32_t* in_addr, uint32_t in_expected, const struct timespec* in_timeout)
+#if defined(__linux__)
+        int do_wait(void const* futex, std::uint32_t expected, Duration timeout)
         {
-            return syscall(SYS_futex, in_addr, FUTEX_WAIT, in_expected, in_timeout, nullptr, 0);
+            auto const timeoutTs = asTimeSpec(timeout);
+            return ::syscall(SYS_futex, futex, FUTEX_WAIT | FUTEX_CLOCK_REALTIME, expected, &timeoutTs, nullptr, 0);
         }
 
-        inline static int futex_wake(uint32_t const* in_addr, int in_count)
+        int do_wake_one(void const* futex)
         {
-            return syscall(SYS_futex, in_addr, FUTEX_WAKE, in_count, nullptr, nullptr, 0);
+            return ::syscall(SYS_futex, futex, FUTEX_WAKE, 1, nullptr, nullptr, 0);
         }
 
+        int do_wake_all(void const* futex)
+        {
+            return ::syscall(SYS_futex, futex, FUTEX_WAKE, INT_MAX, nullptr, nullptr, 0);
+        }
+
+#elif defined(__APPLE__)
+        int do_wait(void const* futex, std::uint32_t expected, Duration timeout)
+        {
+            return ::os_sync_wait_on_address_with_timeout(
+                const_cast<void*>(futex), expected, sizeof(std::uint32_t), OS_SYNC_WAIT_ON_ADDRESS_SHARED,
+                OS_CLOCK_MACH_ABSOLUTE_TIME, timeout.value);
+        }
+
+        int do_wake_one(void const* futex)
+        {
+            return ::os_sync_wake_by_address_any(const_cast<void*>(futex), sizeof(std::uint32_t), OS_SYNC_WAKE_BY_ADDRESS_SHARED);
+        }
+
+        int do_wake_all(void const* futex)
+        {
+            return ::os_sync_wake_by_address_all(const_cast<void*>(futex), sizeof(std::uint32_t), OS_SYNC_WAKE_BY_ADDRESS_SHARED);
+        }
 #else
 #   pragma GCC error "Unsupported platform"
 #endif
-
-    } // namespace details
-
-    // Monotonic clock in nanoseconds
-    inline static uint64_t get_monotonic_ns()
-    {
-        struct timespec ts;
-        clock_gettime(CLOCK_MONOTONIC, &ts);
-        return static_cast<uint64_t>(ts.tv_sec) * 1'000'000'000ull + ts.tv_nsec;
     }
 
     template<typename T>
-    bool waitUntilChanged(T* in_addr, uint16_t in_timeoutMs, T in_expected)
+    bool waitUntilChanged(T const* in_addr, T in_expected, Timepoint in_deadline)
     {
-        static_assert(sizeof(T) == sizeof(uint32_t), "Only 32-bit types are supported.");
-
-        uint64_t const timeout_ns = in_timeoutMs * 1'000'000;
-        uint64_t const deadline_ns = get_monotonic_ns() + timeout_ns;
+        static_assert(sizeof(T) == sizeof(std::uint32_t), "Only 32-bit types are supported.");
 
         while (true)
         {
-            uint64_t now_ns = get_monotonic_ns();
-            if (now_ns >= deadline_ns)
+            auto const now = currentTime(Clock::Realtime);
+            if (now >= in_deadline)
             {
                 MXL_DEBUG("Deadline already reached");
                 return false; // Timeout
             }
 
-            uint64_t remaining_ns = deadline_ns - now_ns;
-            struct timespec ts;
-            ts.tv_sec = remaining_ns / 1000000000ull;
-            ts.tv_nsec = remaining_ns % 1000000000ull;
-
-            int ret = details::futex_wait(reinterpret_cast<uint32_t const*>(in_addr), in_expected, &ts);
-            if (ret == -1)
+            auto const ret = do_wait(in_addr, in_expected, in_deadline - now);
+            if (ret == 0)
+            {
+                // TODO: This should probably be an atomic ...
+                if (*in_addr != static_cast<T>(in_expected))
+                {
+                    return true;
+                }
+            }
+            else
             {
                 switch (errno)
                 {
-                    case EAGAIN:    MXL_TRACE("Eagain. returning true"); return true;
+                    case EAGAIN:    MXL_TRACE("EAGAIN. returning true"); return true;
 
-                    case ETIMEDOUT: MXL_TRACE("Etimedout. returning false"); return false;
+                    case ETIMEDOUT: MXL_TRACE("ETIMEDOUT. returning false"); return false;
 
                     case EINTR:
                         // Interrupted. try again.
@@ -81,26 +93,42 @@ namespace mxl::lib
 
                 return false;
             }
-
-            if (*in_addr != static_cast<T>(in_expected))
-            {
-                return true;
-            }
         }
     }
 
     template<typename T>
-    void wakeAll(T* in_addr)
+    bool waitUntilChanged(T const* in_addr, T in_expected, Duration in_timeout)
     {
-        static_assert(sizeof(T) == sizeof(uint32_t), "Only 32-bit types are supported.");
-        MXL_TRACE("Wake all waiting on = {}, val : {}", fmt::ptr(in_addr), *in_addr);
-        details::futex_wake(reinterpret_cast<uint32_t const*>(in_addr), INT_MAX);
+        static_assert(sizeof(T) == sizeof(std::uint32_t), "Only 32-bit types are supported.");
+
+        return waitUntilChanged(in_addr, in_expected, currentTime(Clock::Realtime) + in_timeout);
+    }
+
+    template<typename T>
+    void wakeOne(T const* in_addr)
+    {
+        static_assert(sizeof(T) == sizeof(std::uint32_t), "Only 32-bit types are supported.");
+
+        MXL_TRACE("Wake all waiting on = {}, val : {}", static_cast<void const*>(in_addr), *in_addr);
+        do_wake_all(in_addr);
+    }
+
+    template<typename T>
+    void wakeAll(T const* in_addr)
+    {
+        static_assert(sizeof(T) == sizeof(std::uint32_t), "Only 32-bit types are supported.");
+
+        MXL_TRACE("Wake one waiting on = {}, val : {}", static_cast<void const*>(in_addr), *in_addr);
+        do_wake_one(in_addr);
     }
 
     // Explicit template instantiations
-    template bool waitUntilChanged<uint32_t>(uint32_t* in_addr, uint16_t in_timeoutMs, uint32_t in_expected);
-    template bool waitUntilChanged<int32_t>(int32_t* in_addr, uint16_t in_timeoutMs, int32_t in_expected);
-    template void wakeAll<uint32_t>(uint32_t* in_addr);
-    template void wakeAll<int32_t>(int32_t* in_addr);
-
-} // namespace mxl::lib
+    template bool waitUntilChanged<std::uint32_t>(std::uint32_t const* in_addr, std::uint32_t in_expected, Timepoint in_deadline);
+    template bool waitUntilChanged<std::uint32_t>(std::uint32_t const* in_addr, std::uint32_t in_expected, Duration in_timeout);
+    template bool waitUntilChanged<std::int32_t>(std::int32_t const* in_addr, std::int32_t in_expected, Timepoint in_deadline);
+    template bool waitUntilChanged<std::int32_t>(std::int32_t const* in_addr, std::int32_t in_expected, Duration in_timeout);
+    template void wakeOne<std::uint32_t>(std::uint32_t const* in_addr);
+    template void wakeOne<std::int32_t>(std::int32_t const* in_addr);
+    template void wakeAll<std::uint32_t>(std::uint32_t const* in_addr);
+    template void wakeAll<std::int32_t>(std::int32_t const* in_addr);
+}
