@@ -8,7 +8,8 @@
 #   include <time.h>
 #endif
 
-#include <mxl/mxl.h>
+#include <mxl/platform.h>
+#include <mxl/rational.h>
 
 #ifdef __cplusplus
 extern "C"

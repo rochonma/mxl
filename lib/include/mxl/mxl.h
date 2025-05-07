@@ -36,12 +36,6 @@ extern "C"
         uint16_t build;
     } mxlVersionType;
 
-    typedef struct Rational
-    {
-        int64_t numerator;
-        int64_t denominator;
-    } Rational;
-
     MXL_EXPORT
     int8_t mxlGetVersion(mxlVersionType* out_version);
 
