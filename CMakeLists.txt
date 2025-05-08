@@ -1,4 +1,15 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
+
+# Allow version in project definition
+cmake_policy(SET CMP0048 NEW)
+# Only interpret if arguments as variables or keywords when unquoted.
+cmake_policy(SET CMP0054 NEW)
+# Allow visibility definitions
+cmake_policy(SET CMP0063 NEW)
+# Interpret target_sources paths as relative to the current source dir
+cmake_policy(SET CMP0076 NEW)
+# Set the timestamps of all extracted contents to the time of the extraction
+cmake_policy(SET CMP0135 NEW)
 
 set(mxl_VERSION 0.2.5)
 
@@ -22,14 +33,6 @@ if(ccache_executable)
     set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
     set(CMAKE_CXX_COMPILER_LAUNCHER ${ccache_executable})
 endif()
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_C_VISIBILITY_PRESET hidden)
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
 # Enable testing for the project
 enable_testing()

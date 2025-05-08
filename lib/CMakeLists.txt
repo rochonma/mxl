@@ -45,10 +45,22 @@ target_sources(mxl
             src/internal/Timing.cpp
         )
 
-find_package(stduuid CONFIG REQUIRED)
-find_package(spdlog CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
-find_package(picojson REQUIRED)
+
+if (NOT TARGET stduuid)
+    find_package(stduuid CONFIG REQUIRED)
+endif ()
+
+if (NOT TARGET spdlog::spdlog)
+    find_package(spdlog CONFIG REQUIRED)
+endif ()
+
+if (NOT TARGET fmt::fmt)
+    find_package(fmt CONFIG REQUIRED)
+endif()
+
+if (NOT TARGET picojson::picojson)
+    find_package(picojson REQUIRED)
+endif()
 
 target_include_directories(mxl PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
