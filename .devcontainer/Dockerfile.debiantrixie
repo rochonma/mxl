@@ -32,28 +32,30 @@ RUN apt-get update \
     pkg-config \
     bison \
     flex \
-    htop 
+    htop
 
 ARG CLANG_VERSION=19
 RUN apt-get install -y --no-install-recommends \
-    clang-${CLANG_VERSION} \
-    clang-tools-${CLANG_VERSION} \
-    clang-tidy-${CLANG_VERSION} \
-    clang-format-${CLANG_VERSION} \
+    "clang-${CLANG_VERSION}" \
+    "clang-tools-${CLANG_VERSION}" \
+    "clang-tidy-${CLANG_VERSION}" \
+    "clang-format-${CLANG_VERSION}" \
     cmake \
     ninja-build
 
 # Make the selected clang version the default alternative
 COPY register-clang-version.sh ./register-clang-version.sh 
-RUN ./register-clang-version.sh ${CLANG_VERSION} 100 \
+RUN ./register-clang-version.sh "${CLANG_VERSION}" 100 \
  && rm ./register-clang-version.sh
 
-RUN apt-get -y install libgstreamer1.0-dev \
-      libgstreamer-plugins-base1.0-dev \
-      gstreamer1.0-plugins-good \
-      gstreamer1.0-plugins-bad \
-      gstreamer1.0-plugins-ugly \
-      gstreamer1.0-x
+
+RUN apt-get install -y --no-install-recommends \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-x
 
 # Set default user
 ARG USERNAME=devcontainer
@@ -64,7 +66,7 @@ ARG USER_GID=${USER_UID}
 RUN groupadd --gid "${USER_GID}" "${USERNAME}" \
  && useradd --uid "${USER_UID}" --gid "${USER_GID}" -m -s /bin/bash "${USERNAME}" \
  && apt-get install -y sudo \
- && echo "${USERNAME} ALL=(root) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" \
+ && printf '%s ALL=(root) NOPASSWD:ALL\n' "${USERNAME}" > "/etc/sudoers.d/${USERNAME}" \
  && chmod 0440 "/etc/sudoers.d/${USERNAME}"
 
 USER "${USERNAME}"
