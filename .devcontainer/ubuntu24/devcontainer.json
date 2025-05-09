@@ -3,9 +3,7 @@
     "build": {
         "dockerfile": "../Dockerfile",
         "context": "../",
-        "args": {
-            "BASE_IMAGE_VERSION": "24.04"
-        }
+        "args": {}
     },
     "runArgs": [
         "--security-opt",
