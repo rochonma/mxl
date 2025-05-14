@@ -3,9 +3,7 @@
     "build": {
         "dockerfile": "../Dockerfile",
         "context": "../",
-        "args": {
-            "BASE_IMAGE_VERSION": "24.04"
-        }
+        "args": {}
     },
     "runArgs": [
         "--security-opt",
@@ -30,7 +28,8 @@
                 "ms-vscode.cpptools-extension-pack",
                 "mhutchie.git-graph",
                 "matepek.vscode-catch2-test-adapter",
-                "llvm-vs-code-extensions.vscode-clangd"
+                "llvm-vs-code-extensions.vscode-clangd",
+                "xaver.clang-format"
             ],
             "settings": {
                 "C_Cpp.intelliSenseEngine": "disabled",
@@ -38,7 +37,7 @@
                 "cmake.copyCompileCommands": "${workspaceFolder}/build/compile_commands.json",
                 "editor.formatOnSave": true,
                 "[cpp]": {
-                    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+                    "editor.defaultFormatter": "xaver.clang-format"
                 }
             }
         }
@@ -48,5 +47,5 @@
         "CCACHE_DIR": "${containerWorkspaceFolder}/.cache/ccache",
         "DISPLAY": "${localEnv:DISPLAY}"
     },
-    "remoteUser": "ubuntu"
+    "remoteUser": "devcontainer"
 }

@@ -1,7 +1,7 @@
 {
     "name": "mxl - Ubuntu 22.04",
     "build": {
-        "dockerfile": "../Dockerfile",
+        "dockerfile": "../Dockerfile.ubuntu-legacy",
         "context": "../",
         "args": {
             "BASE_IMAGE_VERSION": "22.04"
@@ -49,5 +49,5 @@
         "CCACHE_DIR": "${containerWorkspaceFolder}/.cache/ccache",
         "DISPLAY": "${localEnv:DISPLAY}"
     },
-    "remoteUser": "ubuntu"
+    "remoteUser": "devcontainer"
 }
