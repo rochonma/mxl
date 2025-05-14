@@ -27,7 +27,7 @@ ubuntu_24_04:
     - docker rmi mxl_build_container:$CI_JOB_ID || true
   cache:
     paths:
-      - vcpkg_cache
+      - vcpkg_cache/
   artifacts:
     paths:
       - install/Linux-$PRESET/
@@ -59,7 +59,7 @@ ubuntu_22_04:
     - docker rmi mxl_build_container:$CI_JOB_ID || true
   cache:
     paths:
-      - vcpkg_cache
+      - vcpkg_cache/
   artifacts:
     paths:
       - install/Linux-$PRESET/
@@ -91,7 +91,7 @@ ubuntu_20_04:
     - docker rmi mxl_build_container:$CI_JOB_ID || true
   cache:
     paths:
-      - vcpkg_cache
+      - vcpkg_cache/
   artifacts:
     paths:
       - install/Linux-$PRESET/
