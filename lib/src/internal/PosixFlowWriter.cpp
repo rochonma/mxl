@@ -18,6 +18,7 @@ namespace mxl::lib
 
     PosixFlowWriter::PosixFlowWriter(FlowManager::ptr in_manager)
         : _manager{in_manager}
+        , _currentIndex{MXL_UNDEFINED_INDEX}
     {}
 
     bool PosixFlowWriter::open(uuids::uuid const& in_id)
@@ -41,7 +42,7 @@ namespace mxl::lib
             _manager->closeFlow(_flowData);
             _flowData.reset();
             _flowId = uuids::uuid(); // reset to nil
-            _currentIndex = MXL_UNDEFINED_OFFSET;
+            _currentIndex = MXL_UNDEFINED_INDEX;
         }
     }
 
@@ -77,7 +78,7 @@ namespace mxl::lib
 
     mxlStatus PosixFlowWriter::cancel()
     {
-        _currentIndex = MXL_UNDEFINED_OFFSET;
+        _currentIndex = MXL_UNDEFINED_INDEX;
         return MXL_STATUS_OK;
     }
 
@@ -86,7 +87,7 @@ namespace mxl::lib
         if (_flowData && _flowData->flow)
         {
             auto flow = _flowData->flow->get();
-            mxlGetTime(&flow->info.lastReadTime);
+            flow->info.lastReadTime = mxlGetTime();
         }
     }
 
@@ -103,12 +104,12 @@ namespace mxl::lib
         uint32_t offset = _currentIndex % flow->info.grainCount;
         auto dst = &_flowData->grains.at(offset)->get()->info;
         std::memcpy(dst, in_grainInfo, sizeof(GrainInfo));
-        mxlGetTime(&flow->info.lastWriteTime);
+        flow->info.lastWriteTime = mxlGetTime();
 
         // If the grain is complete, reset the current index of the flow writer.
         if (in_grainInfo->grainSize == in_grainInfo->commitedSize)
         {
-            _currentIndex = MXL_UNDEFINED_OFFSET;
+            _currentIndex = MXL_UNDEFINED_INDEX;
         }
 
         // Let readers know that the head has moved or that new data is available in a partial grain

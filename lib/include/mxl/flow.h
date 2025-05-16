@@ -2,12 +2,11 @@
 
 #ifdef __cplusplus
 #   include <cstdint>
-#   include <ctime>
 #else
 #   include <stdint.h>
-#   include <time.h>
 #endif
 
+#include <mxl/rational.h>
 #include <mxl/mxl.h>
 
 #ifdef __cplusplus
@@ -45,11 +44,13 @@ extern "C"
         /// no flags defined yet.
         uint32_t flags;
 
-        /// The last time a producer wrote to the flow
-        struct timespec lastWriteTime;
+        /// The last time a producer wrote to the flow in nanoseconds since the
+        /// epoch.
+        uint64_t lastWriteTime;
 
-        /// The last time a consumer read from the flow
-        struct timespec lastReadTime;
+        /// The last time a consumer read from the flow in nanoseconds since the
+        /// epoch.
+        uint64_t lastReadTime;
 
         /// 32 bit word used syncronization between a writer and multiple readers.  This value can be used by futexes.
         // When a FlowWriter commits some data (a grain, a slice, etc) it will increment this value and then wake all FlowReaders waiting on this
@@ -57,7 +58,7 @@ extern "C"
         uint32_t syncCounter;
 
         /// User data space
-        uint8_t userData[4004];
+        uint8_t userData[4020];
     } FlowInfo;
 
 /*
@@ -144,13 +145,13 @@ MXL_EXPORT
      * \param in_instance A valid mxl instance
      * \param in_reader A valid flow reader
      * \param in_index The index of the grain to obtain
-     * \param in_timeoutMs How long should we wait for the grain (in milliseconds)
+     * \param in_timeoutNs How long should we wait for the grain (in nanoseconds)
      * \param out_grain The requested GrainInfo structure.
      * \param out_payload The requested grain payload.
      * \return The result code. \see mxlStatus
      */
 MXL_EXPORT
-    mxlStatus mxlFlowReaderGetGrain(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, uint16_t in_timeoutMs, GrainInfo* out_grain,
+    mxlStatus mxlFlowReaderGetGrain(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, uint64_t in_timeoutNs, GrainInfo* out_grain,
         uint8_t** out_payload);
 
     /**

@@ -234,8 +234,8 @@ int real_main(int argc, char** argv)
     mxlStatus ret;
 
     Rational rate;
-    uint32_t editUnitDurationMs = 33;
-    uint64_t grain_index = 0;
+    std::uint64_t editUnitDurationNs = 33'000'000LL;
+    std::uint64_t grain_index = 0;
 
     auto instance = mxlCreateInstance(domain.c_str(), "");
     if (instance == nullptr)
@@ -266,8 +266,8 @@ int real_main(int argc, char** argv)
     }
 
     rate = flow_info.grainRate;
-    editUnitDurationMs = (uint32_t)((double)rate.denominator * 1000.0 / (double)rate.numerator);
-    editUnitDurationMs += 1; // allow some margin.
+    editUnitDurationNs = static_cast<std::uint64_t>(1.0 * rate.denominator * (1'000'000'000.0 / rate.numerator));
+    editUnitDurationNs += 1'000'000ULL; // allow some margin.
     gst_pipeline.start();
 
     grain_index = mxlGetCurrentGrainIndex(&flow_info.grainRate);
@@ -275,7 +275,7 @@ int real_main(int argc, char** argv)
     {
         GrainInfo grain_info;
         uint8_t* payload;
-        auto ret = mxlFlowReaderGetGrain(instance, reader, grain_index, editUnitDurationMs, &grain_info, &payload);
+        auto ret = mxlFlowReaderGetGrain(instance, reader, grain_index, editUnitDurationNs, &grain_info, &payload);
         if (ret != MXL_STATUS_OK)
         {
             // Missed a grain. resync.

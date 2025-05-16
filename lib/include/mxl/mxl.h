@@ -6,18 +6,12 @@
 #   include <stdint.h>
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
-#   define MXL_EXPORT __attribute__((visibility("default")))
-#else
-#   define MXL_EXPORT
-#endif
+#include <mxl/platform.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-#define MXL_UNDEFINED_OFFSET UINT64_MAX
 
     typedef enum mxlStatus
     {
@@ -39,12 +33,6 @@ extern "C"
         uint16_t bugfix;
         uint16_t build;
     } mxlVersionType;
-
-    typedef struct Rational
-    {
-        int64_t numerator;
-        int64_t denominator;
-    } Rational;
 
     MXL_EXPORT
     int8_t mxlGetVersion(mxlVersionType* out_version);

@@ -1,87 +1,154 @@
+include(GNUInstallDirs)
+
+# Configure the version.h header file base on the current project version
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/mxl/version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/include/mxl/version.h
+    @ONLY
+)
+
 # Files to be compiled into the library
-add_library(mxl SHARED
-    include/mxl/flow.h
-    include/mxl/mxl.h
-    include/mxl/time.h
-    src/flow.cpp
-    src/mxl.cpp
-    src/time.cpp
-    src/internal/DomainWatcher.hpp
-    src/internal/DomainWatcher.cpp
-    src/internal/Flow.hpp
-    src/internal/Flow.cpp
-    src/internal/FlowParser.hpp
-    src/internal/FlowParser.cpp
-    src/internal/FlowManager.hpp
-    src/internal/FlowManager.cpp
-    src/internal/Instance.hpp
-    src/internal/Instance.cpp
-    src/internal/Logging.hpp
-    src/internal/Logging.cpp
-    src/internal/PosixFlowReader.hpp
-    src/internal/PosixFlowReader.cpp
-    src/internal/PosixFlowWriter.hpp
-    src/internal/PosixFlowWriter.cpp
-    src/internal/SharedMem.hpp
-    src/internal/SharedMem.cpp
-    src/internal/Sync.hpp
-    src/internal/Sync.cpp
-    src/internal/Time.hpp
-    src/internal/Time.cpp
-)
+add_library(mxl SHARED)
+target_compile_features(mxl
+        PRIVATE
+            cxx_std_20
+    )
+set_target_properties(mxl
+        PROPERTIES
+            POSITION_INDEPENDENT_CODE    ON
+            VISIBILITY_INLINES_HIDDEN    ON
+            C_VISIBILITY_PRESET          hidden
+            CXX_VISIBILITY_PRESET        hidden
+            C_EXTENSIONS                 OFF
+            CXX_EXTENSIONS               OFF
+            VERSION                      "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+            SOVERSION                    "${PROJECT_VERSION_MAJOR}"
+    )
 
-find_package(stduuid CONFIG REQUIRED)
-find_package(spdlog CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
-find_package(picojson REQUIRED)
+target_sources(mxl
+        PRIVATE
+            src/flow.cpp
+            src/mxl.cpp
+            src/time.cpp
+            src/internal/DomainWatcher.cpp
+            src/internal/Flow.cpp
+            src/internal/FlowParser.cpp
+            src/internal/FlowManager.cpp
+            src/internal/Instance.cpp
+            src/internal/Logging.cpp
+            src/internal/PosixFlowReader.cpp
+            src/internal/PosixFlowWriter.cpp
+            src/internal/SharedMem.cpp
+            src/internal/Sync.cpp
+            src/internal/Thread.cpp
+            src/internal/Time.cpp
+            src/internal/Timing.cpp
+        )
 
-target_link_libraries(mxl PRIVATE stduuid spdlog::spdlog fmt::fmt picojson::picojson)
+
+if (NOT TARGET stduuid)
+    find_package(stduuid CONFIG REQUIRED)
+endif ()
+
+if (NOT TARGET spdlog::spdlog)
+    find_package(spdlog CONFIG REQUIRED)
+endif ()
+
+if (NOT TARGET fmt::fmt)
+    find_package(fmt CONFIG REQUIRED)
+endif()
+
+if (NOT TARGET picojson::picojson)
+    find_package(picojson REQUIRED)
+endif()
+
 target_include_directories(mxl PUBLIC
-    $<BUILD_INTERFACE:${mxl_SOURCE_DIR}/lib/include>
-    $<BUILD_INTERFACE:${mxl_BINARY_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
+target_link_libraries(mxl
+        PRIVATE
+            stduuid
+            spdlog::spdlog
+            fmt::fmt
+            picojson::picojson
+    )
 
-set_target_properties(mxl PROPERTIES
-    SOVERSION ${mxl_VERSION_MAJOR}
-    VERSION ${mxl_VERSION}
-)
-
+# Alias trace to libtrace::libtrace so that this library can be used
+# in lieu of a module from the local source tree
+add_library(${PROJECT_NAME}::mxl ALIAS mxl)
 add_subdirectory(tests)
 
 # Install targets
-install(TARGETS mxl
-    EXPORT mxlTarget
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    INCLUDES DESTINATION include
-)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
-    DESTINATION include
-    PATTERN *.h.in EXCLUDE
-)
+install(TARGETS mxl EXPORT ${PROJECT_NAME}-targets
+        COMPONENT ${PROJECT_NAME}-lib
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
 
-# Generate CMake config files
+
+install(DIRECTORY
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        COMPONENT ${PROJECT_NAME}-dev
+        FILES_MATCHING
+            PATTERN "*.h"
+    )
+install(DIRECTORY
+            ${CMAKE_CURRENT_BINARY_DIR}/include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        COMPONENT ${PROJECT_NAME}-dev
+        FILES_MATCHING
+            PATTERN "*.h"
+    )
+
 include(CMakePackageConfigHelpers)
-configure_package_config_file(${mxl_SOURCE_DIR}/cmake/mxlConfig.cmake.in
-    mxlConfig.cmake
-    INSTALL_DESTINATION lib/cmake/mxl
-    NO_SET_AND_CHECK_MACRO
-    NO_CHECK_REQUIRED_COMPONENTS_MACRO
-)
+
+set(MXL_CMAKE_CONFIG_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+
+# Generate the config file and put it into the build directory.
+configure_package_config_file(
+        ${CMAKE_CURRENT_LIST_DIR}/cmake/${PROJECT_NAME}-config.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+        INSTALL_DESTINATION ${MXL_CMAKE_CONFIG_DESTINATION}
+        NO_SET_AND_CHECK_MACRO
+        NO_CHECK_REQUIRED_COMPONENTS_MACRO
+    )
+
+# Generate the version file and put it into the build directory.
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/mxlConfigVersion.cmake
-    VERSION ${mxl_VERSION}
-    COMPATIBILITY SameMinorVersion
-)
-# Install CMake config files
+        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMinorVersion
+    )
+
+# Install the generated config and version files.
 install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/mxlConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/mxlConfigVersion.cmake
-    DESTINATION lib/cmake/mxl
-)
-install(EXPORT mxlTarget
-    NAMESPACE mxl::
-    DESTINATION lib/cmake/mxl
-    FILE mxlTarget.cmake
-)
+            ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+            ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
+        DESTINATION ${MXL_CMAKE_CONFIG_DESTINATION}
+        COMPONENT ${PROJECT_NAME}-dev
+    )
+
+# Generate a pkg-config file
+configure_file(
+        ${CMAKE_CURRENT_LIST_DIR}/cmake/libmxl.pc.in
+        ${CMAKE_CURRENT_BINARY_DIR}/libmxl.pc
+        @ONLY
+    )
+
+# Install the generated pkg-config file
+install(FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/libmxl.pc
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+        COMPONENT ${PROJECT_NAME}-dev
+    )
+
+# Make the project importable from the install directory
+install(EXPORT ${PROJECT_NAME}-targets
+        NAMESPACE ${PROJECT_NAME}::
+        DESTINATION ${MXL_CMAKE_CONFIG_DESTINATION}
+        COMPONENT ${PROJECT_NAME}-dev
+    )

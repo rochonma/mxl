@@ -66,8 +66,8 @@ namespace mxl::lib
         FlowManager::ptr _manager;
         /// The FlowData for the currently opened flow. null if no flow is opened.
         FlowData::ptr _flowData;
-        /// The currently opened grain index. MXL_UNDEFINED_OFFSET if no grain is currently opened.
-        uint64_t _currentIndex = MXL_UNDEFINED_OFFSET;
+        /// The currently opened grain index. MXL_UNDEFINED_INDEX if no grain is currently opened.
+        uint64_t _currentIndex;
     };
 
 } // namespace mxl::lib

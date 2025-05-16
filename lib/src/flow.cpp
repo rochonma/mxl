@@ -1,9 +1,8 @@
-#include <mxl/flow.h>
+#include "mxl/flow.h"
 #include <cstdint>
 #include <exception>
 #include <string>
 #include <uuid.h>
-#include <mxl/mxl.h>
 #include "internal/Instance.hpp"
 #include "internal/Logging.hpp"
 
@@ -185,7 +184,7 @@ mxlStatus mxlFlowReaderGetInfo(mxlInstance in_instance, mxlFlowReader in_reader,
 
 extern "C"
 MXL_EXPORT
-mxlStatus mxlFlowReaderGetGrain(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, uint16_t in_timeoutMs, GrainInfo* out_grainInfo,
+mxlStatus mxlFlowReaderGetGrain(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, uint64_t in_timeoutNs, GrainInfo* out_grainInfo,
     uint8_t** out_payload)
 {
     try
@@ -196,7 +195,7 @@ mxlStatus mxlFlowReaderGetGrain(mxlInstance in_instance, mxlFlowReader in_reader
             {
                 if (auto const reader = instance->getReader(to_FlowReaderId(in_reader)); reader != nullptr)
                 {
-                    return reader->getGrain(in_index, in_timeoutMs, out_grainInfo, out_payload);
+                    return reader->getGrain(in_index, in_timeoutNs, out_grainInfo, out_payload);
                 }
                 return MXL_ERR_INVALID_FLOW_READER;
             }

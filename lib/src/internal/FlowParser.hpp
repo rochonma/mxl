@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <string>
 #include <uuid.h>
-#include <mxl/mxl.h>
+#include <mxl/rational.h>
 #include <picojson/picojson.h>
 
 namespace mxl::lib

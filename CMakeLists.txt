@@ -1,6 +1,17 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
-set(mxl_VERSION 0.2.5)
+# Allow version in project definition
+cmake_policy(SET CMP0048 NEW)
+# Only interpret if arguments as variables or keywords when unquoted.
+cmake_policy(SET CMP0054 NEW)
+# Allow visibility definitions
+cmake_policy(SET CMP0063 NEW)
+# Interpret target_sources paths as relative to the current source dir
+cmake_policy(SET CMP0076 NEW)
+# Set the timestamps of all extracted contents to the time of the extraction
+cmake_policy(SET CMP0135 NEW)
+
+set(mxl_VERSION 0.3.0)
 
 if(DEFINED MXL_BUILD_NUMBER)
     string(APPEND mxl_VERSION ".${MXL_BUILD_NUMBER}")
@@ -13,32 +24,7 @@ project(mxl
     LANGUAGES CXX C
 )
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
-include(FetchContent)
-FetchContent_Declare(
-    doxygen-awesome-css
-    URL https://github.com/jothepro/doxygen-awesome-css/archive/refs/heads/main.zip
-)
-FetchContent_MakeAvailable(doxygen-awesome-css)
-
-# Save the location the files were cloned into
-# This allows us to get the path to doxygen-awesome.css
-FetchContent_GetProperties(doxygen-awesome-css SOURCE_DIR AWESOME_CSS_DIR)
-
-# Generate the Doxyfile
-set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
-set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
-configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
-
-# Configure the version.h header file base on the current project version
-configure_file(
-    ${mxl_SOURCE_DIR}/lib/include/mxl/version.h.in
-    ${mxl_BINARY_DIR}/mxl/version.h
-    @ONLY
-)
-
-find_package(Doxygen)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 find_program(ccache_executable ccache)
 
@@ -47,14 +33,6 @@ if(ccache_executable)
     set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
     set(CMAKE_CXX_COMPILER_LAUNCHER ${ccache_executable})
 endif()
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_C_VISIBILITY_PRESET hidden)
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
 # Enable testing for the project
 enable_testing()
@@ -75,7 +53,27 @@ endif()
 add_subdirectory(lib)
 add_subdirectory(tools)
 
+
+find_package(Doxygen)
+
 if(DOXYGEN_FOUND)
+    include(FetchContent)
+
+    FetchContent_Declare(
+        doxygen-awesome-css
+        URL https://github.com/jothepro/doxygen-awesome-css/archive/refs/heads/main.zip
+    )
+    FetchContent_MakeAvailable(doxygen-awesome-css)
+
+    # Save the location the files were cloned into
+    # This allows us to get the path to doxygen-awesome.css
+    FetchContent_GetProperties(doxygen-awesome-css SOURCE_DIR AWESOME_CSS_DIR)
+
+    # Generate the Doxyfile
+    set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
+    set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+    configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
+
     set(DOXYGEN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/docs")
 
     add_custom_target(doc

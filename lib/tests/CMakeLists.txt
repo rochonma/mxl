@@ -1,34 +1,78 @@
-find_package(Catch2 REQUIRED)
-find_package(stduuid CONFIG REQUIRED)
-find_package(spdlog CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
-find_package(picojson REQUIRED)
-find_package(PcapPlusPlus CONFIG)
-
 # Add the test executable
-add_executable(mxl-tests
-    test_domainwatcher.cpp
-    test_flowmanager.cpp
-    test_flows.cpp
-    test_time.cpp
-    test_sharedmem.cpp
-    Utils.cpp
-    ../src/internal/DomainWatcher.cpp
-    ../src/internal/Flow.cpp
-    ../src/internal/FlowManager.cpp
-    ../src/internal/FlowParser.cpp
-    ../src/internal/PosixFlowReader.cpp
-    ../src/internal/Time.cpp
-    ../src/internal/Sync.cpp
-)
+add_executable(mxl-tests)
+target_compile_features(mxl-tests
+        PRIVATE
+            cxx_std_20
+    )
+set_target_properties(mxl-tests
+        PROPERTIES
+            POSITION_INDEPENDENT_CODE    ON
+            VISIBILITY_INLINES_HIDDEN    ON
+            C_VISIBILITY_PRESET          hidden
+            CXX_VISIBILITY_PRESET        hidden
+            C_EXTENSIONS                 OFF
+            CXX_EXTENSIONS               OFF
+    )
 
-# Specify the include directories for the test executable to find the library headers
-target_include_directories(mxl-tests PRIVATE ${PROJECT_SOURCE_DIR}/lib/include)
+target_sources(mxl-tests
+        PRIVATE
+            test_domainwatcher.cpp
+            test_flowmanager.cpp
+            test_flows.cpp
+            test_time.cpp
+            test_sharedmem.cpp
+            Utils.cpp
+            ../src/internal/DomainWatcher.cpp
+            ../src/internal/Flow.cpp
+            ../src/internal/FlowManager.cpp
+            ../src/internal/FlowParser.cpp
+            ../src/internal/PosixFlowReader.cpp
+            ../src/internal/Thread.cpp
+            ../src/internal/Time.cpp
+            ../src/internal/Timing.cpp
+            ../src/internal/Sync.cpp
+        )
 
-if(APPLE)
-    target_link_libraries(mxl-tests PRIVATE mxl stduuid Catch2::Catch2WithMain spdlog::spdlog fmt::fmt picojson::picojson)
-else()
-    target_link_libraries(mxl-tests PRIVATE mxl stduuid Catch2::Catch2WithMain spdlog::spdlog fmt::fmt picojson::picojson PcapPlusPlus::Pcap++)
+if (NOT TARGET Catch2::Catch2WithMain)
+    find_package(Catch2 REQUIRED)
+endif()
+
+if (NOT TARGET stduuid)
+    find_package(stduuid CONFIG REQUIRED)
+endif ()
+
+if (NOT TARGET spdlog::spdlog)
+    find_package(spdlog CONFIG REQUIRED)
+endif ()
+
+if (NOT TARGET fmt::fmt)
+    find_package(fmt CONFIG REQUIRED)
+endif()
+
+if (NOT TARGET picojson::picojson)
+    find_package(picojson REQUIRED)
+endif()
+
+if (NOT TARGET PcapPlusPlus::Pcap++)
+    find_package(PcapPlusPlus CONFIG)
+endif()
+
+
+target_link_libraries(mxl-tests
+        PRIVATE
+            mxl
+            stduuid
+            spdlog::spdlog
+            fmt::fmt
+            picojson::picojson
+            Catch2::Catch2WithMain
+    )
+
+if (TARGET PcapPlusPlus::Pcap++)
+    target_link_libraries(mxl-tests
+            PRIVATE
+                PcapPlusPlus::Pcap++
+        )
 endif()
 
 # Enable testing using CTest

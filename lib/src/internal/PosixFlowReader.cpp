@@ -86,7 +86,7 @@ namespace mxl::lib
         }
     }
 
-    mxlStatus PosixFlowReader::getGrain(uint64_t in_index, uint16_t in_timeoutMs, GrainInfo* out_grainInfo, uint8_t** out_payload)
+    mxlStatus PosixFlowReader::getGrain(std::uint64_t in_index, std::uint64_t in_timeoutNs, GrainInfo* out_grainInfo, std::uint8_t** out_payload)
     {
         mxlStatus status = MXL_ERR_TIMEOUT;
 
@@ -112,7 +112,7 @@ namespace mxl::lib
             }
             else if (in_index <= flow->info.headIndex)
             {
-                uint32_t offset = in_index % flow->info.grainCount;
+                auto const offset = in_index % flow->info.grainCount;
                 auto grain = _flowData->grains.at(offset)->get();
                 *out_grainInfo = grain->info;
                 *out_payload = reinterpret_cast<uint8_t*>(grain) + MXL_GRAIN_PAYLOAD_OFFSET;
@@ -120,9 +120,9 @@ namespace mxl::lib
             }
             else
             {
-                if (waitUntilChanged(&flow->info.syncCounter, in_timeoutMs, flow->info.syncCounter))
+                if (waitUntilChanged(&flow->info.syncCounter, flow->info.syncCounter, Duration(in_timeoutNs)))
                 {
-                    uint32_t offset = in_index % flow->info.grainCount;
+                    auto const offset = in_index % flow->info.grainCount;
                     auto grain = _flowData->grains.at(offset)->get();
                     *out_grainInfo = grain->info;
                     *out_payload = reinterpret_cast<uint8_t*>(grain) + MXL_GRAIN_PAYLOAD_OFFSET;

@@ -2,12 +2,10 @@
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
-#include <iomanip>
-#include <ios>
 #include <iostream>
-#include <ostream>
 #include <sstream>
 #include <string>
+#include <fmt/format.h>
 #include <uuid.h>
 #include <CLI/CLI.hpp>
 #include <gsl/span>
@@ -17,45 +15,26 @@
 
 namespace fs = std::filesystem;
 
-namespace
-{
-
-    double timespec_diff_ms(const struct timespec& start, const struct timespec& end)
-    {
-        int64_t diff_ns = (end.tv_sec - start.tv_sec) * 1000000000LL + (end.tv_nsec - start.tv_nsec);
-        return diff_ns / 1e6;
-    }
-
-} // namespace
-
-std::ostream& operator<<(std::ostream& os, timespec const& ts)
-{
-    std::time_t sec = ts.tv_sec;
-    struct tm tm;
-    gmtime_r(&sec, &tm);
-    os << std::put_time(&tm, "%Y-%m-%d %H:%M:%S UTC") << " +" << std::setw(9) << std::setfill('0') << ts.tv_nsec << "ns";
-    return os;
-}
-
 std::ostream& operator<<(std::ostream& os, FlowInfo const& info)
 {
-    auto span = gsl::span<uint8_t, 16>(const_cast<uint8_t*>(info.id), sizeof(info.id));
+    auto span = gsl::span<std::uint8_t, 16>(const_cast<std::uint8_t*>(info.id), sizeof(info.id));
     auto id = uuids::uuid(span);
-    os << "- Flow [" << uuids::to_string(id) << "]" << std::endl;
-    os << "\tversion           : " << info.version << std::endl;
-    os << "\tstruct size       : " << info.size << std::endl;
-    os << "\tflags             : 0x" << std::setw(32) << std::setfill('0') << std::hex << info.flags << std::dec << std::endl;
-    os << "\thead index        : " << info.headIndex << std::endl;
-    os << "\tgrain rate        : " << info.grainRate.numerator << "/" << info.grainRate.denominator << std::endl;
-    os << "\tgrain count       : " << info.grainCount << std::endl;
-    os << "\tlast write time   : " << info.lastWriteTime << std::endl;
-    os << "\tlast read time    : " << info.lastReadTime << std::endl;
+    os << "- Flow [" << uuids::to_string(id) << ']' << '\n'
+       << '\t' << fmt::format("{: >18}: {}", "Version", info.version) << '\n'
+       << '\t' << fmt::format("{: >18}: {}", "Struct size", info.size) << '\n'
+       << '\t' << fmt::format("{: >18}: {:0>8x}", "Flags", info.flags) << '\n'
+       << '\t' << fmt::format("{: >18}: {}", "Head index", info.headIndex) << '\n'
+       << '\t' << fmt::format("{: >18}: {}/{}", "Grain rate", info.grainRate.numerator, info.grainRate.denominator) << '\n'
+       << '\t' << fmt::format("{: >18}: {}", "Grain count", info.grainCount) << '\n'
+       << '\t' << fmt::format("{: >18}: {}", "Last write time", info.lastWriteTime) << '\n'
+       << '\t' << fmt::format("{: >18}: {}", "Last read time", info.lastReadTime)
+       << std::endl;
 
-    timespec ts;
-    mxlGetTime(&ts);
-    auto currentIndex = mxlTimeSpecToGrainIndex(&info.grainRate, &ts);
-    os << "\tLatency (grains)  : " << (currentIndex - info.headIndex) << std::endl;
-    os << "\tLatency (ms)      : " << std::fixed << std::setprecision(3) << timespec_diff_ms(info.lastWriteTime, ts) << std::endl;
+    auto const now = mxlGetTime();
+    auto currentIndex = mxlTimestampToGrainIndex(&info.grainRate, now);
+    os << '\t' << fmt::format("{: >18}: {}", "Latency (grains)", currentIndex - info.headIndex) << '\n'
+       << '\t' << fmt::format("{: >18}: {}", "Latency (ns)", now - info.lastWriteTime)
+       << std::endl;
 
     return os;
 }

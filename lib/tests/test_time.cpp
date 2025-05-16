@@ -6,31 +6,34 @@
 
 TEST_CASE("Invalid Times", "[time]")
 {
-    Rational rate{30000, 1001};
+    auto const badRate        = Rational{    0,    0};
+    auto const badNumerator   = Rational{    0, 1001};
+    auto const badDenominator = Rational{30000,    0};
+    auto const goodRate       = Rational{30000, 1001};
 
-    timespec ts;
-    mxlGetTime(&ts);
+    auto const now = mxlGetTime();
 
-    REQUIRE(mxlTimeSpecToGrainIndex(nullptr, nullptr) == MXL_UNDEFINED_OFFSET);
-    REQUIRE(mxlTimeSpecToGrainIndex(&rate, nullptr) == MXL_UNDEFINED_OFFSET);
-    REQUIRE(mxlTimeSpecToGrainIndex(&rate, &ts) != MXL_UNDEFINED_OFFSET);
+    REQUIRE(mxlTimestampToGrainIndex(nullptr,         now) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToGrainIndex(&badRate,        now) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToGrainIndex(&badNumerator,   now) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToGrainIndex(&badDenominator, now) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToGrainIndex(&goodRate,       now) != MXL_UNDEFINED_INDEX);
 }
 
 TEST_CASE("Grain 0 and 1", "[time]")
 {
-    Rational rate{30000, 1001};
+    auto const rate = Rational{30000, 1001};
 
-    timespec ts = {.tv_sec = 0, .tv_nsec = 0};
-    REQUIRE(mxlTimeSpecToGrainIndex(&rate, &ts) == 0);
+    auto const firstGrainTimeNs  = 0ULL;
+    auto const secondGrainTimeNs = rate.denominator * 1000000000ULL / rate.numerator;
 
-    uint64_t val = rate.denominator * 1000000000ULL / rate.numerator;
-    ts.tv_nsec = val;
-    REQUIRE(mxlTimeSpecToGrainIndex(&rate, &ts) == 1);
+    REQUIRE(mxlTimestampToGrainIndex(&rate, firstGrainTimeNs ) == 0);
+    REQUIRE(mxlTimestampToGrainIndex(&rate, secondGrainTimeNs) == 1);
 }
 
 TEST_CASE("Test TAI Epoch", "[time]")
 {
-    timespec ts = {.tv_sec = 0, .tv_nsec = 0};
+    auto ts = std::timespec{0, 0};
     tm t;
     gmtime_r(&ts.tv_sec, &t);
 
