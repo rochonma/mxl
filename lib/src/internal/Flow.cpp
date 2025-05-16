@@ -27,14 +27,14 @@ namespace mxl::lib
 
     std::ostream& operator<<(std::ostream& os, Grain const& grain)
     {
-        auto const location = (grain.info.payloadLocation == PAYLOAD_LOCATION_HOST_MEMORY) ? "host" : "device";
+        auto const location = (grain.header.info.payloadLocation == PAYLOAD_LOCATION_HOST_MEMORY) ? "host" : "device";
         os << "- Grain" << '\n'
-           << '\t' << fmt::format("{: >14}: {}", "Version", grain.info.version) << '\n'
-           << '\t' << fmt::format("{: >14}: {}", "Struct size", grain.info.size) << '\n'
-           << '\t' << fmt::format("{: >14}: {:0>8x}", "Flags", grain.info.flags) << '\n'
+           << '\t' << fmt::format("{: >14}: {}", "Version", grain.header.info.version) << '\n'
+           << '\t' << fmt::format("{: >14}: {}", "Struct size", grain.header.info.size) << '\n'
+           << '\t' << fmt::format("{: >14}: {:0>8x}", "Flags", grain.header.info.flags) << '\n'
            << '\t' << fmt::format("{: >14}: {}", "Location", location) << '\n'
-           << '\t' << fmt::format("{: >14}: {}", "Device", grain.info.deviceIndex) << '\n'
-           << '\t' << fmt::format("{: >14}: {}", "Payload size", grain.info.grainSize) << '\n';
+           << '\t' << fmt::format("{: >14}: {}", "Device", grain.header.info.deviceIndex) << '\n'
+           << '\t' << fmt::format("{: >14}: {}", "Payload size", grain.header.info.grainSize) << '\n';
 
         return os;
     }

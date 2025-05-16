@@ -114,8 +114,8 @@ namespace mxl::lib
             {
                 auto const offset = in_index % flow->info.grainCount;
                 auto grain = _flowData->grains.at(offset)->get();
-                *out_grainInfo = grain->info;
-                *out_payload = reinterpret_cast<uint8_t*>(grain) + MXL_GRAIN_PAYLOAD_OFFSET;
+                *out_grainInfo = grain->header.info;
+                *out_payload = reinterpret_cast<std::uint8_t*>(&grain->header + 1);
                 status = MXL_STATUS_OK;
             }
             else
@@ -124,8 +124,8 @@ namespace mxl::lib
                 {
                     auto const offset = in_index % flow->info.grainCount;
                     auto grain = _flowData->grains.at(offset)->get();
-                    *out_grainInfo = grain->info;
-                    *out_payload = reinterpret_cast<uint8_t*>(grain) + MXL_GRAIN_PAYLOAD_OFFSET;
+                    *out_grainInfo = grain->header.info;
+                    *out_payload = reinterpret_cast<std::uint8_t*>(&grain->header + 1);
                     status = MXL_STATUS_OK;
                 }
                 else
