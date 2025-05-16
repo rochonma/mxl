@@ -26,7 +26,7 @@ namespace mxl::lib
     {
         bool updateFileAccessTime(int fd) noexcept
         {
-            auto const times = std::array<timespec, 2>{{{0, UTIME_NOW}, {0, UTIME_NOW}}};
+            auto const times = std::array<timespec, 2>{{{0, UTIME_NOW}, {0, UTIME_OMIT}}};
             return (::futimens(fd, times.data()) == 0);
         }
     }
