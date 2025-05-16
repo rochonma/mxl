@@ -15,15 +15,17 @@ extern "C"
 
     typedef enum mxlStatus
     {
-        MXL_STATUS_OK = 0,
-        MXL_ERR_UNKNOWN = 1,
-        MXL_ERR_FLOW_NOT_FOUND = 2,
-        MXL_ERR_OUT_OF_RANGE = 3,
-        MXL_ERR_INVALID_FLOW_READER = 4,
-        MXL_ERR_INVALID_FLOW_WRITER = 5,
-        MXL_ERR_TIMEOUT = 6,
-        MXL_ERR_INVALID_ARG = 7,
-        MXL_ERR_CONFLICT = 8
+        MXL_STATUS_OK,
+        MXL_ERR_UNKNOWN,
+        MXL_ERR_FLOW_NOT_FOUND,
+        MXL_ERR_OUT_OF_RANGE,
+        MXL_ERR_OUT_OF_RANGE_TOO_LATE = MXL_ERR_OUT_OF_RANGE,
+        MXL_ERR_OUT_OF_RANGE_TOO_EARLY,
+        MXL_ERR_INVALID_FLOW_READER,
+        MXL_ERR_INVALID_FLOW_WRITER,
+        MXL_ERR_TIMEOUT,
+        MXL_ERR_INVALID_ARG,
+        MXL_ERR_CONFLICT,
     } mxlStatus;
 
     typedef struct mxlVersionType
