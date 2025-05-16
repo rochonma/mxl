@@ -22,6 +22,15 @@
 
 namespace mxl::lib
 {
+    namespace
+    {
+        bool updateFileAccessTime(int fd) noexcept
+        {
+            auto const times = std::array<timespec, 2>{{{0, UTIME_NOW}, {0, UTIME_NOW}}};
+            return (::futimens(fd, times.data()) == 0);
+        }
+    }
+
 
     namespace fs = std::filesystem;
 
@@ -88,44 +97,44 @@ namespace mxl::lib
 
     mxlStatus PosixFlowReader::getGrain(std::uint64_t in_index, std::uint64_t in_timeoutNs, GrainInfo* out_grainInfo, std::uint8_t** out_payload)
     {
-        mxlStatus status = MXL_ERR_TIMEOUT;
+        auto status = MXL_ERR_TIMEOUT;
 
         if (_flowData)
         {
-            // Update the file times
-            std::array<timespec, 2> times;
-            times[0].tv_sec = 0; // Set access time to current time
-            times[0].tv_nsec = UTIME_NOW;
-            times[1].tv_sec = 0; // Set modification time to current time
-            times[1].tv_nsec = UTIME_NOW;
-            if (::futimens(_accessFileFd, times.data()) == -1)
+            auto const flow = _flowData->flow->get();
+            if (auto const headIndex = flow->info.headIndex; in_index <= headIndex)
             {
-                MXL_ERROR("Failed to update access file times");
-            }
+                auto const grainCount = flow->info.grainCount;
+                auto const minIndex = (headIndex >= grainCount)
+                    ? (headIndex - grainCount + 1U)
+                    : std::uint64_t{0};
 
-            auto flow = _flowData->flow->get();
-            uint64_t minIndex = std::max<uint64_t>(0, flow->info.headIndex - flow->info.grainCount + 1);
+                if (in_index >= minIndex)
+                {
+                    auto const offset = in_index % flow->info.grainCount;
+                    auto const grain = _flowData->grains.at(offset)->get();
+                    *out_grainInfo = grain->header.info;
+                    *out_payload = reinterpret_cast<std::uint8_t*>(&grain->header + 1);
 
-            if (minIndex > in_index)
-            {
-                status = MXL_ERR_OUT_OF_RANGE;
-            }
-            else if (in_index <= flow->info.headIndex)
-            {
-                auto const offset = in_index % flow->info.grainCount;
-                auto grain = _flowData->grains.at(offset)->get();
-                *out_grainInfo = grain->header.info;
-                *out_payload = reinterpret_cast<std::uint8_t*>(&grain->header + 1);
-                status = MXL_STATUS_OK;
+                    status = MXL_STATUS_OK;
+                }
+                else
+                {
+                    status = MXL_ERR_OUT_OF_RANGE_TOO_LATE;
+                }
             }
             else
             {
+                // FIXME: This code is hopelessly broken. As it assumes that the
+                //      next write provides the index of interest, which is not
+                //      guaranteed.
                 if (waitUntilChanged(&flow->info.syncCounter, flow->info.syncCounter, Duration(in_timeoutNs)))
                 {
                     auto const offset = in_index % flow->info.grainCount;
-                    auto grain = _flowData->grains.at(offset)->get();
+                    auto const grain = _flowData->grains[offset]->get();
                     *out_grainInfo = grain->header.info;
                     *out_payload = reinterpret_cast<std::uint8_t*>(&grain->header + 1);
+
                     status = MXL_STATUS_OK;
                 }
                 else
@@ -133,9 +142,49 @@ namespace mxl::lib
                     status = MXL_ERR_TIMEOUT;
                 }
             }
+
+            if (status == MXL_STATUS_OK)
+            {
+                if (!updateFileAccessTime(_accessFileFd))
+                {
+                    MXL_ERROR("Failed to update access file times");
+                }
+            }
         }
 
         return status;
+    }
+
+    mxlStatus PosixFlowReader::getGrain(std::uint64_t in_index, GrainInfo* out_grainInfo, std::uint8_t** out_payload)
+    {
+        if (_flowData)
+        {
+            auto const flow = _flowData->flow->get();
+            if (auto const headIndex = flow->info.headIndex; in_index <= headIndex)
+            {
+                auto const grainCount = flow->info.grainCount;
+                auto const minIndex = (headIndex >= grainCount)
+                    ? (headIndex - grainCount + 1U)
+                    : std::uint64_t{0};
+                if (in_index >= minIndex)
+                {
+                    auto const offset = in_index % grainCount;
+                    auto const grain = _flowData->grains[offset]->get();
+                    *out_grainInfo = grain->header.info;
+                    *out_payload = reinterpret_cast<std::uint8_t*>(&grain->header + 1);
+
+                    updateFileAccessTime(_accessFileFd);
+
+                    return MXL_STATUS_OK;
+                }
+
+                return MXL_ERR_OUT_OF_RANGE_TOO_LATE;
+            }
+
+            return MXL_ERR_OUT_OF_RANGE_TOO_EARLY;
+        }
+
+        return MXL_ERR_UNKNOWN;
     }
 
 } // namespace mxl::lib

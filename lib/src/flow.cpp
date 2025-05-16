@@ -210,6 +210,32 @@ mxlStatus mxlFlowReaderGetGrain(mxlInstance in_instance, mxlFlowReader in_reader
 
 extern "C"
 MXL_EXPORT
+mxlStatus mxlFlowReaderGetGrainNonBlocking(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, GrainInfo* out_grainInfo,
+    uint8_t** out_payload)
+{
+    try
+    {
+        if ((out_grainInfo != nullptr) && (out_payload != nullptr))
+        {
+            if (auto const instance = to_Instance(in_instance); instance != nullptr)
+            {
+                if (auto const reader = instance->getReader(to_FlowReaderId(in_reader)); reader != nullptr)
+                {
+                    return reader->getGrain(in_index, out_grainInfo, out_payload);
+                }
+                return MXL_ERR_INVALID_FLOW_READER;
+            }
+        }
+        return MXL_ERR_INVALID_ARG;
+    }
+    catch (...)
+    {
+        return MXL_ERR_UNKNOWN;
+    }
+}
+
+extern "C"
+MXL_EXPORT
 mxlStatus mxlFlowWriterOpenGrain(mxlInstance in_instance, mxlFlowWriter in_writer, uint64_t in_index, GrainInfo* out_grainInfo, uint8_t** out_payload)
 {
     try
