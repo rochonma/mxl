@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <uuid.h>
 #include <mxl/mxl.h>
@@ -13,6 +14,42 @@ namespace mxl::lib
 {
     namespace
     {
+        /**
+         * Translate a NMOS IS-04 data format to a an mxlDataFormat enum.
+         * \param[in] format a string view referring to the format.
+         * \return The mxlDataFormat enumerator coresponding to \p format, or
+         *      MXL_DATA_FORMAT_UNSPECIFIED if \p format did not map to a known
+         *      valid format.
+         */
+        constexpr mxlDataFormat translateFlowFormat(std::string_view format) noexcept
+        {
+            using namespace std::literals;
+
+            constexpr auto const FORMAT_PREFIX = "urn:x-nmos:format:"sv;
+            if (format.starts_with(FORMAT_PREFIX))
+            {
+                auto const tail = format.substr(FORMAT_PREFIX.length());
+                if (tail == "video"sv)
+                {
+                    return MXL_DATA_FORMAT_VIDEO;
+                }
+                if (tail == "audio"sv)
+                {
+                    return MXL_DATA_FORMAT_AUDIO;
+                }
+                if (tail == "data"sv)
+                {
+                    return MXL_DATA_FORMAT_DATA;
+                }
+                if (tail == "mux"sv)
+                {
+                    return MXL_DATA_FORMAT_MUX;
+                }
+            }
+
+            return MXL_DATA_FORMAT_UNSPECIFIED;
+        }
+
         /**
          * Validates that a field exists in the json object.
          * \param in_obj The json object to look into.
@@ -63,7 +100,7 @@ namespace mxl::lib
 
     FlowParser::FlowParser(std::string const& in_flowDef)
         : _id{}
-        , _format{}
+        , _format{MXL_DATA_FORMAT_UNSPECIFIED}
         , _interlaced{false}
         , _grainRate{0, 1}
         , _root{}
@@ -94,17 +131,21 @@ namespace mxl::lib
         _id = *id;
 
         // Read the media format
-        _format = fetchAs<std::string>(_root, "format");
+        _format = translateFlowFormat(fetchAs<std::string>(_root, "format"));
 
         // Read the grain rate if this is not an audio flow.
-        if (_format != "urn:x-nmos:format:audio")
+        if (mxlIsDiscreteDataFormat(_format))
         {
             _grainRate = extractRational(fetchAs<picojson::object>(_root, "grain_rate"));
+        }
+        else
+        {
+            throw std::domain_error{"Unsupported flow format."};
         }
 
         // Validate that grain_rate if we are interlaced video
         // Grain rate must be either 30000/1001 or 25/1
-        if (_format == "urn:x-nmos:format:video")
+        if (_format == MXL_DATA_FORMAT_VIDEO)
         {
             auto interlaceMode = std::string{};
             if (auto const it = _root.find("interlace_mode"); it != _root.end())
@@ -145,11 +186,16 @@ namespace mxl::lib
         return _grainRate;
     }
 
+    mxlDataFormat FlowParser::getFormat() const
+    {
+        return _format;
+    }
+
     std::size_t FlowParser::getPayloadSize() const
     {
         auto payloadSize = std::size_t{0};
 
-        if (_format == "urn:x-nmos:format:video")
+        if (_format == MXL_DATA_FORMAT_VIDEO)
         {
             auto const width = static_cast<std::size_t>(fetchAs<double>(_root, "frame_width"));
             auto const height = static_cast<std::size_t>(fetchAs<double>(_root, "frame_height"));
@@ -175,7 +221,7 @@ namespace mxl::lib
                 throw std::invalid_argument{std::move(msg)};
             }
         }
-        else if (_format == "urn:x-nmos:format:data")
+        else if (_format == MXL_DATA_FORMAT_DATA)
         {
             auto const mediaType = fetchAs<std::string>(_root, "media_type");
             if (mediaType == "video/smpte291")

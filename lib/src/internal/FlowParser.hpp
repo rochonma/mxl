@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string>
 #include <uuid.h>
+#include <mxl/dataformat.h>
 #include <mxl/rational.h>
 #include <picojson/picojson.h>
 
@@ -41,6 +42,14 @@ namespace mxl::lib
         Rational getGrainRate() const;
 
         /**
+         * Accessor for the 'format' field
+         *
+         * \return The flow format if found and valid
+         */
+        [[nodiscard]]
+        mxlDataFormat getFormat() const;
+
+        /**
          * Generic accessor for json fields.
          * - integer fields should be accessed using T=double then cast.
          * - string fields should be accessed using T=std::string
@@ -67,7 +76,7 @@ namespace mxl::lib
         /** The flow id read from the 'id' field. */
         uuids::uuid _id;
         /** The flow format read from the 'format' field. */
-        std::string _format;
+        mxlDataFormat _format;
         /** True if video and interlaced, false otherwise. */
         bool _interlaced;
         /** The flow grain rate, if defined, 0/1 if undefined. */
