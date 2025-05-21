@@ -6,8 +6,8 @@
 #   include <stdint.h>
 #endif
 
-#include <mxl/rational.h>
 #include <mxl/mxl.h>
+#include <mxl/rational.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -152,6 +152,20 @@ MXL_EXPORT
      */
 MXL_EXPORT
     mxlStatus mxlFlowReaderGetGrain(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, uint64_t in_timeoutNs, GrainInfo* out_grain,
+        uint8_t** out_payload);
+
+    /**
+     * Non-blocking accessor for a flow grain at a specific index
+     *
+     * \param in_instance A valid mxl instance
+     * \param in_reader A valid flow reader
+     * \param in_index The index of the grain to obtain
+     * \param out_grain The requested GrainInfo structure.
+     * \param out_payload The requested grain payload.
+     * \return The result code. \see mxlStatus
+     */
+MXL_EXPORT
+    mxlStatus mxlFlowReaderGetGrainNonBlocking(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, GrainInfo* out_grain,
         uint8_t** out_payload);
 
     /**

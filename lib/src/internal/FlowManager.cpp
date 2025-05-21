@@ -112,7 +112,7 @@ namespace mxl::lib
                 throw std::runtime_error("Failed to create grain shared memory.");
             }
 
-            auto& gInfo = grain->get()->info;
+            auto& gInfo = grain->get()->header.info;
             gInfo.grainSize = in_grainPayloadSize;
             gInfo.version = 1;
             gInfo.size = sizeof(GrainInfo);

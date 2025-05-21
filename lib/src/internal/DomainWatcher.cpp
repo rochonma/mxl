@@ -118,7 +118,7 @@ namespace mxl::lib
             int wd = open(record->fileName.c_str(), O_EVTONLY);
 #elif defined __linux__
             // if not found, add the watch and add it to the maps
-            int wd = inotify_add_watch(_inotifyFd, record->fileName.c_str(), IN_MODIFY | IN_ATTRIB);
+            int wd = inotify_add_watch(_inotifyFd, record->fileName.c_str(), ((in_type == WatcherType::READER) ? IN_MODIFY : IN_ACCESS) | IN_ATTRIB);
 #endif
             if (wd == -1)
             {
@@ -240,7 +240,7 @@ namespace mxl::lib
 
 #elif defined __linux__
         epoll_event events[1];
-        char buffer[4096] __attribute__((aligned(__alignof__(struct inotify_event)))){};
+        alignas(alignof(struct inotify_event)) char buffer[406]  = {};
 
         while (_running)
         {
@@ -264,7 +264,7 @@ namespace mxl::lib
                 auto it = _watches.find(event->wd);
                 if (it != _watches.end())
                 {
-                    if (event->mask & IN_MODIFY || event->mask & IN_ATTRIB)
+                    if ((event->mask & (IN_ACCESS | IN_MODIFY| IN_ATTRIB)) != 0)
                     {
                         _callback(it->second->id, it->second->type);
                     }

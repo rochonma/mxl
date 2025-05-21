@@ -65,7 +65,7 @@ namespace mxl::lib
             uint32_t offset = in_index % _flowData->flow->get()->info.grainCount;
 
             auto grain = _flowData->grains.at(offset)->get();
-            *out_grainInfo = grain->info;
+            *out_grainInfo = grain->header.info;
             *out_payload = reinterpret_cast<uint8_t*>(grain) + MXL_GRAIN_PAYLOAD_OFFSET;
             _currentIndex = in_index;
             return MXL_STATUS_OK;
@@ -102,7 +102,7 @@ namespace mxl::lib
         flow->info.headIndex = _currentIndex;
 
         uint32_t offset = _currentIndex % flow->info.grainCount;
-        auto dst = &_flowData->grains.at(offset)->get()->info;
+        auto dst = &_flowData->grains.at(offset)->get()->header.info;
         std::memcpy(dst, in_grainInfo, sizeof(GrainInfo));
         flow->info.lastWriteTime = mxlGetTime();
 
