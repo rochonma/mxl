@@ -7,30 +7,19 @@
 #include <uuid.h>
 #include <mxl/mxl.h>
 #include <picojson/picojson.h>
+#include "Rational.hpp"
 
 namespace mxl::lib
 {
-
     namespace
     {
-
-        bool operator==(Rational const& lhs, Rational const& rhs)
-        {
-            return lhs.numerator * rhs.denominator == lhs.denominator * rhs.numerator;
-        }
-
-        bool operator!=(Rational const& lhs, Rational const& rhs)
-        {
-            return !(lhs == rhs);
-        }
-
-        ///
-        /// Validates that a field exists in the json object.
-        /// \param in_obj The json object to look into.
-        /// \param in_in_field The field to test for.
-        /// \return An iterator to the field if found
-        /// \throws std::invalid_argument If the field is not found.
-        ///
+        /**
+         * Validates that a field exists in the json object.
+         * \param in_obj The json object to look into.
+         * \param in_in_field The field to test for.
+         * \return An iterator to the field if found
+         * \throws std::invalid_argument If the field is not found.
+         */
         picojson::object::const_iterator testField(picojson::object const& in_obj, std::string const& in_field)
         {
             auto const it = in_obj.find(in_field);
@@ -42,15 +31,15 @@ namespace mxl::lib
             return it;
         }
 
-        ///
-        /// Get a JSON field as a specific type
-        ///
-        /// \param T The desired type.  Can be std::string, double, boolean (types supported by picojson)
-        /// \param in_object The json object potentially containing our field.
-        /// \param in_field The name of the field to get
-        /// \return The field (if found) expressed as a value of type T
-        /// \throws std::invalid_argument If the field is not found.
-        ///
+        /**
+         * Get a JSON field as a specific type
+         *
+         * \param T The desired type.  Can be std::string, double, boolean (types supported by picojson)
+         * \param in_object The json object potentially containing our field.
+         * \param in_field The name of the field to get
+         * \return The field (if found) expressed as a value of type T
+         * \throws std::invalid_argument If the field is not found.
+         */
         template<typename T>
         T fetchAs(picojson::object const& in_object, std::string const& in_field)
         {
@@ -58,15 +47,32 @@ namespace mxl::lib
             return it->second.get<T>();
         }
 
+        Rational extractRational(picojson::object const& in_object)
+        {
+            auto result = Rational{0, 1};
+
+            result.numerator = static_cast<std::int64_t>(fetchAs<double>(in_object, "numerator"));
+            if (auto const it = in_object.find("denominator"); it != in_object.end())
+            {
+                result.denominator = static_cast<std::int64_t>(it->second.get<double>());
+            }
+            return result;
+        }
+
     } // namespace
 
     FlowParser::FlowParser(std::string const& in_flowDef)
+        : _id{}
+        , _format{}
+        , _interlaced{false}
+        , _grainRate{0, 1}
+        , _root{}
     {
         //
         // Parse the json flow
         //
-        picojson::value jsonValue;
-        std::string err = picojson::parse(jsonValue, in_flowDef);
+        auto jsonValue = picojson::value{};
+        auto const err = picojson::parse(jsonValue, in_flowDef);
         if (!err.empty())
         {
             throw std::invalid_argument{"Invalid JSON flow definition. " + err};
@@ -93,33 +99,30 @@ namespace mxl::lib
         // Read the grain rate if this is not an audio flow.
         if (_format != "urn:x-nmos:format:audio")
         {
-            auto grain_rate = fetchAs<picojson::object>(_root, "grain_rate");
-            _grainRate.numerator = static_cast<int64_t>(fetchAs<double>(grain_rate, "numerator"));
-            if (grain_rate.find("denominator") != grain_rate.end())
-            {
-                _grainRate.denominator = static_cast<int64_t>(fetchAs<double>(grain_rate, "denominator"));
-            }
+            _grainRate = extractRational(fetchAs<picojson::object>(_root, "grain_rate"));
         }
 
         // Validate that grain_rate if we are interlaced video
         // Grain rate must be either 30000/1001 or 25/1
         if (_format == "urn:x-nmos:format:video")
         {
-            std::string interlaceMode = "progressive";
-            try
+            auto interlaceMode = std::string{};
+            if (auto const it = _root.find("interlace_mode"); it != _root.end())
             {
-                interlaceMode = fetchAs<std::string>(_root, "interlace_mode");
+                interlaceMode = it->second.get<std::string>();
             }
-            catch (std::invalid_argument&)
+            else
             {
                 // the interlace_mode field is absent. This means that the flow is progressive.  No need to validate the grain rate.
                 // We will use the grain rate as is.
+
+                interlaceMode = "progressive";
             }
 
-            if (interlaceMode == "interlaced_tff" || interlaceMode == "interlaced_bff")
+            if ((interlaceMode == "interlaced_tff") || (interlaceMode == "interlaced_bff"))
             {
                 // This is an interlaced video flow.  confirm that the grain rate is defined to 30000/1001 or 25/1
-                if (_grainRate != Rational{30000, 1001} && _grainRate != Rational{25, 1})
+                if ((_grainRate != Rational{30000, 1001}) && (_grainRate != Rational{25, 1}))
                 {
                     auto msg = std::string{"Invalid grain_rate for interlaced video. Expected 30000/1001 or 25/1."};
                     throw std::invalid_argument{std::move(msg)};
@@ -132,7 +135,7 @@ namespace mxl::lib
         }
     }
 
-    uuids::uuid FlowParser::getId() const
+    uuids::uuid const& FlowParser::getId() const
     {
         return _id;
     }
@@ -142,27 +145,29 @@ namespace mxl::lib
         return _grainRate;
     }
 
-    size_t FlowParser::getPayloadSize() const
+    std::size_t FlowParser::getPayloadSize() const
     {
-        size_t payloadSize = 0;
+        auto payloadSize = std::size_t{0};
 
         if (_format == "urn:x-nmos:format:video")
         {
-            auto width = static_cast<size_t>(fetchAs<double>(_root, "frame_width"));
-            auto height = static_cast<size_t>(fetchAs<double>(_root, "frame_height"));
-            auto mediaType = fetchAs<std::string>(_root, "media_type");
+            auto const width = static_cast<std::size_t>(fetchAs<double>(_root, "frame_width"));
+            auto const height = static_cast<std::size_t>(fetchAs<double>(_root, "frame_height"));
+            auto const mediaType = fetchAs<std::string>(_root, "media_type");
 
             if (mediaType == "video/v210")
             {
-                if (height % 2 != 0)
+                if (!_interlaced || ((height % 2) == 0))
+                {
+                    // Interlaced media is handled as separate fields.
+                    auto const h = _interlaced ? height / 2 : height;
+                    payloadSize = static_cast<std::size_t>((width + 47) / 48 * 128) * h;
+                }
+                else
                 {
                     auto msg = std::string{"Invalid video height for interlaced v210. Must be even."};
                     throw std::invalid_argument{std::move(msg)};
                 }
-
-                // Interlaced media is handled as separate fields.
-                auto h = (_interlaced) ? height / 2 : height;
-                payloadSize = static_cast<size_t>((width + 47) / 48 * 128) * h;
             }
             else
             {
@@ -172,7 +177,7 @@ namespace mxl::lib
         }
         else if (_format == "urn:x-nmos:format:data")
         {
-            auto mediaType = fetchAs<std::string>(_root, "media_type");
+            auto const mediaType = fetchAs<std::string>(_root, "media_type");
             if (mediaType == "video/smpte291")
             {
                 // This is large enough to hold all the ANC data in a single grain.
@@ -193,5 +198,4 @@ namespace mxl::lib
 
         return payloadSize;
     }
-
 } // namespace mxl::lib
