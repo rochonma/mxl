@@ -37,52 +37,54 @@ namespace mxl::lib
         auto uuid = uuids::to_string(in_flowId);
         MXL_DEBUG("Create flow. id: {}, grainCount: {}, grain payload size: {}", uuid, in_grainCount, in_grainPayloadSize);
 
-        auto flowFile = _mxlDomain / uuid;
-        if (fs::exists(flowFile))
+        auto const flowDirectory = _mxlDomain / (uuid + ".mxl-flow");
+        if (!fs::exists(flowDirectory))
         {
-            throw fs::filesystem_error("Flow file conflict. File already exists", flowFile, std::make_error_code(std::errc::file_exists));
+            fs::create_directory(flowDirectory);
+        }
+        else
+        {
+            throw fs::filesystem_error("Flow file conflict. File already exists", flowDirectory, std::make_error_code(std::errc::file_exists));
         }
 
-        auto flowJsonFile = _mxlDomain / (uuid + ".json");
+        auto flowJsonFile = flowDirectory / ".json";
         if (fs::exists(flowJsonFile))
         {
             throw fs::filesystem_error(
                 "Flow description file conflict. File already exists", flowJsonFile, std::make_error_code(std::errc::file_exists));
         }
 
-        auto grainDir = _mxlDomain / (uuid + ".grains");
+        auto grainDir = flowDirectory / "grains";
         if (fs::exists(grainDir))
         {
             throw fs::filesystem_error("Grain directory conflict. Directory already exists", grainDir, std::make_error_code(std::errc::file_exists));
         }
 
         // Write the json file to disk.
-        std::ofstream out{flowJsonFile, std::ios::out | std::ios::trunc};
-        if (!out)
+        if (auto out = std::ofstream{flowJsonFile, std::ios::out | std::ios::trunc}; out)
+        {
+            out << in_flowDef;
+        }
+        else
         {
             throw fs::filesystem_error("Failed to open file", flowJsonFile, std::make_error_code(std::errc::io_error));
         }
-        else
-        {
-            out << in_flowDef;
-            out.close();
-        }
 
-        auto readAccessFile = _mxlDomain / (uuid + ".access");
-        if (fs::exists(readAccessFile))
-        {
-            throw fs::filesystem_error("Read access file already exists", readAccessFile, std::make_error_code(std::errc::file_exists));
-        }
-        else
+        auto readAccessFile = flowDirectory / ".access";
+        if (!fs::exists(readAccessFile))
         {
             // create the dummy file.
             std::ofstream out{readAccessFile, std::ios::out | std::ios::trunc};
+        }
+        else
+        {
+            throw fs::filesystem_error("Read access file already exists", readAccessFile, std::make_error_code(std::errc::file_exists));
         }
 
         auto flowData = std::make_shared<FlowData>();
         flowData->flow = std::make_shared<SharedMem<Flow>>();
 
-        if (!flowData->flow->open(flowFile.string(), true, AccessMode::READ_WRITE))
+        if (auto const flowFile = flowDirectory / "data"; fs::exists(flowFile) || !flowData->flow->open(flowFile.native(), true, AccessMode::READ_WRITE))
         {
             throw std::runtime_error("Failed to create flow shared memory.");
         }
@@ -101,7 +103,7 @@ namespace mxl::lib
         for (size_t i = 0; i < in_grainCount; i++)
         {
             auto grain = std::make_shared<SharedMem<Grain>>();
-            auto grainPath = grainDir / std::to_string(i);
+            auto grainPath = grainDir / fmt::format("data.{}", i);
 
             MXL_TRACE("Creating grain: {}", grainPath.string());
 
@@ -127,10 +129,10 @@ namespace mxl::lib
     {
         auto uuid = uuids::to_string(in_flowId);
 
-        fs::path base{_mxlDomain};
+        auto const base = fs::path{_mxlDomain} / (uuid + ".mxl-flow");
 
         // Verify that the flow file exists.
-        auto flowFile = base / uuid;
+        auto flowFile = base / "data";
         if (!fs::exists(flowFile))
         {
             throw fs::filesystem_error("Flow file not found", flowFile, std::make_error_code(std::errc::no_such_file_or_directory));
@@ -145,14 +147,14 @@ namespace mxl::lib
         }
 
         size_t grainCount = flowData->flow->get()->info.grainCount;
-        auto grainDir = base / (uuid + ".grains");
+        auto grainDir = base / "grains";
         if (fs::exists(grainDir) && fs::is_directory(grainDir))
         {
             // Open each grains
             for (size_t i = 0; i < grainCount; i++)
             {
                 auto grain = std::make_shared<SharedMem<Grain>>();
-                auto grainPath = grainDir / std::to_string(i);
+                auto grainPath = grainDir / fmt::format("data.{}", i);
                 MXL_TRACE("Opening grain: {}", grainPath.string());
                 if (!grain->open(grainPath.string(), false, in_mode))
                 {
@@ -193,12 +195,8 @@ namespace mxl::lib
             closeFlow(in_flowData);
         }
 
-        fs::path base{_mxlDomain};
-        bool found = std::filesystem::remove(base / uuid);
-        std::filesystem::remove(base / (uuid + ".json"));
-        std::filesystem::remove(base / (uuid + ".access"));
-        std::filesystem::remove_all(base / (uuid + ".grains"));
-
+        auto const base = fs::path{_mxlDomain};
+        auto const found = (std::filesystem::remove_all(base / (uuid + ".mxl-flow")) != 0);
         return found;
     }
 
