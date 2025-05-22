@@ -44,7 +44,6 @@ TEST_CASE("Flow Manager", "[flow manager]")
     REQUIRE(fs::exists(flowDirectory));
     REQUIRE(fs::is_directory(flowDirectory));
 
-    return;
     // Count the grains.
     auto grainDir = flowDirectory / "grains";
     size_t grainCount = 0;
