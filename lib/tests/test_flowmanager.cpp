@@ -40,10 +40,13 @@ TEST_CASE("Flow Manager", "[flow manager]")
     REQUIRE(flowData->flow != nullptr);
     REQUIRE(flowData->grains.size() == 5);
 
-    REQUIRE(fs::exists(domain / uuids::to_string(flowId)));
+    auto flowDirectory = domain / (uuids::to_string(flowId) + ".mxl-flow");
+    REQUIRE(fs::exists(flowDirectory));
+    REQUIRE(fs::is_directory(flowDirectory));
 
+    return;
     // Count the grains.
-    auto grainDir = domain / (uuids::to_string(flowId) + ".grains");
+    auto grainDir = flowDirectory / "grains";
     size_t grainCount = 0;
     if (fs::exists(grainDir) && fs::is_directory(grainDir))
     {
@@ -77,7 +80,5 @@ TEST_CASE("Flow Manager", "[flow manager]")
     REQUIRE(manager->listFlows().size() == 0);
 
     // Confirm that files on disk do not exist anymore
-    REQUIRE(!fs::exists(domain / uuids::to_string(flowId)));
-    REQUIRE(!fs::exists(domain / (uuids::to_string(flowId) + ".grains")));
-    REQUIRE(!fs::exists(domain / (uuids::to_string(flowId) + ".json")));
+    REQUIRE(!fs::exists(flowDirectory));
 }

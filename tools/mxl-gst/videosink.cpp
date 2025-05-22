@@ -211,7 +211,7 @@ int real_main(int argc, char** argv)
     CLI11_PARSE(app, argc, argv);
 
     // So the source need to generate a json?
-    std::string descriptor_path = domain + "/" + flowID + ".json";
+    std::string descriptor_path = domain + "/" + flowID + ".mxl-flow" + "/.json";
 
     if (!std::filesystem::exists(descriptor_path))
     {

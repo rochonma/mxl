@@ -86,13 +86,15 @@ namespace mxl::lib
         record->count = 0;
         record->id = in_flowId;
         record->type = in_type;
+
+        auto const flowDirectory = _domain / (id + ".mxl-flow");
         if (in_type == WatcherType::READER)
         {
-            record->fileName = _domain / id;
+            record->fileName = flowDirectory / "data";
         }
         else
         {
-            record->fileName = _domain / (id + ".access");
+            record->fileName = flowDirectory / ".access";
         }
 
         // try to find it in the maps.

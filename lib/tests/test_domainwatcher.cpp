@@ -17,16 +17,20 @@ TEST_CASE("Directory Watcher", "[directory watcher]")
     fs::path domain{std::string{homeDir} + "/mxl_domain"}; // Remove that path if it exists.
     fs::remove_all(domain);
 
-    DomainWatcher watcher{domain.string(), nullptr};
-
     fs::create_directories(domain);
 
+    auto watcher = DomainWatcher{domain.native(), nullptr};
+
     auto const* id = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
+    auto const flowDirectory = domain / (std::string{id} + ".mxl-flow");
+
+    fs::create_directories(flowDirectory);
+
     auto flowId = *uuids::uuid::from_string(id);
-    auto f1Path = domain / id;
-    std::ofstream f1{f1Path};
-    auto f2Path = domain / (id + std::string(".access"));
-    std::ofstream f2(f2Path);
+    auto f1Path = flowDirectory / "data";
+    auto f1 = std::ofstream{f1Path};
+    auto f2Path = flowDirectory / ".access";
+    auto f2 = std::ofstream{f2Path};
 
     REQUIRE(1 == watcher.addFlow(flowId, WatcherType::READER));
     REQUIRE(2 == watcher.addFlow(flowId, WatcherType::READER));

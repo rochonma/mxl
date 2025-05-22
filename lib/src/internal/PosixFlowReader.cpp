@@ -51,8 +51,8 @@ namespace mxl::lib
         {
             _flowId = in_id;
 
-            fs::path base = _manager->getDomain();
-            auto accessFile = base / (uuids::to_string(in_id) + ".access");
+            auto const base = _manager->getDomain() / (uuids::to_string(in_id) + ".mxl-flow");
+            auto accessFile = base / ".access";
             _accessFileFd = ::open(accessFile.string().c_str(), O_RDWR);
 
             // Opening the access file may fail if the domain is in a read only volume.
