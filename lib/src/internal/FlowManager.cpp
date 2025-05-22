@@ -208,18 +208,17 @@ namespace mxl::lib
 
     std::vector<uuids::uuid> FlowManager::listFlows() const
     {
-        fs::path base{_mxlDomain};
+        auto base = fs::path{_mxlDomain};
 
-        std::vector<uuids::uuid> flowIds;
-
-        if (fs::exists(base) && fs::is_directory(base))
+        auto flowIds = std::vector<uuids::uuid>{};
+        if (exists(base) && is_directory(base))
         {
-            for (auto const& entry : fs::directory_iterator(_mxlDomain))
+            for (auto const& entry : std::filesystem::directory_iterator(_mxlDomain))
             {
-                if (fs::is_regular_file(entry) && entry.path().extension().empty())
+                if (is_directory(entry) && (entry.path().extension() == ".mxl-flow"))
                 {
                     // this looks like a uuid. try to parse it an confirm it is valid.
-                    auto id = uuids::uuid::from_string(entry.path().filename().string());
+                    auto id = uuids::uuid::from_string(entry.path().stem().string());
                     if (id.has_value())
                     {
                         flowIds.push_back(*id);
