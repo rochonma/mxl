@@ -37,6 +37,7 @@ if (gstreamer_FOUND)
             PRIVATE
                 videotestsrc.cpp
                 ../../lib/src/internal/FlowParser.cpp
+                ../../lib/src/internal/PathUtils.cpp
             )
 
     target_link_libraries(mxl-gst-videotestsrc
@@ -69,6 +70,7 @@ if (gstreamer_FOUND)
             PRIVATE
                 videosink.cpp
                 ../../lib/src/internal/FlowParser.cpp
+                ../../lib/src/internal/PathUtils.cpp
             )
 
     target_link_libraries(mxl-gst-videosink
