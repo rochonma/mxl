@@ -147,20 +147,34 @@ namespace mxl::lib
         ::size_t garbageCollect() const;
     };
 
-    // POD struct to hold an instance and that can be easily
-    // cast to and from void* across the C interface.
-    struct InstanceInternal
-    {
-        std::unique_ptr<Instance> instance;
-    };
 
-    /// Utility function to convert from a C mxlInstance to a C++ Instance class
-    Instance* to_Instance(mxlInstance in_instance);
+    /// Utility function to convert from a C mxlInstance handle to a C++ Instance class
+    Instance* to_Instance(mxlInstance in_instance) noexcept;
 
     /// Utility function to convert from a C mxlFlowReader to a C++ FlowReaderId type
-    FlowReaderId to_FlowReaderId(mxlFlowReader in_reader);
+    FlowReaderId to_FlowReaderId(mxlFlowReader in_reader) noexcept;
 
     /// Utility function to convert from a C mxlFlowWriter to a C++ FlowWriterId type
-    FlowWriterId to_FlowWriterId(mxlFlowWriter in_writer);
+    FlowWriterId to_FlowWriterId(mxlFlowWriter in_writer) noexcept;
+
+
+    /**************************************************************************/
+    /* Inline implementation.                                                 */
+    /**************************************************************************/
+
+    inline Instance* to_Instance(mxlInstance in_instance) noexcept
+    {
+        return reinterpret_cast<Instance*>(in_instance);
+    }
+
+    inline FlowReaderId to_FlowReaderId(mxlFlowReader in_reader) noexcept
+    {
+        return static_cast<FlowReaderId>(reinterpret_cast<std::uintptr_t>(in_reader));
+    }
+
+    inline FlowWriterId to_FlowWriterId(mxlFlowWriter in_writer) noexcept
+    {
+        return static_cast<FlowWriterId>(reinterpret_cast<std::uintptr_t>(in_writer));
+    }
 
 } // namespace mxl::lib

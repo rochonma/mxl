@@ -30,9 +30,8 @@ mxlInstance mxlCreateInstance(char const* in_mxlDomain, char const* in_options)
 {
     try
     {
-        std::string opts = (in_options) ? in_options : "";
-        auto tmp = new mxl::lib::InstanceInternal{std::make_unique<mxl::lib::Instance>(in_mxlDomain, opts)};
-        return reinterpret_cast<mxlInstance>(tmp);
+        auto const opts = (in_options != nullptr) ? in_options : "";
+        return reinterpret_cast<mxlInstance>(new mxl::lib::Instance{in_mxlDomain, opts});
     }
     catch (std::exception& e)
     {
@@ -52,10 +51,8 @@ mxlStatus mxlDestroyInstance(mxlInstance in_instance)
 {
     try
     {
-        auto const instance = reinterpret_cast<mxl::lib::InstanceInternal*>(in_instance);
-        delete instance;
-
-        return (instance != nullptr) ? MXL_STATUS_OK : MXL_ERR_INVALID_ARG;
+        delete mxl::lib::to_Instance(in_instance);
+        return (in_instance != nullptr) ? MXL_STATUS_OK : MXL_ERR_INVALID_ARG;
     }
     catch (...)
     {

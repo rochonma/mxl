@@ -301,19 +301,4 @@ namespace mxl::lib
         return count;
     }
 
-    Instance* to_Instance(mxlInstance in_instance)
-    {
-        return (in_instance != nullptr) ? reinterpret_cast<InstanceInternal*>(in_instance)->instance.get() : nullptr;
-    }
-
-    FlowReaderId to_FlowReaderId(mxlFlowReader in_reader)
-    {
-        return static_cast<FlowReaderId>(reinterpret_cast<std::uintptr_t>(in_reader));
-    }
-
-    FlowWriterId to_FlowWriterId(mxlFlowWriter in_writer)
-    {
-        return static_cast<FlowWriterId>(reinterpret_cast<std::uintptr_t>(in_writer));
-    }
-
 } // namespace mxl::lib
