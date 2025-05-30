@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <uuid.h>
 #include <condition_variable>
@@ -25,11 +26,6 @@ namespace mxl::lib
         /// \see FlowReader::open
         ///
         virtual bool open(uuids::uuid const& in_id) override;
-
-        ///
-        /// Releases all the required shared memory structures associated with this flow.
-        ///
-        virtual void close() override;
 
         ///
         /// Accessor for the current FlowInfo. A copy of the current structure is returned.
@@ -65,14 +61,9 @@ namespace mxl::lib
         ///
         virtual mxlStatus getGrain(std::uint64_t in_index, GrainInfo* out_grainInfo, std::uint8_t** out_payload) override;
 
-        ///
-        /// Dtor. Releases all resources.
-        ///
-        virtual ~PosixFlowReader();
-
     private:
         FlowManager::ptr _manager;
-        FlowData::ptr _flowData;
+        std::unique_ptr<FlowData> _flowData;
         int _accessFileFd = 1;
         std::mutex _grainMutex;
         std::condition_variable _grainCV;

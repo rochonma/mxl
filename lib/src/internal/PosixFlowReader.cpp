@@ -40,11 +40,6 @@ namespace mxl::lib
         , _accessFileFd{-1}
     {}
 
-    PosixFlowReader::~PosixFlowReader()
-    {
-        PosixFlowReader::close();
-    }
-
     bool PosixFlowReader::open(uuids::uuid const& in_id)
     {
         _flowData = _manager->openFlow(in_id, AccessMode::READ_ONLY);
@@ -64,21 +59,6 @@ namespace mxl::lib
         else
         {
             return false;
-        }
-    }
-
-    void PosixFlowReader::close()
-    {
-        if (_flowData)
-        {
-            std::unique_lock lk(_grainMutex);
-            _manager->closeFlow(_flowData);
-            _flowData.reset();
-            _flowId = uuids::uuid(); // reset to nil
-            if (_accessFileFd != -1)
-            {
-                ::close(_accessFileFd);
-            }
         }
     }
 

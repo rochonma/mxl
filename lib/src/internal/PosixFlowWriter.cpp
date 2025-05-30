@@ -29,21 +29,7 @@ namespace mxl::lib
             _flowId = in_id;
             return true;
         }
-        else
-        {
-            return false;
-        }
-    }
-
-    void PosixFlowWriter::close()
-    {
-        if (_flowData && _flowData->flow)
-        {
-            _manager->closeFlow(_flowData);
-            _flowData.reset();
-            _flowId = uuids::uuid(); // reset to nil
-            _currentIndex = MXL_UNDEFINED_INDEX;
-        }
+        return false;
     }
 
     FlowInfo PosixFlowWriter::getFlowInfo()
@@ -118,10 +104,4 @@ namespace mxl::lib
 
         return MXL_STATUS_OK;
     }
-
-    PosixFlowWriter::~PosixFlowWriter()
-    {
-        PosixFlowWriter::close();
-    }
-
 } // namespace mxl::lib

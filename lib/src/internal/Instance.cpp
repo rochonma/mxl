@@ -132,7 +132,6 @@ namespace mxl::lib
             auto flowId = reader->getId();
 
             _watcher->removeFlow((*found).second->getId(), WatcherType::READER);
-            (*found).second->close();
             _readers.erase(found);
 
             auto byId = _readersByUUID.find(flowId);
@@ -189,8 +188,6 @@ namespace mxl::lib
         if (found != _writers.end())
         {
             _watcher->removeFlow(found->second->getId(), WatcherType::WRITER);
-
-            (*found).second->close();
             _writers.erase(found);
             return true;
         }
@@ -200,7 +197,7 @@ namespace mxl::lib
         }
     }
 
-    FlowData::ptr Instance::createFlow(std::string const& in_flowDef)
+    std::unique_ptr<FlowData> Instance::createFlow(std::string const& in_flowDef)
     {
         // Parse the json flow resource
         FlowParser parser{in_flowDef};
@@ -233,7 +230,7 @@ namespace mxl::lib
 
     bool Instance::deleteFlow(uuids::uuid const& in_id)
     {
-        return _flowManager->deleteFlow(in_id, nullptr);
+        return _flowManager->deleteFlow(in_id);
     }
 
     // This function is performed in a 'collaborative best effort' way.

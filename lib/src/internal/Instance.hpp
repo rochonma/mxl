@@ -90,7 +90,7 @@ namespace mxl::lib
         /// \return The created flow resources in shared memory
         /// \throw std::runtime_error On any error (parse exception, shared memory conflicts, etc)
         ///
-        FlowData::ptr createFlow(std::string const& in_flowDef);
+        std::unique_ptr<FlowData> createFlow(std::string const& in_flowDef);
 
         /// Delete a flow by id
         ///

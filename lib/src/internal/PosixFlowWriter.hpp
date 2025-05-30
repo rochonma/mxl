@@ -29,11 +29,6 @@ namespace mxl::lib
         virtual bool open(uuids::uuid const& in_id) override;
 
         ///
-        /// \see FlowWriter::close
-        ///
-        virtual void close() override;
-
-        ///
         /// \see FlowWriter::getFlowInfo
         ///
         virtual FlowInfo getFlowInfo() override;
@@ -53,11 +48,6 @@ namespace mxl::lib
         ///
         virtual mxlStatus commit(GrainInfo const* in_grainInfo) override;
 
-        ///
-        /// dtor
-        ///
-        virtual ~PosixFlowWriter();
-
         /// \see FlowWriter
         virtual void flowRead() override;
 
@@ -65,7 +55,7 @@ namespace mxl::lib
         /// The flow manager
         FlowManager::ptr _manager;
         /// The FlowData for the currently opened flow. null if no flow is opened.
-        FlowData::ptr _flowData;
+        std::unique_ptr<FlowData> _flowData;
         /// The currently opened grain index. MXL_UNDEFINED_INDEX if no grain is currently opened.
         uint64_t _currentIndex;
     };

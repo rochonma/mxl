@@ -13,8 +13,6 @@ namespace mxl::lib
     public:
         virtual bool open(uuids::uuid const& in_id) = 0;
 
-        virtual void close() = 0;
-
         ///
         /// Accessor for the flow id;
         /// \return The flow id

@@ -25,11 +25,6 @@ namespace mxl::lib
         virtual bool open(uuids::uuid const& in_id) = 0;
 
         ///
-        /// Releases all the required shared memory structures associated with this flow.
-        ///
-        virtual void close() = 0;
-
-        ///
         /// Accessor for the flow id;
         /// \return The flow id
         ///

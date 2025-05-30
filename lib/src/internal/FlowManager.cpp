@@ -66,7 +66,7 @@ namespace mxl::lib
         }
     }
 
-    FlowData::ptr FlowManager::createFlow(uuids::uuid const& flowId, std::string const& flowDef, std::size_t grainCount, Rational const& grainRate,
+    std::unique_ptr<FlowData> FlowManager::createFlow(uuids::uuid const& flowId, std::string const& flowDef, std::size_t grainCount, Rational const& grainRate,
         std::size_t grainPayloadSize)
     {
         auto const uuidString = uuids::to_string(flowId);
@@ -95,7 +95,7 @@ namespace mxl::lib
                     "Failed to create flow access file.", readAccessFile, std::make_error_code(std::errc::file_exists));
             }
 
-            auto flowData = std::make_shared<FlowData>();
+            auto flowData = std::make_unique<FlowData>();
             flowData->flow = SharedMemoryInstance<Flow>{makeFlowDataFilePath(tempDirectory).string().c_str(), AccessMode::CREATE_READ_WRITE, 0U};
 
             auto& info = flowData->flow.get()->info;
@@ -143,7 +143,7 @@ namespace mxl::lib
         }
     }
 
-    FlowData::ptr FlowManager::openFlow(uuids::uuid const& in_flowId, AccessMode in_mode)
+    std::unique_ptr<FlowData> FlowManager::openFlow(uuids::uuid const& in_flowId, AccessMode in_mode)
     {
         if (in_mode == AccessMode::CREATE_READ_WRITE)
         {
@@ -161,7 +161,7 @@ namespace mxl::lib
         }
 
         // Open the shared memory
-        auto flowData = std::make_shared<FlowData>();
+        auto flowData = std::make_unique<FlowData>();
         flowData->flow = SharedMemoryInstance<Flow>{flowFile.string().c_str(), in_mode, 0U};
 
         auto const grainCount = flowData->flow.get()->info.grainCount;
@@ -189,22 +189,26 @@ namespace mxl::lib
         return flowData;
     }
 
-    void FlowManager::closeFlow(FlowData::ptr in_flowData)
+    bool FlowManager::deleteFlow(std::unique_ptr<FlowData>&& flowData)
     {
-        in_flowData->grains.clear();
-        in_flowData->flow = {};
+        if (flowData && flowData->flow)
+        {
+            // Extract the ID
+            auto const span = uuids::span<std::uint8_t, sizeof flowData->flow.get()->info.id>{const_cast<std::uint8_t*>(flowData->flow.get()->info.id), sizeof flowData->flow.get()->info.id};
+            auto const id = uuids::uuid(span);
+
+            // Close the flow
+            flowData.reset();
+
+            return deleteFlow(id);
+        }
+        return false;
     }
 
-    bool FlowManager::deleteFlow(uuids::uuid const& in_flowId, FlowData::ptr in_flowData)
+    bool FlowManager::deleteFlow(uuids::uuid const& flowId)
     {
-        auto uuid = uuids::to_string(in_flowId);
+        auto uuid = uuids::to_string(flowId);
         MXL_TRACE("Delete flow: {}", uuid);
-
-        // First. close the flow if opened.
-        if (in_flowData && in_flowData->flow)
-        {
-            closeFlow(in_flowData);
-        }
 
         auto const base = std::filesystem::path{_mxlDomain};
         return (remove_all(makeFlowDirectoryName(base, uuid)) != 0);
