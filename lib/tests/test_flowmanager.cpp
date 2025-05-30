@@ -37,7 +37,7 @@ TEST_CASE("Flow Manager", "[flow manager]")
     flowData = manager->createFlow(flowId, flowDef, 5, grainRate, 1024);
 
     REQUIRE(flowData != nullptr);
-    REQUIRE(flowData->flow != nullptr);
+    REQUIRE(flowData->flow.isValid());
     REQUIRE(flowData->grains.size() == 5);
 
     auto const flowDirectory = makeFlowDirectoryName(domain, uuids::to_string(flowId));

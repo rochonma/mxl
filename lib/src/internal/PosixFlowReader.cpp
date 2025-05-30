@@ -18,7 +18,7 @@
 #include "FlowManager.hpp"
 #include "Logging.hpp"
 #include "PathUtils.hpp"
-#include "SharedMem.hpp"
+#include "SharedMemory.hpp"
 #include "Sync.hpp"
 
 namespace mxl::lib
@@ -86,7 +86,7 @@ namespace mxl::lib
     {
         if (_flowData)
         {
-            FlowInfo info = _flowData->flow->get()->info;
+            FlowInfo info = _flowData->flow.get()->info;
             return info;
         }
         else
@@ -101,7 +101,7 @@ namespace mxl::lib
 
         if (_flowData)
         {
-            auto const flow = _flowData->flow->get();
+            auto const flow = _flowData->flow.get();
             if (auto const headIndex = flow->info.headIndex; in_index <= headIndex)
             {
                 auto const grainCount = flow->info.grainCount;
@@ -112,7 +112,7 @@ namespace mxl::lib
                 if (in_index >= minIndex)
                 {
                     auto const offset = in_index % flow->info.grainCount;
-                    auto const grain = _flowData->grains.at(offset)->get();
+                    auto const grain = _flowData->grains.at(offset).get();
                     *out_grainInfo = grain->header.info;
                     *out_payload = reinterpret_cast<std::uint8_t*>(&grain->header + 1);
 
@@ -131,7 +131,7 @@ namespace mxl::lib
                 if (waitUntilChanged(&flow->info.syncCounter, flow->info.syncCounter, Duration(in_timeoutNs)))
                 {
                     auto const offset = in_index % flow->info.grainCount;
-                    auto const grain = _flowData->grains[offset]->get();
+                    auto const grain = _flowData->grains[offset].get();
                     *out_grainInfo = grain->header.info;
                     *out_payload = reinterpret_cast<std::uint8_t*>(&grain->header + 1);
 
@@ -159,7 +159,7 @@ namespace mxl::lib
     {
         if (_flowData)
         {
-            auto const flow = _flowData->flow->get();
+            auto const flow = _flowData->flow.get();
             if (auto const headIndex = flow->info.headIndex; in_index <= headIndex)
             {
                 auto const grainCount = flow->info.grainCount;
@@ -169,7 +169,7 @@ namespace mxl::lib
                 if (in_index >= minIndex)
                 {
                     auto const offset = in_index % grainCount;
-                    auto const grain = _flowData->grains[offset]->get();
+                    auto const grain = _flowData->grains[offset].get();
                     *out_grainInfo = grain->header.info;
                     *out_payload = reinterpret_cast<std::uint8_t*>(&grain->header + 1);
 

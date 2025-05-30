@@ -19,7 +19,7 @@ mxlStatus mxlCreateFlow(mxlInstance in_instance, char const* in_flowDef, char co
             if (auto const instance = to_Instance(in_instance); instance != nullptr)
             {
                 auto const flowData = instance->createFlow(in_flowDef);
-                *out_flowInfo = flowData->flow->get()->info;
+                *out_flowInfo = flowData->flow.get()->info;
                 return MXL_STATUS_OK;
             }
         }

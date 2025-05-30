@@ -39,7 +39,7 @@ target_sources(mxl
             src/internal/PathUtils.cpp
             src/internal/PosixFlowReader.cpp
             src/internal/PosixFlowWriter.cpp
-            src/internal/SharedMem.cpp
+            src/internal/SharedMemory.cpp
             src/internal/Sync.cpp
             src/internal/Thread.cpp
             src/internal/Time.cpp

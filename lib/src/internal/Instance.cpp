@@ -7,6 +7,11 @@
 #include <mutex>
 #include <stdexcept>
 #include <string>
+#include <fcntl.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <uuid.h>
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
@@ -208,7 +213,7 @@ namespace mxl::lib
 
         // Create the flow using the flow manager
         auto flowData = _flowManager->createFlow(id, in_flowDef, grainCount, grainRate, parser.getPayloadSize());
-        auto info = flowData->flow->get()->info;
+        auto info = flowData->flow.get()->info;
 
         // Populate the flowinfo structure. This structure will be visible through the C api.
         info.version = 1;

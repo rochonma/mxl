@@ -27,14 +27,14 @@ namespace fs = std::filesystem;
 
 TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
 {
-    char const* opts = "{}";
+    auto const opts = "{}";
+    auto const flowId = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
     auto flowDef = mxl::tests::readFile("data/v210_flow.json");
-    char const* flowId = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
 
-    fs::path domain{"/dev/shm/mxl_domain"}; // Remove that path if it exists.
-    fs::remove_all(domain);
+    auto domain = std::filesystem::path{"./mxl_unittest_domain"}; // Remove that path if it exists.
+    remove_all(domain);
 
-    std::filesystem::create_directories(domain);
+    create_directories(domain);
     auto instanceReader = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instanceReader != nullptr);
 
@@ -132,8 +132,7 @@ TEST_CASE("Invalid flow definitions", "[mxl flows]")
 
     char const* homeDir = getenv("HOME");
     REQUIRE(homeDir != nullptr);
-    fs::path domain{homeDir}; // Remove that path if it exists.
-    domain /= "mxl_domain";
+    fs::path domain{"./mxl_unittest_domain"}; // Remove that path if it exists.
     fs::remove_all(domain);
 
     std::filesystem::create_directories(domain);
@@ -179,7 +178,7 @@ TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
     auto flowDef = mxl::tests::readFile("data/data_flow.json");
     char const* flowId = "db3bd465-2772-484f-8fac-830b0471258b";
 
-    fs::path domain{"/dev/shm/mxl_domain"}; // Remove that path if it exists.
+    fs::path domain{"./mxl_unittest_domain"}; // Remove that path if it exists.
     fs::remove_all(domain);
 
     std::filesystem::create_directories(domain);
@@ -272,10 +271,7 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
     auto flowDef = mxl::tests::readFile("data/v210_flow.json");
     char const* flowId = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
 
-    char const* homeDir = getenv("HOME");
-    REQUIRE(homeDir != nullptr);
-    fs::path domain{homeDir}; // Remove that path if it exists.
-    domain /= "mxl_domain";
+    fs::path domain{"/dev/shm/mxl_domain"}; // Remove that path if it exists.
     fs::remove_all(domain);
 
     std::filesystem::create_directories(domain);

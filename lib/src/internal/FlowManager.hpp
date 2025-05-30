@@ -7,7 +7,7 @@
 #include <vector>
 #include <uuid.h>
 #include "Flow.hpp"
-#include "SharedMem.hpp"
+#include "SharedMemory.hpp"
 
 namespace mxl::lib
 {
@@ -18,8 +18,8 @@ namespace mxl::lib
     struct FlowData
     {
         typedef std::shared_ptr<FlowData> ptr;
-        SharedMem<Flow>::ptr flow;
-        std::vector<SharedMem<Grain>::ptr> grains;
+        SharedMemoryInstance<Flow> flow;
+        std::vector<SharedMemoryInstance<Grain>> grains;
     };
 
     ///

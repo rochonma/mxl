@@ -10,7 +10,7 @@
 #include <sys/stat.h>
 #include "Flow.hpp"
 #include "FlowManager.hpp"
-#include "SharedMem.hpp"
+#include "SharedMemory.hpp"
 #include "Sync.hpp"
 
 namespace mxl::lib
@@ -50,7 +50,7 @@ namespace mxl::lib
     {
         if (_flowData)
         {
-            return _flowData->flow->get()->info;
+            return _flowData->flow.get()->info;
         }
         else
         {
@@ -62,9 +62,9 @@ namespace mxl::lib
     {
         if (_flowData)
         {
-            uint32_t offset = in_index % _flowData->flow->get()->info.grainCount;
+            uint32_t offset = in_index % _flowData->flow.get()->info.grainCount;
 
-            auto grain = _flowData->grains.at(offset)->get();
+            auto grain = _flowData->grains.at(offset).get();
             *out_grainInfo = grain->header.info;
             *out_payload = reinterpret_cast<uint8_t*>(grain) + MXL_GRAIN_PAYLOAD_OFFSET;
             _currentIndex = in_index;
@@ -86,7 +86,7 @@ namespace mxl::lib
     {
         if (_flowData && _flowData->flow)
         {
-            auto flow = _flowData->flow->get();
+            auto flow = _flowData->flow.get();
             flow->info.lastReadTime = mxlGetTime();
         }
     }
@@ -98,11 +98,11 @@ namespace mxl::lib
             return MXL_ERR_INVALID_ARG;
         }
 
-        auto flow = _flowData->flow->get();
+        auto flow = _flowData->flow.get();
         flow->info.headIndex = _currentIndex;
 
         uint32_t offset = _currentIndex % flow->info.grainCount;
-        auto dst = &_flowData->grains.at(offset)->get()->header.info;
+        auto dst = &_flowData->grains.at(offset).get()->header.info;
         std::memcpy(dst, in_grainInfo, sizeof(GrainInfo));
         flow->info.lastWriteTime = mxlGetTime();
 
@@ -113,8 +113,8 @@ namespace mxl::lib
         }
 
         // Let readers know that the head has moved or that new data is available in a partial grain
-        _flowData->flow->get()->info.syncCounter++;
-        wakeAll(&_flowData->flow->get()->info.syncCounter);
+        _flowData->flow.get()->info.syncCounter++;
+        wakeAll(&_flowData->flow.get()->info.syncCounter);
 
         return MXL_STATUS_OK;
     }
