@@ -7,7 +7,7 @@ RUN echo 'vm.swappiness=0'          >> /etc/sysctl.conf \
  && echo 'kernel.shmmax=2147483648' >> /etc/sysctl.conf
 
 # Install basic and runtime dependencies
-RUN apt-get update \
+RUN apt clean all && apt-get update \
  && apt-get install -y --no-install-recommends \
     wget \
     curl \
