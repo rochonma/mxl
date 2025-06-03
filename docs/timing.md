@@ -69,7 +69,7 @@ $$
 
 ## Origin timestamps (OTS)
 
-MXL does not try to hide or compensate for jitter and latency: it relies instead on the origin timestamps of the media grains for accurate indexing. If origin timestamps are not available explicitly through RTP header extensions they can be inferred at capture time by 'unrolling' the RTP timestamps of 2110 and AES67 packets or through other transport-specific mechanisms.
+MXL does not try to hide or compensate for jitter and latency automatically: it relies instead on the origin timestamps of the media grains for accurate indexing. If origin timestamps are not available explicitly through RTP header extensions they can be inferred at capture time by 'unrolling' the RTP timestamps of 2110 and AES67 packets or through other transport-specific mechanisms.
 
 In absence of origin timestamps a receiver media function may need to re-timestamp incoming media and write at $grainIndex(T{now})$.
 
