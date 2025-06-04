@@ -1,21 +1,37 @@
 services:
+  init:
+    image: alpine
+    command: ["sh", "-c", "mkdir -p /dev/shm/mxl"]
+    volumes:
+      - type: bind
+        source: /dev/shm
+        target: /dev/shm
+    restart: "no"
+
   writer-media-function:
     image: mxl-writer
+    depends_on:
+      - init
     build:
       context: ..
       dockerfile: examples/Dockerfile.writer.txt
     restart: unless-stopped
     volumes:
-      - domain:/domain  # Maps the named volume "domain" to /domain inside the container, in read-write mode.
+      - type: bind
+        source: /dev/shm/mxl
+        target: /domain
+        
   reader-media-function:
     image: mxl-reader
+    depends_on:
+      - init
     build:
       context: ..
       dockerfile: examples/Dockerfile.reader.txt
     restart: unless-stopped
     volumes:
-      - domain:/domain:ro  # Maps the named volume "domain" to /domain inside the container, in read only mode
+      - type: bind
+        source: /dev/shm/mxl
+        target: /domain
     stdin_open: true
     tty: true
-volumes:
-  domain:  # Defines the named volume "domain"
