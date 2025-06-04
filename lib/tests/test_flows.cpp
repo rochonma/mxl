@@ -60,7 +60,7 @@ TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
     GrainInfo gInfo;
     uint8_t* buffer = nullptr;
     /// Open the grain for writing.
-    REQUIRE(mxlFlowWriterOpenGrain(instanceWriter, writer, index, &gInfo, &buffer) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowWriterOpenGrain(writer, index, &gInfo, &buffer) == MXL_STATUS_OK);
 
     /// Set a mark at the beginning and the end of the grain payload.
     buffer[0] = 0xCA;
@@ -68,15 +68,15 @@ TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
 
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
     FlowInfo fInfo1;
-    REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &fInfo1) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
     REQUIRE(fInfo1.headIndex == 0);
 
     /// Mark the grain as invalid
     gInfo.flags |= GRAIN_FLAG_INVALID;
-    REQUIRE(mxlFlowWriterCommit(instanceWriter, writer, &gInfo) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowWriterCommit(writer, &gInfo) == MXL_STATUS_OK);
 
     /// Create back the grain using a flow reader.
-    REQUIRE(mxlFlowReaderGetGrain(instanceReader, reader, index, 16, &gInfo, &buffer) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowReaderGetGrain(reader, index, 16, &gInfo, &buffer) == MXL_STATUS_OK);
 
     // Give some time to the inotify message to reach the directorywatcher.
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -90,7 +90,7 @@ TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
 
     /// Get the updated flow info
     FlowInfo fInfo2;
-    REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &fInfo2) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo2) == MXL_STATUS_OK);
 
     /// Confirm that that head has moved.
     REQUIRE(fInfo2.headIndex == index);
@@ -101,17 +101,17 @@ TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
     // We commited a new grain. This should have increased the lastWriteTime field.
     REQUIRE(fInfo2.lastWriteTime > fInfo1.lastWriteTime);
 
-    /// Delete the reader
-    REQUIRE(mxlDestroyFlowReader(instanceReader, reader) == MXL_STATUS_OK);
+    /// Release the reader
+    REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
 
     // Use the writer after closing the reader.
     buffer = nullptr;
-    REQUIRE(mxlFlowWriterOpenGrain(instanceWriter, writer, index++, &gInfo, &buffer) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowWriterOpenGrain(writer, index++, &gInfo, &buffer) == MXL_STATUS_OK);
     /// Set a mark at the beginning and the end of the grain payload.
     buffer[0] = 0xCA;
     buffer[gInfo.grainSize - 1] = 0xFE;
 
-    REQUIRE(mxlDestroyFlowWriter(instanceWriter, writer) == MXL_STATUS_OK);
+    REQUIRE(mxlReleaseFlowWriter(instanceWriter, writer) == MXL_STATUS_OK);
     REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_STATUS_OK);
     // This should be gone from the filesystem.
     REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_ERR_FLOW_NOT_FOUND);
@@ -207,7 +207,7 @@ TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
     GrainInfo gInfo;
     uint8_t* buffer = nullptr;
     /// Open the grain for writing.
-    REQUIRE(mxlFlowWriterOpenGrain(instanceWriter, writer, index, &gInfo, &buffer) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowWriterOpenGrain(writer, index, &gInfo, &buffer) == MXL_STATUS_OK);
 
     /// ANC Grains are always 4KiB
     REQUIRE(gInfo.grainSize == 4096);
@@ -217,15 +217,15 @@ TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
 
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
     FlowInfo fInfo1;
-    REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &fInfo1) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
     REQUIRE(fInfo1.headIndex == 0);
 
     /// Mark the grain as invalid
     gInfo.flags |= GRAIN_FLAG_INVALID;
-    REQUIRE(mxlFlowWriterCommit(instanceWriter, writer, &gInfo) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowWriterCommit(writer, &gInfo) == MXL_STATUS_OK);
 
     /// Create back the grain using a flow reader.
-    REQUIRE(mxlFlowReaderGetGrain(instanceReader, reader, index, 16, &gInfo, &buffer) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowReaderGetGrain(reader, index, 16, &gInfo, &buffer) == MXL_STATUS_OK);
 
     /// Confirm that the flags are preserved.
     REQUIRE(gInfo.flags == GRAIN_FLAG_INVALID);
@@ -238,7 +238,7 @@ TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
 
     /// Get the updated flow info
     FlowInfo fInfo2;
-    REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &fInfo2) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo2) == MXL_STATUS_OK);
 
     /// Confirm that that head has moved.
     REQUIRE(fInfo2.headIndex == index);
@@ -250,13 +250,13 @@ TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
     REQUIRE(fInfo2.lastWriteTime > fInfo1.lastWriteTime);
 
     /// Delete the reader
-    REQUIRE(mxlDestroyFlowReader(instanceReader, reader) == MXL_STATUS_OK);
+    REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
 
     // Use the writer after closing the reader.
     uint8_t* buffer2 = nullptr;
-    REQUIRE(mxlFlowWriterOpenGrain(instanceWriter, writer, index++, &gInfo, &buffer2) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowWriterOpenGrain(writer, index++, &gInfo, &buffer2) == MXL_STATUS_OK);
 
-    REQUIRE(mxlDestroyFlowWriter(instanceWriter, writer) == MXL_STATUS_OK);
+    REQUIRE(mxlReleaseFlowWriter(instanceWriter, writer) == MXL_STATUS_OK);
     REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_STATUS_OK);
     // This should be gone from the filesystem.
     REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_ERR_FLOW_NOT_FOUND);
@@ -299,11 +299,11 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
     /// Open the grain.
     GrainInfo gInfo;
     uint8_t* buffer = nullptr;
-    REQUIRE(mxlFlowWriterOpenGrain(instanceWriter, writer, index, &gInfo, &buffer) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowWriterOpenGrain(writer, index, &gInfo, &buffer) == MXL_STATUS_OK);
 
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
     FlowInfo fInfo1;
-    REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &fInfo1) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
     REQUIRE(fInfo1.headIndex == 0);
 
     size_t const maxSlice = 8;
@@ -312,17 +312,17 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
     {
         /// Write a slice to the grain.
         gInfo.commitedSize += sliceSize;
-        REQUIRE(mxlFlowWriterCommit(instanceWriter, writer, &gInfo) == MXL_STATUS_OK);
+        REQUIRE(mxlFlowWriterCommit(writer, &gInfo) == MXL_STATUS_OK);
 
         FlowInfo sliceFlowInfo;
-        REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &sliceFlowInfo) == MXL_STATUS_OK);
+        REQUIRE(mxlFlowReaderGetInfo(reader, &sliceFlowInfo) == MXL_STATUS_OK);
         REQUIRE(sliceFlowInfo.headIndex == index);
 
         // We commited data to a grain. This should have increased the lastWriteTime field.
         REQUIRE(sliceFlowInfo.lastWriteTime > fInfo1.lastWriteTime);
 
         /// Read back the partial grain using the flow reader.
-        REQUIRE(mxlFlowReaderGetGrain(instanceReader, reader, index, 8, &gInfo, &buffer) == MXL_STATUS_OK);
+        REQUIRE(mxlFlowReaderGetGrain(reader, index, 8, &gInfo, &buffer) == MXL_STATUS_OK);
 
         // Validate the commited size
         REQUIRE(gInfo.commitedSize == sliceSize * (slice + 1));
@@ -331,12 +331,12 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
         // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
-        REQUIRE(mxlFlowReaderGetInfo(instanceReader, reader, &sliceFlowInfo) == MXL_STATUS_OK);
+        REQUIRE(mxlFlowReaderGetInfo(reader, &sliceFlowInfo) == MXL_STATUS_OK);
         REQUIRE(sliceFlowInfo.lastReadTime > fInfo1.lastReadTime);
     }
 
-    REQUIRE(mxlDestroyFlowReader(instanceReader, reader) == MXL_STATUS_OK);
-    REQUIRE(mxlDestroyFlowWriter(instanceWriter, writer) == MXL_STATUS_OK);
+    REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
+    REQUIRE(mxlReleaseFlowWriter(instanceWriter, writer) == MXL_STATUS_OK);
     REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_STATUS_OK);
     REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_ERR_FLOW_NOT_FOUND);
     REQUIRE(mxlDestroyInstance(instanceReader) == MXL_STATUS_OK);

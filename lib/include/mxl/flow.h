@@ -120,29 +120,27 @@ MXL_EXPORT
     mxlStatus mxlCreateFlowReader(mxlInstance in_instance, char const* in_flowId, char const* in_options, mxlFlowReader* out_reader);
 
     MXL_EXPORT
-    mxlStatus mxlDestroyFlowReader(mxlInstance in_instance, mxlFlowReader in_reader);
+    mxlStatus mxlReleaseFlowReader(mxlInstance in_instance, mxlFlowReader in_reader);
 
     MXL_EXPORT
     mxlStatus mxlCreateFlowWriter(mxlInstance in_instance, char const* flowId, char const* in_options, mxlFlowWriter* out_writer);
 
     MXL_EXPORT
-    mxlStatus mxlDestroyFlowWriter(mxlInstance in_instance, mxlFlowWriter in_writer);
+    mxlStatus mxlReleaseFlowWriter(mxlInstance in_instance, mxlFlowWriter in_writer);
 
     /**
      * Get the current head and tail values of a Flow
      *
-     * \param in_instance A valid mxl instance
      * \param in_reader A valid flow reader
      * \param out_info A valid pointer to a FlowInfo structure. on return, the structure will be updated with a copy of the current flow info value.
      * \return The result code. \see mxlStatus
      */
 MXL_EXPORT
-    mxlStatus mxlFlowReaderGetInfo(mxlInstance in_instance, mxlFlowReader in_reader, FlowInfo* out_info);
+    mxlStatus mxlFlowReaderGetInfo(mxlFlowReader in_reader, FlowInfo* out_info);
 
     /**
      * Accessor for a flow grain at a specific index
      *
-     * \param in_instance A valid mxl instance
      * \param in_reader A valid flow reader
      * \param in_index The index of the grain to obtain
      * \param in_timeoutNs How long should we wait for the grain (in nanoseconds)
@@ -151,13 +149,12 @@ MXL_EXPORT
      * \return The result code. \see mxlStatus
      */
 MXL_EXPORT
-    mxlStatus mxlFlowReaderGetGrain(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, uint64_t in_timeoutNs, GrainInfo* out_grain,
+    mxlStatus mxlFlowReaderGetGrain(mxlFlowReader in_reader, uint64_t in_index, uint64_t in_timeoutNs, GrainInfo* out_grain,
         uint8_t** out_payload);
 
     /**
      * Non-blocking accessor for a flow grain at a specific index
      *
-     * \param in_instance A valid mxl instance
      * \param in_reader A valid flow reader
      * \param in_index The index of the grain to obtain
      * \param out_grain The requested GrainInfo structure.
@@ -165,14 +162,13 @@ MXL_EXPORT
      * \return The result code. \see mxlStatus
      */
 MXL_EXPORT
-    mxlStatus mxlFlowReaderGetGrainNonBlocking(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, GrainInfo* out_grain,
+    mxlStatus mxlFlowReaderGetGrainNonBlocking(mxlFlowReader in_reader, uint64_t in_index, GrainInfo* out_grain,
         uint8_t** out_payload);
 
     /**
      * Open a grain for mutation.  The flow writer will remember which index is currently opened. Before opening a new grain
      * for mutation, the user must either cancel the mutation using mxlFlowWriterCancel or mxlFlowWriterCommit
      *
-     * \param in_instance A valid mxl instance
      * \param in_writer A valid flow writer
      * \param in_index The index of the grain to obtain
      * \param out_grainInfo The requested GrainInfo structure.
@@ -180,16 +176,15 @@ MXL_EXPORT
      * \return The result code. \see mxlStatus
      */
 MXL_EXPORT
-    mxlStatus mxlFlowWriterOpenGrain(mxlInstance in_instance, mxlFlowWriter in_writer, uint64_t in_index, GrainInfo* out_grainInfo,
+    mxlStatus mxlFlowWriterOpenGrain(mxlFlowWriter in_writer, uint64_t in_index, GrainInfo* out_grainInfo,
         uint8_t** out_payload);
 
     /**
      *
-     * \param in_instance A valid mxl instance
      * \param in_writer A valid flow writer
      */
 MXL_EXPORT
-    mxlStatus mxlFlowWriterCancel(mxlInstance in_instance, mxlFlowWriter in_writer);
+    mxlStatus mxlFlowWriterCancel(mxlFlowWriter in_writer);
 
     /**
      * Inform mxl that a user is done writing the grain that was previously opened.  This will in turn signal all readers waiting on the ringbuffer
@@ -199,7 +194,7 @@ MXL_EXPORT
      * \return The result code. \see mxlStatus
      */
 MXL_EXPORT
-    mxlStatus mxlFlowWriterCommit(mxlInstance in_instance, mxlFlowWriter in_writer, GrainInfo const* in_grain);
+    mxlStatus mxlFlowWriterCommit(mxlFlowWriter in_writer, GrainInfo const* in_grain);
 
 #ifdef __cplusplus
 }

@@ -48,7 +48,14 @@ namespace mxl::lib
     } // namespace
 
     Instance::Instance(std::filesystem::path const& in_mxlDomain, std::string const& in_options)
-        : _options(in_options)
+        : _readers{}
+        , _writers{}
+        , _mutex{}
+        , _options{in_options}
+        , _flowManager{}
+        , _historyDuration{100'000'000ULL}
+        , _watcher{}
+        , _stopping{false}
     {
         std::call_once(loggingFlag, [&]() { initializeLogging(); });
         _flowManager = std::make_shared<FlowManager>(in_mxlDomain);
@@ -61,11 +68,6 @@ namespace mxl::lib
     {
         _stopping = true;
         _watcher->stop();
-        std::lock_guard<std::mutex> lock(_mutex);
-        _readers.clear();
-        _readersByUUID.clear();
-        _writers.clear();
-        _watcher.reset();
         MXL_DEBUG("Instance destroyed.");
         spdlog::default_logger()->flush();
     }
@@ -81,119 +83,101 @@ namespace mxl::lib
 
             {
                 // Someone read the grain and touched the ".access" file.  let update the last read count.
-                auto found = _writersByUUID.find(in_flowId);
-                if (found != _writersByUUID.end())
+                if (auto const found = _writers.find(in_flowId); found != _writers.end())
                 {
-                    found->second->flowRead();
+                    found->second.get()->flowRead();
                 }
             }
         }
     }
 
-    FlowReaderId Instance::createFlowReader(std::string const& in_flowId)
+    FlowReader* Instance::getFlowReader(std::string const& flowId)
     {
-        auto id = uuids::uuid::from_string(in_flowId);
-        auto reader = std::make_shared<PosixFlowReader>(_flowManager);
-        if (!reader->open(*id))
+        auto const id = uuids::uuid::from_string(flowId);
+        // FIXME: Check result of the from_string operation.
+
+        auto const lock = std::lock_guard<std::mutex>{_mutex};
+        if (auto const pos = _readers.lower_bound(*id); pos != _readers.end())
         {
-            throw std::runtime_error("Failed to open flow " + in_flowId);
-        }
-
-        _watcher->addFlow(*id, WatcherType::READER);
-
-        std::lock_guard<std::mutex> lock(_mutex);
-        FlowReaderId const index{_readerCounter++};
-        _readers[index] = reader;
-        _readersByUUID[*id] = reader;
-        return index;
-    }
-
-    std::shared_ptr<FlowReader> Instance::getReader(FlowReaderId in_id)
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-        auto found = _readers.find(in_id);
-        if (found != _readers.end())
-        {
-            return found->second;
+            auto& v = (*pos).second;
+            v.addReference();
+            return v.get();
         }
         else
         {
-            return nullptr;
-        }
-    }
-
-    bool Instance::removeReader(FlowReaderId in_id)
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-        auto found = _readers.find(in_id);
-        if (found != _readers.end())
-        {
-            auto reader = (*found).second;
-            auto flowId = reader->getId();
-
-            _watcher->removeFlow((*found).second->getId(), WatcherType::READER);
-            _readers.erase(found);
-
-            auto byId = _readersByUUID.find(flowId);
-            if (byId != _readersByUUID.end())
+            auto reader = std::make_unique<PosixFlowReader>(_flowManager);
+            if (reader->open(*id))
             {
-                _readersByUUID.erase(byId);
+                // FIXME: This leaks if the map insertion throws an exception.
+                //     Delegate the watch handling to the reader itself by
+                //     passing it a reference to the DomainWatcher.
+                _watcher->addFlow(*id, WatcherType::READER);
+                return (*_readers.try_emplace(pos, *id, std::move(reader))).second.get();
             }
-            else
+            throw std::runtime_error("Failed to open flow " + flowId);
+        }
+    }
+
+    void Instance::releaseReader(FlowReader* reader)
+    {
+        if (reader)
+        {
+            auto const& id = reader->getId();
+
+            auto const lock = std::lock_guard<std::mutex>{_mutex};
+            if (auto const pos = _readers.find(id); pos != _readers.end())
             {
-                MXL_WARN("This should not happen.");
+                if ((*pos).second.releaseReference())
+                {
+                    _watcher->removeFlow(id, WatcherType::READER);
+                    _readers.erase(pos);
+                }
             }
-
-            return true;
-        }
-        else
-        {
-            return false;
         }
     }
 
-    FlowWriterId Instance::createFlowWriter(std::string const& in_flowId)
+    FlowWriter* Instance::getFlowWriter(std::string const& flowId)
     {
-        auto id = uuids::uuid::from_string(in_flowId);
-        auto writer = std::make_shared<PosixFlowWriter>(_flowManager);
-        writer->open(*id);
+        auto const id = uuids::uuid::from_string(flowId);
+        // FIXME: Check result of the from_string operation.
 
-        _watcher->addFlow(*id, WatcherType::WRITER);
-
-        std::lock_guard<std::mutex> lock(_mutex);
-        FlowWriterId const index{_writerCounter++};
-        _writers[index] = writer;
-        _writersByUUID[*id] = writer;
-        return index;
-    }
-
-    std::shared_ptr<FlowWriter> Instance::getWriter(FlowWriterId in_id)
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-        auto found = _writers.find(in_id);
-        if (found != _writers.end())
+        auto const lock = std::lock_guard<std::mutex>{_mutex};
+        if (auto const pos = _writers.lower_bound(*id); pos != _writers.end())
         {
-            return found->second;
+            auto& v = (*pos).second;
+            v.addReference();
+            return v.get();
         }
         else
         {
-            return nullptr;
+            auto writer = std::make_unique<PosixFlowWriter>(_flowManager);
+            if (writer->open(*id))
+            {
+                // FIXME: This leaks if the map insertion throws an exception.
+                //     Delegate the watch handling to the writer itself by
+                //     passing it a reference to the DomainWatcher.
+                _watcher->addFlow(*id, WatcherType::WRITER);
+                return (*_writers.try_emplace(pos, *id, std::move(writer))).second.get();
+            }
+            throw std::runtime_error("Failed to open flow " + flowId);
         }
     }
 
-    bool Instance::removeWriter(FlowWriterId in_id)
+    void Instance::releaseWriter(FlowWriter* writer)
     {
-        std::lock_guard<std::mutex> lock(_mutex);
-        auto found = _writers.find(in_id);
-        if (found != _writers.end())
+        if (writer)
         {
-            _watcher->removeFlow(found->second->getId(), WatcherType::WRITER);
-            _writers.erase(found);
-            return true;
-        }
-        else
-        {
-            return false;
+            auto const& id = writer->getId();
+
+            auto const lock = std::lock_guard<std::mutex>{_mutex};
+            if (auto const pos = _writers.find(id); pos != _writers.end())
+            {
+                if ((*pos).second.releaseReference())
+                {
+                    _watcher->removeFlow(id, WatcherType::WRITER);
+                    _writers.erase(pos);
+                }
+            }
         }
     }
 
@@ -206,7 +190,7 @@ namespace mxl::lib
         // Read the mandatory id field
         auto id = parser.getId();
         // Compute the grain count based on our configured history duration
-        size_t grainCount = _historyDuration / (1000 * grainRate.denominator / grainRate.numerator);
+        auto const grainCount = _historyDuration * grainRate.numerator / (1'000'000'000ULL * grainRate.denominator);
 
         // Create the flow using the flow manager
         auto flowData = _flowManager->createFlow(id, in_flowDef, grainCount, grainRate, parser.getPayloadSize());
@@ -236,9 +220,9 @@ namespace mxl::lib
     // This function is performed in a 'collaborative best effort' way.
     // Exceptions thrown should not be propagated to the caller and cause disruptions to the application.
     // On error the function will return 0 and log the error
-    ::size_t Instance::garbageCollect() const
+    std::size_t Instance::garbageCollect() const
     {
-        ::size_t count = 0;
+        std::size_t count = 0;
 
         try
         {

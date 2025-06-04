@@ -87,7 +87,7 @@ int printFlow(std::string const& in_domain, std::string const& in_id)
 
     // Extract the FlowInfo structure.
     FlowInfo info;
-    status = mxlFlowReaderGetInfo(instance, reader, &info);
+    status = mxlFlowReaderGetInfo(reader, &info);
     if (status != MXL_STATUS_OK)
     {
         std::cerr << "Failed to get flow info" << std::endl;
@@ -114,7 +114,7 @@ int printFlow(std::string const& in_domain, std::string const& in_id)
     }
 
     // Cleanup
-    mxlDestroyFlowReader(instance, reader);
+    mxlReleaseFlowReader(instance, reader);
     mxlDestroyInstance(instance);
 
     return ret;

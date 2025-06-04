@@ -4,12 +4,12 @@
 #include <atomic>
 #include <filesystem>
 #include <limits>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <uuid.h>
 #include <mxl/mxl.h>
-#include <unordered_map>
 #include "DomainWatcher.hpp"
 #include "FlowManager.hpp"
 #include "FlowReader.hpp"
@@ -17,55 +17,11 @@
 
 namespace mxl::lib
 {
-
-    // Strong typedefs for reader and writer IDs
-    enum class FlowReaderId : uint32_t
-    {
-    };
-    enum class FlowWriterId : uint32_t
-    {
-    };
-
     ///
     /// Manages mxl resources allocated by the SDK user.  Represents a single mxfInstance.
     ///
     class Instance
     {
-    protected:
-        /// Maps the flow reader id to FlowReaders.
-        std::unordered_map<FlowReaderId, std::shared_ptr<FlowReader>> _readers;
-        /// Maps flow uuids to flow readers.
-        std::unordered_map<uuids::uuid, std::shared_ptr<FlowReader>> _readersByUUID;
-        /// Holds the writer instances allocated by the SDK user
-        std::unordered_map<FlowWriterId, std::shared_ptr<FlowWriter>> _writers;
-        /// Maps flow uuids to flow writers.
-        std::unordered_map<uuids::uuid, std::shared_ptr<FlowWriter>> _writersByUUID;
-
-        void fileChangedCallback(uuids::uuid const& in_flowId, WatcherType in_type);
-
-        /// Simple 'reader' id counter.  This is just a dumb counter that is incremented for each reader added. These IDs only exist in the context of
-        /// the sdk instance.
-        uint32_t _readerCounter = 0;
-
-        /// Simple 'writer' id counter.  Use a different range than reader counter in order to avoid dumb mistakes.
-        uint32_t _writerCounter = std::numeric_limits<uint32_t>::max() / 2;
-
-        /// Protects the maps
-        std::mutex _mutex;
-
-        /// For future use.
-        std::string _options;
-
-        /// Performs flow CRUD operations
-        FlowManager::ptr _flowManager;
-
-        /// Ring buffer history duration in milliseconds;
-        uint32_t _historyDuration = 100;
-
-        DomainWatcher::ptr _watcher;
-
-        std::atomic_bool _stopping = false;
-
     public:
         ///
         /// Creates an instance
@@ -75,7 +31,7 @@ namespace mxl::lib
         Instance(std::filesystem::path const& in_mxlDomain, std::string const& in_jsonOptions);
 
         /// Dtor. Release all readers and writers.
-        virtual ~Instance();
+        ~Instance();
 
         /// Delete Copy Constructor
         Instance(Instance const&) = delete;
@@ -99,82 +55,171 @@ namespace mxl::lib
         bool deleteFlow(uuids::uuid const& in_id);
 
         ///
-        /// create a FlowReader.
-        /// \param in_flowId The id of the flow to read
-        /// \return the id of the flow reader created
+        /// Create a FlowReader or obtain an additional reference to a
+        /// previously created FlowReader.
+        /// \param[in] flowId The id of the flow to obtain a reader for
+        /// \return A pointer to the created flow reader.
+        /// \note Please note that each successful call to this method must be
+        ///     paired with a corresponding call to releaseReader().
         ///
-        FlowReaderId createFlowReader(std::string const& in_flowId);
+        FlowReader* getFlowReader(std::string const& in_flowId);
 
         ///
-        /// Get a FlowReader by id
-        /// \param in_id The reader id
-        /// \return The flow reader if found or a null shared pointer if not found.
+        /// Release a reference to a FlowReader in order to ultimately free all
+        /// resources associated with it, once the last reference is dropped.
         ///
-        std::shared_ptr<FlowReader> getReader(FlowReaderId in_id);
+        /// \param[in] reader a pointer to a reader previously obtained by a
+        ///     call to getFlowReader.
+        ///
+        void releaseReader(FlowReader* reader);
 
         ///
-        /// Removes a FlowReader by id
-        /// \param in_id The reader id
-        /// \return True if found
+        /// Create a FlowWriter or obtain an additional reference to a
+        /// previously created FlowWriter.
+        /// \param[in] flowId The id of the flow to obtain a reader for
+        /// \return A pointer to the created flow reader.
+        /// \note Please note that each successful call to this method must be
+        ///     paired with a corresponding call to releaseWriter().
         ///
-        bool removeReader(FlowReaderId in_id);
+        FlowWriter* getFlowWriter(std::string const& flowId);
 
         ///
-        /// Create a FlowWriter.
-        /// \param in_flowId The id of the flow to write
-        /// \return The unique instance id of this writer.
+        /// Release a reference to a FlowWriter in order to ultimately free all
+        /// resources associated with it, once the last reference is dropped.
         ///
-        FlowWriterId createFlowWriter(std::string const& in_flowId);
-
+        /// \param[in] writer a pointer to a writer previously obtained by a
+        ///     call to getFlowWriter.
         ///
-        /// Get a FlowWriter by id
-        /// \param in_id The writer id
-        /// \return The flow writer if found or a null shared pointer if not found.
-        ///
-        std::shared_ptr<FlowWriter> getWriter(FlowWriterId in_id);
-
-        ///
-        /// Removes a FlowWriter by id
-        /// \param in_id The writer id
-        /// \return True if found
-        ///
-        bool removeWriter(FlowWriterId in_id);
+        void releaseWriter(FlowWriter* writer);
 
         ///
         /// Garbage collect the inactive flows.  This will remove any flows that are not being used by any readers or writers.
         /// \return The number of flows that were removed.
         ///
-        ::size_t garbageCollect() const;
+        std::size_t garbageCollect() const;
+
+    private:
+        template<typename T>
+        class RefCounted
+        {
+            public:
+                using value_type = T;
+
+            public:
+                explicit RefCounted(std::unique_ptr<value_type>&& value) noexcept;
+
+                RefCounted(RefCounted&&) = delete;
+                RefCounted(RefCounted const&) = delete;
+                RefCounted& operator=(RefCounted&&) = delete;
+                RefCounted& operator=(RefCounted const&) = delete;
+
+                constexpr value_type* get() noexcept;
+                constexpr value_type const* get() const noexcept;
+
+                constexpr void addReference() const noexcept;
+                constexpr bool releaseReference() const noexcept;
+
+                constexpr std::uint64_t referenceCount() const noexcept;
+
+            private:
+                std::unique_ptr<value_type> _ptr;
+                std::uint64_t mutable _refCount;
+        };
+
+
+    private:
+        void fileChangedCallback(uuids::uuid const& in_flowId, WatcherType in_type);
+
+    private:
+        /// Maps flow uuids to flow readers.
+        std::map<uuids::uuid, RefCounted<FlowReader>> _readers;
+        /// Maps flow uuids to flow writers.
+        std::map<uuids::uuid, RefCounted<FlowWriter>> _writers;
+
+        /// Protects the maps
+        std::mutex _mutex;
+
+        /// For future use.
+        std::string _options;
+
+        /// Performs flow CRUD operations
+        FlowManager::ptr _flowManager;
+
+        /// Ring buffer history duration in nanoseconds
+        std::uint64_t _historyDuration;
+
+        DomainWatcher::ptr _watcher;
+
+        std::atomic_bool _stopping;
     };
 
 
     /// Utility function to convert from a C mxlInstance handle to a C++ Instance class
     Instance* to_Instance(mxlInstance in_instance) noexcept;
 
-    /// Utility function to convert from a C mxlFlowReader to a C++ FlowReaderId type
-    FlowReaderId to_FlowReaderId(mxlFlowReader in_reader) noexcept;
+    /// Utility function to convert from a C mxlFlowReader handle to a C++ FlowReaders instance.
+    FlowReader* to_FlowReader(mxlFlowReader in_reader) noexcept;
 
-    /// Utility function to convert from a C mxlFlowWriter to a C++ FlowWriterId type
-    FlowWriterId to_FlowWriterId(mxlFlowWriter in_writer) noexcept;
+    /// Utility function to convert from a C mxlFlowWriter handle to a C++ FlowWriter instance.
+    FlowWriter* to_FlowWriter(mxlFlowWriter in_writer) noexcept;
 
 
     /**************************************************************************/
     /* Inline implementation.                                                 */
     /**************************************************************************/
 
+    template<typename T>
+    inline Instance::RefCounted<T>::RefCounted(std::unique_ptr<value_type>&& value) noexcept
+        : _ptr{std::move(value)}
+        , _refCount{1U}
+    {}
+
+    template<typename T>
+    constexpr auto Instance::RefCounted<T>::get() noexcept -> value_type*
+    {
+        return _ptr.get();
+    }
+
+    template<typename T>
+    constexpr auto Instance::RefCounted<T>::get() const noexcept -> value_type const*
+    {
+        return _ptr.get();
+    }
+
+
+    template<typename T>
+    constexpr void Instance::RefCounted<T>::addReference() const noexcept
+    {
+        _refCount += 1U;
+    }
+
+    template<typename T>
+    constexpr bool Instance::RefCounted<T>::releaseReference() const noexcept
+    {
+        _refCount -= (_refCount > 0U) ? 1U : 0U;
+        return (_refCount == 0U);
+    }
+
+    template<typename T>
+    constexpr std::uint64_t Instance::RefCounted<T>::referenceCount() const noexcept
+    {
+        return _refCount;
+    }
+
+
     inline Instance* to_Instance(mxlInstance in_instance) noexcept
     {
         return reinterpret_cast<Instance*>(in_instance);
     }
 
-    inline FlowReaderId to_FlowReaderId(mxlFlowReader in_reader) noexcept
+    inline FlowReader* to_FlowReader(mxlFlowReader in_reader) noexcept
     {
-        return static_cast<FlowReaderId>(reinterpret_cast<std::uintptr_t>(in_reader));
+        return reinterpret_cast<FlowReader*>(in_reader);
     }
 
-    inline FlowWriterId to_FlowWriterId(mxlFlowWriter in_writer) noexcept
+    inline FlowWriter* to_FlowWriter(mxlFlowWriter in_writer) noexcept
     {
-        return static_cast<FlowWriterId>(reinterpret_cast<std::uintptr_t>(in_writer));
+        return reinterpret_cast<FlowWriter*>(in_writer);
     }
 
 } // namespace mxl::lib
