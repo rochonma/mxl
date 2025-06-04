@@ -1,8 +1,9 @@
 # MXL : Media Exchange Layer
-[![Build Pipeline](https://github.com/vt-tv/xyz/actions/workflows/build.yml/badge.svg)](https://github.com/vt-tv/xyz/actions/workflows/build.yml)
-[![GitHub release](https://img.shields.io/github/v/release/vt-tv/xyz)](https://github.com/vt-tv/xyz/releases)
+
+[![Build Pipeline](https://github.com/dmf-mxl/mxl/actions/workflows/build.yml/badge.svg)](https://github.com/dmf-mxl/mxl/actions/workflows/build.yml)
+[![GitHub release](https://img.shields.io/github/v/release/dmf-mxl/mxl)](https://github.com/dmf-mxl/mxl/releases)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE.txt)
-[![Issues](https://img.shields.io/github/issues/vt-tv/xyz)](https://github.com/vt-tv/xyz/issues)
+[![Issues](https://img.shields.io/github/issues/dmf-mxl/mxl)](https://github.com/dmf-mxl/mxl/issues)
 
 ## Overview
 
@@ -71,7 +72,7 @@ cmake --build build/Linux-Clang-Debug --target all
 
 1. Install the [Homebrew](https://brew.sh) package manager
 2. Install doxygen and ccache through brew: `brew install doxygen ccache`
-3. Install the GStreamer runtime and developement packages according to [these instructions](https://gstreamer.freedesktop.org/documentation/installing/on-mac-osx.html?gi-language=c#download-and-install-the-sdk)
+3. Install the GStreamer runtime and development packages according to [these instructions](https://gstreamer.freedesktop.org/documentation/installing/on-mac-osx.html?gi-language=c#download-and-install-the-sdk)
 
 ## Using with CMake
 
@@ -234,6 +235,6 @@ Options:
                               The MXL domain directory
 ```
 
-## Licence
+## License
 
-This code is covered by the [Apache v2 licence](./LICENSE.txt)
+This code is covered by the [Apache v2 license](./LICENSE.txt)
