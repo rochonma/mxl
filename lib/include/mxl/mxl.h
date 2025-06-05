@@ -41,10 +41,11 @@ extern "C"
     /// Accessor for the version of the MXL SDK.
     /// \param out_version Pointer to a mxlVersionType structure to be filled with the version information.
     /// \return MXL_STATUS_OK if the version was successfully retrieved, MXL_ERR_INVALID_ARG if the pointer passed was NULL.
-    /// 
+    ///
     MXL_EXPORT
     mxlStatus mxlGetVersion(mxlVersionType* out_version);
 
+    /** An opaque type representing an MXL instance. */
     typedef struct mxlInstance_t* mxlInstance;
 
     ///

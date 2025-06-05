@@ -26,8 +26,11 @@ target_sources(mxl-tests
             ../src/internal/Flow.cpp
             ../src/internal/FlowManager.cpp
             ../src/internal/FlowParser.cpp
+            ../src/internal/FlowReader.cpp
+            ../src/internal/FlowWriter.cpp
             ../src/internal/PathUtils.cpp
             ../src/internal/PosixFlowReader.cpp
+            ../src/internal/SharedMemory.cpp
             ../src/internal/Thread.cpp
             ../src/internal/Time.cpp
             ../src/internal/Timing.cpp

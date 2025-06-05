@@ -7,7 +7,7 @@
 #include <vector>
 #include <uuid.h>
 #include "Flow.hpp"
-#include "SharedMem.hpp"
+#include "SharedMemory.hpp"
 
 namespace mxl::lib
 {
@@ -17,9 +17,8 @@ namespace mxl::lib
     ///
     struct FlowData
     {
-        typedef std::shared_ptr<FlowData> ptr;
-        SharedMem<Flow>::ptr flow;
-        std::vector<SharedMem<Grain>::ptr> grains;
+        SharedMemoryInstance<Flow> flow;
+        std::vector<SharedMemoryInstance<Grain>> grains;
     };
 
     ///
@@ -40,9 +39,6 @@ namespace mxl::lib
     ///
     /// DELETE
     /// Delete a flow by flowId.  If the flow is opened it is first closed than all physical resources (see above) are deleted
-    ///
-    /// CLOSE
-    /// Close any cached resources for a flowId. This closes and unmaps the shared memories used by this flow.
     ///
     /// GARBAGE Collect
     /// POSIX IPC resources are not automatically reclaimed if processes using them die or misbehave. A shared memory
@@ -78,7 +74,7 @@ namespace mxl::lib
         /// \param in_grainRate The grain rate.
         /// \param in_grainPayloadSize Size of the grain in host memory.  0 if the grain payload lives in device memory.
         ///
-        FlowData::ptr createFlow(uuids::uuid const& in_flowId, std::string const& in_flowDef, size_t grainCount, Rational const& in_grainRate,
+        std::unique_ptr<FlowData> createFlow(uuids::uuid const& in_flowId, std::string const& in_flowDef, size_t grainCount, Rational const& in_grainRate,
             size_t grainPayloadSize);
 
         ///
@@ -87,21 +83,21 @@ namespace mxl::lib
         /// \param in_flowId The flow to open
         /// \param in_mode The flow access mode
         ///
-        FlowData::ptr openFlow(uuids::uuid const& in_flowId, AccessMode in_mode);
-
-        ///
-        /// Release internal resources associated with a flow
-        /// \param in_flow The flow to unmap.
-        ///
-        void closeFlow(FlowData::ptr in_flow);
+        std::unique_ptr<FlowData> openFlow(uuids::uuid const& in_flowId, AccessMode in_mode);
 
         ///
         /// Delete all resources associated to a flow
-        /// \param in_flowId The flow id
-        /// \param in_flowData The flowdata resource if the flow was previously opened or created. can be null.
+        /// \param flowData The flowdata resource if the flow was previously opened or created
         /// \return success or failure.
         ///
-        bool deleteFlow(uuids::uuid const& in_flowId, FlowData::ptr in_flowData);
+        bool deleteFlow(std::unique_ptr<FlowData>&& flowData);
+
+        ///
+        /// Delete all resources associated to a flow
+        /// \param flowId The ID of the flow to delete.
+        /// \return success or failure.
+        ///
+        bool deleteFlow(uuids::uuid const& flowId);
 
         ///
         /// Delete all flows that haven't been accessed for a period of time.

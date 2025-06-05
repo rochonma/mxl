@@ -19,7 +19,7 @@ mxlStatus mxlCreateFlow(mxlInstance in_instance, char const* in_flowDef, char co
             if (auto const instance = to_Instance(in_instance); instance != nullptr)
             {
                 auto const flowData = instance->createFlow(in_flowDef);
-                *out_flowInfo = flowData->flow->get()->info;
+                *out_flowInfo = flowData->flow.get()->info;
                 return MXL_STATUS_OK;
             }
         }
@@ -80,7 +80,7 @@ mxlStatus mxlCreateFlowReader(mxlInstance in_instance, char const* in_flowId, ch
             {
                 if ((in_flowId != nullptr) && uuids::uuid::is_valid_uuid(in_flowId))
                 {
-                    *out_reader = reinterpret_cast<mxlFlowReader>(instance->createFlowReader(in_flowId));
+                    *out_reader = reinterpret_cast<mxlFlowReader>(instance->getFlowReader(in_flowId));
                     return MXL_STATUS_OK;
                 }
             }
@@ -96,13 +96,16 @@ mxlStatus mxlCreateFlowReader(mxlInstance in_instance, char const* in_flowId, ch
 
 extern "C"
 MXL_EXPORT
-mxlStatus mxlDestroyFlowReader(mxlInstance in_instance, mxlFlowReader in_reader)
+mxlStatus mxlReleaseFlowReader(mxlInstance in_instance, mxlFlowReader in_reader)
 {
     try
     {
-        if (auto const instance = to_Instance(in_instance); instance != nullptr)
+        auto const instance = to_Instance(in_instance);
+        auto const reader = to_FlowReader(in_reader);
+        if ((instance != nullptr) && (reader != nullptr))
         {
-            return instance->removeReader(to_FlowReaderId(in_reader)) ? MXL_STATUS_OK : MXL_ERR_INVALID_FLOW_READER;
+            instance->releaseReader(reader);
+            return MXL_STATUS_OK;
         }
         return MXL_ERR_INVALID_ARG;
     }
@@ -124,7 +127,7 @@ mxlStatus mxlCreateFlowWriter(mxlInstance in_instance, char const* in_flowId, ch
             {
                 if ((in_flowId != nullptr) && uuids::uuid::is_valid_uuid(in_flowId))
                 {
-                    *out_writer = reinterpret_cast<mxlFlowWriter>(instance->createFlowWriter(in_flowId));
+                    *out_writer = reinterpret_cast<mxlFlowWriter>(instance->getFlowWriter(in_flowId));
                     return MXL_STATUS_OK;
                 }
             }
@@ -139,13 +142,16 @@ mxlStatus mxlCreateFlowWriter(mxlInstance in_instance, char const* in_flowId, ch
 
 extern "C"
 MXL_EXPORT
-mxlStatus mxlDestroyFlowWriter(mxlInstance in_instance, mxlFlowWriter in_writer)
+mxlStatus mxlReleaseFlowWriter(mxlInstance in_instance, mxlFlowWriter in_writer)
 {
     try
     {
-        if (auto const instance = to_Instance(in_instance); instance != nullptr)
+        auto const instance = to_Instance(in_instance);
+        auto const writer = to_FlowWriter(in_writer);
+        if ((instance != nullptr) && (writer != nullptr))
         {
-            return instance->removeWriter(to_FlowWriterId(in_writer)) ? MXL_STATUS_OK : MXL_ERR_INVALID_FLOW_WRITER;
+            instance->releaseWriter(writer);
+            return MXL_STATUS_OK;
         }
 
         return MXL_ERR_INVALID_ARG;
@@ -158,21 +164,18 @@ mxlStatus mxlDestroyFlowWriter(mxlInstance in_instance, mxlFlowWriter in_writer)
 
 extern "C"
 MXL_EXPORT
-mxlStatus mxlFlowReaderGetInfo(mxlInstance in_instance, mxlFlowReader in_reader, FlowInfo* out_info)
+mxlStatus mxlFlowReaderGetInfo(mxlFlowReader in_reader, FlowInfo* out_info)
 {
     try
     {
         if (out_info != nullptr)
         {
-            if (auto const instance = to_Instance(in_instance); instance != nullptr)
+            if (auto const reader = to_FlowReader(in_reader); reader != nullptr)
             {
-                if (auto const reader = instance->getReader(to_FlowReaderId(in_reader)); reader != nullptr)
-                {
-                    *out_info = reader->getFlowInfo();
-                    return MXL_STATUS_OK;
-                }
-                return MXL_ERR_INVALID_FLOW_READER;
+                *out_info = reader->getFlowInfo();
+                return MXL_STATUS_OK;
             }
+            return MXL_ERR_INVALID_FLOW_READER;
         }
         return MXL_ERR_INVALID_ARG;
     }
@@ -184,21 +187,18 @@ mxlStatus mxlFlowReaderGetInfo(mxlInstance in_instance, mxlFlowReader in_reader,
 
 extern "C"
 MXL_EXPORT
-mxlStatus mxlFlowReaderGetGrain(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, uint64_t in_timeoutNs, GrainInfo* out_grainInfo,
+mxlStatus mxlFlowReaderGetGrain(mxlFlowReader in_reader, uint64_t in_index, uint64_t in_timeoutNs, GrainInfo* out_grainInfo,
     uint8_t** out_payload)
 {
     try
     {
         if ((out_grainInfo != nullptr) && (out_payload != nullptr))
         {
-            if (auto const instance = to_Instance(in_instance); instance != nullptr)
+            if (auto const reader = to_FlowReader(in_reader); reader != nullptr)
             {
-                if (auto const reader = instance->getReader(to_FlowReaderId(in_reader)); reader != nullptr)
-                {
-                    return reader->getGrain(in_index, in_timeoutNs, out_grainInfo, out_payload);
-                }
-                return MXL_ERR_INVALID_FLOW_READER;
+                return reader->getGrain(in_index, in_timeoutNs, out_grainInfo, out_payload);
             }
+            return MXL_ERR_INVALID_FLOW_READER;
         }
         return MXL_ERR_INVALID_ARG;
     }
@@ -210,21 +210,18 @@ mxlStatus mxlFlowReaderGetGrain(mxlInstance in_instance, mxlFlowReader in_reader
 
 extern "C"
 MXL_EXPORT
-mxlStatus mxlFlowReaderGetGrainNonBlocking(mxlInstance in_instance, mxlFlowReader in_reader, uint64_t in_index, GrainInfo* out_grainInfo,
+mxlStatus mxlFlowReaderGetGrainNonBlocking(mxlFlowReader in_reader, uint64_t in_index, GrainInfo* out_grainInfo,
     uint8_t** out_payload)
 {
     try
     {
         if ((out_grainInfo != nullptr) && (out_payload != nullptr))
         {
-            if (auto const instance = to_Instance(in_instance); instance != nullptr)
+            if (auto const reader = to_FlowReader(in_reader); reader != nullptr)
             {
-                if (auto const reader = instance->getReader(to_FlowReaderId(in_reader)); reader != nullptr)
-                {
-                    return reader->getGrain(in_index, out_grainInfo, out_payload);
-                }
-                return MXL_ERR_INVALID_FLOW_READER;
+                return reader->getGrain(in_index, out_grainInfo, out_payload);
             }
+            return MXL_ERR_INVALID_FLOW_READER;
         }
         return MXL_ERR_INVALID_ARG;
     }
@@ -236,42 +233,17 @@ mxlStatus mxlFlowReaderGetGrainNonBlocking(mxlInstance in_instance, mxlFlowReade
 
 extern "C"
 MXL_EXPORT
-mxlStatus mxlFlowWriterOpenGrain(mxlInstance in_instance, mxlFlowWriter in_writer, uint64_t in_index, GrainInfo* out_grainInfo, uint8_t** out_payload)
+mxlStatus mxlFlowWriterOpenGrain(mxlFlowWriter in_writer, uint64_t in_index, GrainInfo* out_grainInfo, uint8_t** out_payload)
 {
     try
     {
         if ((out_grainInfo != nullptr) && (out_payload != nullptr))
         {
-            if (auto const instance = to_Instance(in_instance); instance != nullptr)
+            if (auto const writer = to_FlowWriter(in_writer); writer != nullptr)
             {
-                if (auto const writer = instance->getWriter(to_FlowWriterId(in_writer)); writer != nullptr)
-                {
-                    return writer->openGrain(in_index, out_grainInfo, out_payload);
-                }
-
-                return MXL_ERR_INVALID_FLOW_WRITER;
+                return writer->openGrain(in_index, out_grainInfo, out_payload);
             }
-        }
-        return MXL_ERR_INVALID_ARG;
-    }
-    catch (...)
-    {
-        return MXL_ERR_UNKNOWN;
-    }
-}
 
-extern "C"
-MXL_EXPORT
-mxlStatus mxlFlowWriterCancel(mxlInstance in_instance, mxlFlowWriter in_writer)
-{
-    try
-    {
-        if (auto const instance = to_Instance(in_instance); instance != nullptr)
-        {
-            if (auto const writer = instance->getWriter(to_FlowWriterId(in_writer)); writer != nullptr)
-            {
-                return writer->cancel();
-            }
             return MXL_ERR_INVALID_FLOW_WRITER;
         }
         return MXL_ERR_INVALID_ARG;
@@ -284,19 +256,33 @@ mxlStatus mxlFlowWriterCancel(mxlInstance in_instance, mxlFlowWriter in_writer)
 
 extern "C"
 MXL_EXPORT
-mxlStatus mxlFlowWriterCommit(mxlInstance in_instance, mxlFlowWriter in_writer, GrainInfo const* in_grainInfo)
+mxlStatus mxlFlowWriterCancel(mxlFlowWriter in_writer)
 {
     try
     {
-        if (auto const instance = to_Instance(in_instance); instance != nullptr)
+        if (auto const writer = to_FlowWriter(in_writer); writer != nullptr)
         {
-            if (auto const writer = instance->getWriter(to_FlowWriterId(in_writer)); writer != nullptr)
-            {
-                return writer->commit(in_grainInfo);
-            }
-            return MXL_ERR_INVALID_FLOW_WRITER;
+            return writer->cancel();
         }
-        return MXL_ERR_INVALID_ARG;
+        return MXL_ERR_INVALID_FLOW_WRITER;
+    }
+    catch (...)
+    {
+        return MXL_ERR_UNKNOWN;
+    }
+}
+
+extern "C"
+MXL_EXPORT
+mxlStatus mxlFlowWriterCommit(mxlFlowWriter in_writer, GrainInfo const* in_grainInfo)
+{
+    try
+    {
+        if (auto const writer = to_FlowWriter(in_writer); writer != nullptr)
+        {
+            return writer->commit(in_grainInfo);
+        }
+        return MXL_ERR_INVALID_FLOW_WRITER;
     }
     catch (...)
     {

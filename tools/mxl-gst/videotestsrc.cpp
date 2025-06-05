@@ -322,7 +322,7 @@ int main(int argc, char** argv)
                     GrainInfo gInfo;
                     uint8_t* mxl_buffer = nullptr;
                     /// Open the grain for writing.
-                    if (mxlFlowWriterOpenGrain(instance, writer, grain_index, &gInfo, &mxl_buffer) != MXL_STATUS_OK)
+                    if (mxlFlowWriterOpenGrain(writer, grain_index, &gInfo, &mxl_buffer) != MXL_STATUS_OK)
                     {
                         MXL_ERROR("Failed to open grain at index '{}'", grain_index);
                         break;
@@ -331,7 +331,7 @@ int main(int argc, char** argv)
                     ::memcpy(mxl_buffer, map_info.data, gInfo.grainSize);
 
                     gInfo.commitedSize = gInfo.grainSize;
-                    if (mxlFlowWriterCommit(instance, writer, &gInfo) != MXL_STATUS_OK)
+                    if (mxlFlowWriterCommit(writer, &gInfo) != MXL_STATUS_OK)
                     {
                         MXL_ERROR("Failed to open grain at index '{}'", grain_index);
                         break;
@@ -353,7 +353,7 @@ mxl_cleanup:
     if (instance != nullptr)
     {
         // clean-up mxl objects
-        mxlDestroyFlowWriter(instance, writer);
+        mxlReleaseFlowWriter(instance, writer);
         mxlDestroyFlow(instance, flowID.c_str());
         mxlDestroyInstance(instance);
     }

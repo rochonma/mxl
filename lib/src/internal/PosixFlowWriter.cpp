@@ -10,47 +10,30 @@
 #include <sys/stat.h>
 #include "Flow.hpp"
 #include "FlowManager.hpp"
-#include "SharedMem.hpp"
+#include "SharedMemory.hpp"
 #include "Sync.hpp"
 
 namespace mxl::lib
 {
-
-    PosixFlowWriter::PosixFlowWriter(FlowManager::ptr in_manager)
-        : _manager{in_manager}
+    PosixFlowWriter::PosixFlowWriter(FlowManager::ptr manager, uuids::uuid const& flowId)
+        : FlowWriter{flowId}
+        , _manager{manager}
+        , _flowData{}
         , _currentIndex{MXL_UNDEFINED_INDEX}
     {}
 
-    bool PosixFlowWriter::open(uuids::uuid const& in_id)
+    bool PosixFlowWriter::open()
     {
-        _flowData = _manager->openFlow(in_id, AccessMode::READ_WRITE);
-        if (_flowData)
-        {
-            _flowId = in_id;
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    void PosixFlowWriter::close()
-    {
-        if (_flowData && _flowData->flow)
-        {
-            _manager->closeFlow(_flowData);
-            _flowData.reset();
-            _flowId = uuids::uuid(); // reset to nil
-            _currentIndex = MXL_UNDEFINED_INDEX;
-        }
+        auto const& flowId = getId();
+        _flowData = _manager->openFlow(flowId, AccessMode::READ_WRITE);
+        return (_flowData != nullptr);
     }
 
     FlowInfo PosixFlowWriter::getFlowInfo()
     {
         if (_flowData)
         {
-            return _flowData->flow->get()->info;
+            return _flowData->flow.get()->info;
         }
         else
         {
@@ -58,15 +41,15 @@ namespace mxl::lib
         }
     }
 
-    mxlStatus PosixFlowWriter::openGrain(uint64_t in_index, GrainInfo* out_grainInfo, uint8_t** out_payload)
+    mxlStatus PosixFlowWriter::openGrain(std::uint64_t in_index, GrainInfo* out_grainInfo, std::uint8_t** out_payload)
     {
         if (_flowData)
         {
-            uint32_t offset = in_index % _flowData->flow->get()->info.grainCount;
+            std::uint32_t offset = in_index % _flowData->flow.get()->info.grainCount;
 
-            auto grain = _flowData->grains.at(offset)->get();
+            auto grain = _flowData->grains.at(offset).get();
             *out_grainInfo = grain->header.info;
-            *out_payload = reinterpret_cast<uint8_t*>(grain) + MXL_GRAIN_PAYLOAD_OFFSET;
+            *out_payload = reinterpret_cast<std::uint8_t*>(grain) + MXL_GRAIN_PAYLOAD_OFFSET;
             _currentIndex = in_index;
             return MXL_STATUS_OK;
         }
@@ -86,7 +69,7 @@ namespace mxl::lib
     {
         if (_flowData && _flowData->flow)
         {
-            auto flow = _flowData->flow->get();
+            auto flow = _flowData->flow.get();
             flow->info.lastReadTime = mxlGetTime();
         }
     }
@@ -98,11 +81,11 @@ namespace mxl::lib
             return MXL_ERR_INVALID_ARG;
         }
 
-        auto flow = _flowData->flow->get();
+        auto flow = _flowData->flow.get();
         flow->info.headIndex = _currentIndex;
 
-        uint32_t offset = _currentIndex % flow->info.grainCount;
-        auto dst = &_flowData->grains.at(offset)->get()->header.info;
+        std::uint32_t offset = _currentIndex % flow->info.grainCount;
+        auto dst = &_flowData->grains.at(offset).get()->header.info;
         std::memcpy(dst, in_grainInfo, sizeof(GrainInfo));
         flow->info.lastWriteTime = mxlGetTime();
 
@@ -113,15 +96,9 @@ namespace mxl::lib
         }
 
         // Let readers know that the head has moved or that new data is available in a partial grain
-        _flowData->flow->get()->info.syncCounter++;
-        wakeAll(&_flowData->flow->get()->info.syncCounter);
+        _flowData->flow.get()->info.syncCounter++;
+        wakeAll(&_flowData->flow.get()->info.syncCounter);
 
         return MXL_STATUS_OK;
     }
-
-    PosixFlowWriter::~PosixFlowWriter()
-    {
-        PosixFlowWriter::close();
-    }
-
-} // namespace mxl::lib
+}

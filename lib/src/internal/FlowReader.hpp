@@ -1,42 +1,27 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
 #include <uuid.h>
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
 
 namespace mxl::lib
 {
-
     class FlowReader
     {
-    protected:
-        std::string _options;
-        uuids::uuid _flowId;
-
     public:
         ///
         /// Opens all the required shared memory structures associated with this flow.
         ///
-        /// \param in_id The flow id.  Must be valid and refer to an existing flow.
         /// \return true on success
         ///
-        virtual bool open(uuids::uuid const& in_id) = 0;
-
-        ///
-        /// Releases all the required shared memory structures associated with this flow.
-        ///
-        virtual void close() = 0;
+        virtual bool open() = 0;
 
         ///
         /// Accessor for the flow id;
         /// \return The flow id
         ///
-        uuids::uuid getId() const
-        {
-            return _flowId;
-        }
+        uuids::uuid const& getId() const;
 
         ///
         /// Accessor for the current FlowInfo. A copy of the current structure is returned.
@@ -75,7 +60,14 @@ namespace mxl::lib
         ///
         /// Dtor.
         ///
-        virtual ~FlowReader() = default;
+        virtual ~FlowReader();
+
+    protected:
+        explicit FlowReader(uuids::uuid&& flowId);
+        explicit FlowReader(uuids::uuid const& flowId);
+
+    private:
+        uuids::uuid _flowId;
     };
 
 } // namespace mxl::lib

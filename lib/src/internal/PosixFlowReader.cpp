@@ -18,7 +18,7 @@
 #include "FlowManager.hpp"
 #include "Logging.hpp"
 #include "PathUtils.hpp"
-#include "SharedMem.hpp"
+#include "SharedMemory.hpp"
 #include "Sync.hpp"
 
 namespace mxl::lib
@@ -32,27 +32,20 @@ namespace mxl::lib
         }
     }
 
-
-    namespace fs = std::filesystem;
-
-    PosixFlowReader::PosixFlowReader(FlowManager::ptr in_manager)
-        : _manager{in_manager}
+    PosixFlowReader::PosixFlowReader(FlowManager::ptr manager, uuids::uuid const& flowId)
+        : FlowReader{flowId}
+        , _manager{manager}
+        , _flowData{}
         , _accessFileFd{-1}
     {}
 
-    PosixFlowReader::~PosixFlowReader()
+    bool PosixFlowReader::open()
     {
-        PosixFlowReader::close();
-    }
-
-    bool PosixFlowReader::open(uuids::uuid const& in_id)
-    {
-        _flowData = _manager->openFlow(in_id, AccessMode::READ_ONLY);
+        auto const& flowId = getId();
+        _flowData = _manager->openFlow(flowId, AccessMode::READ_ONLY);
         if (_flowData)
         {
-            _flowId = in_id;
-
-            auto const accessFile = makeFlowAccessFilePath(_manager->getDomain(), to_string(in_id));
+            auto const accessFile = makeFlowAccessFilePath(_manager->getDomain(), to_string(flowId));
             _accessFileFd = ::open(accessFile.string().c_str(), O_RDWR);
 
             // Opening the access file may fail if the domain is in a read only volume.
@@ -61,32 +54,14 @@ namespace mxl::lib
 
             return true;
         }
-        else
-        {
-            return false;
-        }
-    }
-
-    void PosixFlowReader::close()
-    {
-        if (_flowData)
-        {
-            std::unique_lock lk(_grainMutex);
-            _manager->closeFlow(_flowData);
-            _flowData.reset();
-            _flowId = uuids::uuid(); // reset to nil
-            if (_accessFileFd != -1)
-            {
-                ::close(_accessFileFd);
-            }
-        }
+        return false;
     }
 
     FlowInfo PosixFlowReader::getFlowInfo()
     {
         if (_flowData)
         {
-            FlowInfo info = _flowData->flow->get()->info;
+            FlowInfo info = _flowData->flow.get()->info;
             return info;
         }
         else
@@ -101,7 +76,7 @@ namespace mxl::lib
 
         if (_flowData)
         {
-            auto const flow = _flowData->flow->get();
+            auto const flow = _flowData->flow.get();
             if (auto const headIndex = flow->info.headIndex; in_index <= headIndex)
             {
                 auto const grainCount = flow->info.grainCount;
@@ -112,7 +87,7 @@ namespace mxl::lib
                 if (in_index >= minIndex)
                 {
                     auto const offset = in_index % flow->info.grainCount;
-                    auto const grain = _flowData->grains.at(offset)->get();
+                    auto const grain = _flowData->grains.at(offset).get();
                     *out_grainInfo = grain->header.info;
                     *out_payload = reinterpret_cast<std::uint8_t*>(&grain->header + 1);
 
@@ -131,7 +106,7 @@ namespace mxl::lib
                 if (waitUntilChanged(&flow->info.syncCounter, flow->info.syncCounter, Duration(in_timeoutNs)))
                 {
                     auto const offset = in_index % flow->info.grainCount;
-                    auto const grain = _flowData->grains[offset]->get();
+                    auto const grain = _flowData->grains[offset].get();
                     *out_grainInfo = grain->header.info;
                     *out_payload = reinterpret_cast<std::uint8_t*>(&grain->header + 1);
 
@@ -159,7 +134,7 @@ namespace mxl::lib
     {
         if (_flowData)
         {
-            auto const flow = _flowData->flow->get();
+            auto const flow = _flowData->flow.get();
             if (auto const headIndex = flow->info.headIndex; in_index <= headIndex)
             {
                 auto const grainCount = flow->info.grainCount;
@@ -169,7 +144,7 @@ namespace mxl::lib
                 if (in_index >= minIndex)
                 {
                     auto const offset = in_index % grainCount;
-                    auto const grain = _flowData->grains[offset]->get();
+                    auto const grain = _flowData->grains[offset].get();
                     *out_grainInfo = grain->header.info;
                     *out_payload = reinterpret_cast<std::uint8_t*>(&grain->header + 1);
 

@@ -31,13 +31,12 @@ TEST_CASE("Flow Manager", "[flow manager]")
 
     auto manager = std::make_shared<FlowManager>(domain);
 
-    FlowData::ptr flowData;
-    Rational grainRate{60000, 1001};
+    auto const grainRate = Rational{60000, 1001};
 
-    flowData = manager->createFlow(flowId, flowDef, 5, grainRate, 1024);
+    auto flowData = manager->createFlow(flowId, flowDef, 5, grainRate, 1024);
 
     REQUIRE(flowData != nullptr);
-    REQUIRE(flowData->flow != nullptr);
+    REQUIRE(flowData->flow.isValid());
     REQUIRE(flowData->grains.size() == 5);
 
     auto const flowDirectory = makeFlowDirectoryName(domain, uuids::to_string(flowId));
@@ -88,12 +87,12 @@ TEST_CASE("Flow Manager", "[flow manager]")
     REQUIRE(manager->listFlows().size() == 1);
 
     // Close the flow.  it should not be available for a get operation after being closed.
-    manager->closeFlow(flowData);
+    flowData.reset();
 
     REQUIRE(manager->listFlows().size() == 1);
 
     // Delete the flow.
-    manager->deleteFlow(flowId, flowData);
+    manager->deleteFlow(flowId);
 
     REQUIRE(manager->listFlows().size() == 0);
 

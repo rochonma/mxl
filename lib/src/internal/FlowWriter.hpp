@@ -7,22 +7,22 @@
 
 namespace mxl::lib
 {
-
     class FlowWriter
     {
     public:
-        virtual bool open(uuids::uuid const& in_id) = 0;
-
-        virtual void close() = 0;
+        ///
+        /// Opens all the required shared memory structures associated with this flow.
+        ///
+        /// \param in_id The flow id.  Must be valid and refer to an existing flow.
+        /// \return true on success
+        ///
+        virtual bool open() = 0;
 
         ///
         /// Accessor for the flow id;
         /// \return The flow id
         ///
-        uuids::uuid getId() const
-        {
-            return _flowId;
-        }
+        uuids::uuid const& getId() const;
 
         ///
         /// Accessor for the current FlowInfo. A copy of the current structure is returned.
@@ -37,14 +37,17 @@ namespace mxl::lib
 
         virtual mxlStatus commit(GrainInfo const* in_grainInfo) = 0;
 
-        virtual ~FlowWriter() = default;
-
         /// Invoked when a flow is read. The writer will
         /// update the 'lastReadTime' field
         virtual void flowRead() = 0;
 
+        virtual ~FlowWriter();
+
     protected:
+        explicit FlowWriter(uuids::uuid&& flowId);
+        explicit FlowWriter(uuids::uuid const& flowId);
+
+    private:
         uuids::uuid _flowId;
     };
-
-} // namespace mxl::lib
+}

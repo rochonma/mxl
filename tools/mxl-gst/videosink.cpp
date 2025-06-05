@@ -257,7 +257,7 @@ int real_main(int argc, char** argv)
 
     // Extract the FlowInfo structure.
     FlowInfo flow_info;
-    ret = mxlFlowReaderGetInfo(instance, reader, &flow_info);
+    ret = mxlFlowReaderGetInfo(reader, &flow_info);
     if (ret != MXL_STATUS_OK)
     {
         MXL_ERROR("Failed to get flow info with status '{}'", static_cast<int>(ret));
@@ -275,7 +275,7 @@ int real_main(int argc, char** argv)
     {
         GrainInfo grain_info;
         uint8_t* payload;
-        auto ret = mxlFlowReaderGetGrain(instance, reader, grain_index, editUnitDurationNs, &grain_info, &payload);
+        auto ret = mxlFlowReaderGetGrain(reader, grain_index, editUnitDurationNs, &grain_info, &payload);
         if (ret != MXL_STATUS_OK)
         {
             // Missed a grain. resync.
@@ -310,7 +310,7 @@ mxl_cleanup:
     if (instance != nullptr)
     {
         // clean-up mxl objects
-        mxlDestroyFlowReader(instance, reader);
+        mxlReleaseFlowReader(instance, reader);
         mxlDestroyInstance(instance);
     }
 

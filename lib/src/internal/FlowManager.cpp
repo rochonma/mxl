@@ -16,7 +16,7 @@
 #include "Flow.hpp"
 #include "Logging.hpp"
 #include "PathUtils.hpp"
-#include "SharedMem.hpp"
+#include "SharedMemory.hpp"
 
 namespace mxl::lib
 {
@@ -66,7 +66,7 @@ namespace mxl::lib
         }
     }
 
-    FlowData::ptr FlowManager::createFlow(uuids::uuid const& flowId, std::string const& flowDef, std::size_t grainCount, Rational const& grainRate,
+    std::unique_ptr<FlowData> FlowManager::createFlow(uuids::uuid const& flowId, std::string const& flowDef, std::size_t grainCount, Rational const& grainRate,
         std::size_t grainPayloadSize)
     {
         auto const uuidString = uuids::to_string(flowId);
@@ -95,15 +95,10 @@ namespace mxl::lib
                     "Failed to create flow access file.", readAccessFile, std::make_error_code(std::errc::file_exists));
             }
 
-            auto flowData = std::make_shared<FlowData>();
-            flowData->flow = std::make_shared<SharedMem<Flow>>();
+            auto flowData = std::make_unique<FlowData>();
+            flowData->flow = SharedMemoryInstance<Flow>{makeFlowDataFilePath(tempDirectory).string().c_str(), AccessMode::CREATE_READ_WRITE, 0U};
 
-            if (auto const flowFile = makeFlowDataFilePath(tempDirectory); !flowData->flow->open(flowFile.native(), true, AccessMode::READ_WRITE))
-            {
-                throw std::runtime_error("Failed to create flow shared memory.");
-            }
-
-            auto& info = flowData->flow->get()->info;
+            auto& info = flowData->flow.get()->info;
             info.version = 1;
             info.size = sizeof info;
 
@@ -119,27 +114,21 @@ namespace mxl::lib
             auto const grainDir = makeGrainDirectoryName(tempDirectory);
             create_directory(grainDir);
 
+            flowData->grains.reserve(grainCount);
             for (auto i = std::size_t{0}; i < grainCount; ++i)
             {
-                auto const grain = std::make_shared<SharedMem<Grain>>();
-                auto const grainPath = makeGrainDataFilePath(grainDir, i);
-
-                MXL_TRACE("Creating grain: {}", grainPath.string());
-
                 // \todo Handle payload stored device memory
                 auto const totalSize = std::size_t{MXL_GRAIN_PAYLOAD_OFFSET + grainPayloadSize};
-                if (!grain->open(grainPath.string(), true, AccessMode::READ_WRITE, totalSize))
-                {
-                    throw std::runtime_error("Failed to create grain shared memory.");
-                }
 
-                auto& gInfo = grain->get()->header.info;
+                auto const grainPath = makeGrainDataFilePath(grainDir, i);
+                MXL_TRACE("Creating grain: {}", grainPath.string());
+
+                auto& grain = flowData->grains.emplace_back(grainPath.string().c_str(), AccessMode::CREATE_READ_WRITE, totalSize);
+                auto& gInfo = grain.get()->header.info;
                 gInfo.grainSize = grainPayloadSize;
                 gInfo.version = 1;
                 gInfo.size = sizeof gInfo;
                 gInfo.deviceIndex = -1;
-
-                flowData->grains.push_back(grain);
             }
 
             publishFlowDirectory(tempDirectory, makeFlowDirectoryName(_mxlDomain, uuidString));
@@ -154,10 +143,14 @@ namespace mxl::lib
         }
     }
 
-    FlowData::ptr FlowManager::openFlow(uuids::uuid const& in_flowId, AccessMode in_mode)
+    std::unique_ptr<FlowData> FlowManager::openFlow(uuids::uuid const& in_flowId, AccessMode in_mode)
     {
-        auto uuid = uuids::to_string(in_flowId);
+        if (in_mode == AccessMode::CREATE_READ_WRITE)
+        {
+            throw std::invalid_argument("Attempt to open flow with invalid access mode.");
+        }
 
+        auto uuid = uuids::to_string(in_flowId);
         auto const base = makeFlowDirectoryName(_mxlDomain, uuid);
 
         // Verify that the flow file exists.
@@ -168,63 +161,54 @@ namespace mxl::lib
         }
 
         // Open the shared memory
-        auto flowData = std::make_shared<FlowData>();
-        flowData->flow = std::make_shared<SharedMem<Flow>>();
-        if (!flowData->flow->open(flowFile.string(), false, in_mode))
-        {
-            throw std::runtime_error("Failed to open flow shared memory.");
-        }
+        auto flowData = std::make_unique<FlowData>();
+        flowData->flow = SharedMemoryInstance<Flow>{flowFile.string().c_str(), in_mode, 0U};
 
-        auto const grainCount = flowData->flow->get()->info.grainCount;
-        auto const grainDir = makeGrainDirectoryName(base);
-        if (exists(grainDir) && is_directory(grainDir))
+        auto const grainCount = flowData->flow.get()->info.grainCount;
+        if (grainCount > 0U)
         {
-            // Open each grain
-            for (auto i = 0U; i < grainCount; ++i)
+            auto const grainDir = makeGrainDirectoryName(base);
+            if (exists(grainDir) && is_directory(grainDir))
             {
-                auto grain = std::make_shared<SharedMem<Grain>>();
-                auto const grainPath = makeGrainDataFilePath(grainDir, i);
-
-                MXL_TRACE("Opening grain: {}", grainPath.string());
-                if (!grain->open(grainPath.string(), false, in_mode))
+                // Open each grain
+                flowData->grains.reserve(grainCount);
+                for (auto i = 0U; i < grainCount; ++i)
                 {
-                    throw std::runtime_error("Failed to open grain shared memory.");
+                    auto const grainPath = makeGrainDataFilePath(grainDir, i).string();
+                    MXL_TRACE("Opening grain: {}", grainPath);
+                    flowData->grains.emplace_back(grainPath.c_str(), in_mode, 0U);
                 }
-                flowData->grains.push_back(grain);
             }
-        }
-        else
-        {
-            throw std::filesystem::filesystem_error(
-                "Grain directory not found.", grainDir, std::make_error_code(std::errc::no_such_file_or_directory));
+            else
+            {
+                throw std::filesystem::filesystem_error(
+                    "Grain directory not found.", grainDir, std::make_error_code(std::errc::no_such_file_or_directory));
+            }
         }
 
         return flowData;
     }
 
-    void FlowManager::closeFlow(FlowData::ptr in_flowData)
+    bool FlowManager::deleteFlow(std::unique_ptr<FlowData>&& flowData)
     {
-        // Explicitly close all resources.
-        in_flowData->flow->close();
-        for (auto grain : in_flowData->grains)
+        if (flowData && flowData->flow)
         {
-            grain->close();
-        }
+            // Extract the ID
+            auto const span = uuids::span<std::uint8_t, sizeof flowData->flow.get()->info.id>{const_cast<std::uint8_t*>(flowData->flow.get()->info.id), sizeof flowData->flow.get()->info.id};
+            auto const id = uuids::uuid(span);
 
-        in_flowData->flow.reset();
-        in_flowData->grains.clear();
+            // Close the flow
+            flowData.reset();
+
+            return deleteFlow(id);
+        }
+        return false;
     }
 
-    bool FlowManager::deleteFlow(uuids::uuid const& in_flowId, FlowData::ptr in_flowData)
+    bool FlowManager::deleteFlow(uuids::uuid const& flowId)
     {
-        auto uuid = uuids::to_string(in_flowId);
+        auto uuid = uuids::to_string(flowId);
         MXL_TRACE("Delete flow: {}", uuid);
-
-        // First. close the flow if opened.
-        if (in_flowData && in_flowData->flow)
-        {
-            closeFlow(in_flowData);
-        }
 
         auto const base = std::filesystem::path{_mxlDomain};
         return (remove_all(makeFlowDirectoryName(base, uuid)) != 0);
