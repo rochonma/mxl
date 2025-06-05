@@ -8,13 +8,8 @@
 
 namespace mxl::lib
 {
-
     class FlowReader
     {
-    protected:
-        std::string _options;
-        uuids::uuid _flowId;
-
     public:
         ///
         /// Opens all the required shared memory structures associated with this flow.
@@ -28,10 +23,7 @@ namespace mxl::lib
         /// Accessor for the flow id;
         /// \return The flow id
         ///
-        uuids::uuid getId() const
-        {
-            return _flowId;
-        }
+        uuids::uuid getId() const;
 
         ///
         /// Accessor for the current FlowInfo. A copy of the current structure is returned.
@@ -70,7 +62,26 @@ namespace mxl::lib
         ///
         /// Dtor.
         ///
-        virtual ~FlowReader() = default;
+        virtual ~FlowReader();
+
+    protected:
+        FlowReader();
+        explicit FlowReader(uuids::uuid&& flowId);
+        explicit FlowReader(uuids::uuid const& flowId);
+        FlowReader(uuids::uuid&& flowId, std::string&& options);
+        FlowReader(uuids::uuid&& flowId, std::string const& options);
+        FlowReader(uuids::uuid const& flowId, std::string&& options);
+        FlowReader(uuids::uuid const& flowId, std::string const& options);
+
+        void setFlowId(uuids::uuid&& id);
+        void setFlowId(uuids::uuid const& id);
+
+        void setOptions(std::string&& options);
+        void setOptions(std::string const& options);
+
+    private:
+        uuids::uuid _flowId;
+        std::string _options;
     };
 
 } // namespace mxl::lib

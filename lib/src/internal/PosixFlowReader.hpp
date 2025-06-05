@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <mutex>
 #include <uuid.h>
 #include <condition_variable>
 #include <mxl/flow.h>
@@ -16,7 +15,8 @@ namespace mxl::lib
     ///
     /// Implementation of a flow reader based on POSIX shared memory.
     ///
-    class PosixFlowReader : public FlowReader
+    class PosixFlowReader final
+        : public FlowReader
     {
     public:
         /// Ctor.
@@ -64,9 +64,7 @@ namespace mxl::lib
     private:
         FlowManager::ptr _manager;
         std::unique_ptr<FlowData> _flowData;
-        int _accessFileFd = 1;
-        std::mutex _grainMutex;
-        std::condition_variable _grainCV;
+        int _accessFileFd;
     };
 
 } // namespace mxl::lib

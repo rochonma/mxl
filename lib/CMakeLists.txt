@@ -32,8 +32,10 @@ target_sources(mxl
             src/time.cpp
             src/internal/DomainWatcher.cpp
             src/internal/Flow.cpp
-            src/internal/FlowParser.cpp
             src/internal/FlowManager.cpp
+            src/internal/FlowParser.cpp
+            src/internal/FlowReader.cpp
+            src/internal/FlowWriter.cpp
             src/internal/Instance.cpp
             src/internal/Logging.cpp
             src/internal/PathUtils.cpp

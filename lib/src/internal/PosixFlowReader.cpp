@@ -32,11 +32,10 @@ namespace mxl::lib
         }
     }
 
-
-    namespace fs = std::filesystem;
-
     PosixFlowReader::PosixFlowReader(FlowManager::ptr in_manager)
-        : _manager{in_manager}
+        : FlowReader{}
+        , _manager{in_manager}
+        , _flowData{}
         , _accessFileFd{-1}
     {}
 
@@ -45,7 +44,7 @@ namespace mxl::lib
         _flowData = _manager->openFlow(in_id, AccessMode::READ_ONLY);
         if (_flowData)
         {
-            _flowId = in_id;
+            setFlowId(in_id);
 
             auto const accessFile = makeFlowAccessFilePath(_manager->getDomain(), to_string(in_id));
             _accessFileFd = ::open(accessFile.string().c_str(), O_RDWR);

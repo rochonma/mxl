@@ -23,8 +23,6 @@
 #include "DomainWatcher.hpp"
 #include "FlowManager.hpp"
 #include "FlowParser.hpp"
-#include "FlowReader.hpp"
-#include "FlowWriter.hpp"
 #include "Logging.hpp"
 #include "PathUtils.hpp"
 #include "PosixFlowReader.hpp"

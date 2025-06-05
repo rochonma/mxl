@@ -13,7 +13,8 @@ namespace mxl::lib
     ///
     /// Implementation of a FlowWriter based on POSIX shared memory mapping.
     ///
-    class PosixFlowWriter : public FlowWriter
+    class PosixFlowWriter
+        : public FlowWriter
     {
     public:
         ///
@@ -39,16 +40,18 @@ namespace mxl::lib
         virtual mxlStatus openGrain(uint64_t in_index, GrainInfo* out_grainInfo, uint8_t** out_payload) override;
 
         ///
+        /// \see FlowWriter::commit
+        ///
+        virtual mxlStatus commit(GrainInfo const* in_grainInfo) override;
+
+        ///
         /// \see FlowWriter::cancel
         ///
         virtual mxlStatus cancel() override;
 
         ///
-        /// \see FlowWriter::commit
-        ///
-        virtual mxlStatus commit(GrainInfo const* in_grainInfo) override;
-
         /// \see FlowWriter
+        ///
         virtual void flowRead() override;
 
     private:
@@ -57,7 +60,6 @@ namespace mxl::lib
         /// The FlowData for the currently opened flow. null if no flow is opened.
         std::unique_ptr<FlowData> _flowData;
         /// The currently opened grain index. MXL_UNDEFINED_INDEX if no grain is currently opened.
-        uint64_t _currentIndex;
+        std::uint64_t _currentIndex;
     };
-
-} // namespace mxl::lib
+}
