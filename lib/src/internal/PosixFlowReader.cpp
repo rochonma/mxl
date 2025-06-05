@@ -32,21 +32,20 @@ namespace mxl::lib
         }
     }
 
-    PosixFlowReader::PosixFlowReader(FlowManager::ptr in_manager)
-        : FlowReader{}
-        , _manager{in_manager}
+    PosixFlowReader::PosixFlowReader(FlowManager::ptr manager, uuids::uuid const& flowId)
+        : FlowReader{flowId}
+        , _manager{manager}
         , _flowData{}
         , _accessFileFd{-1}
     {}
 
-    bool PosixFlowReader::open(uuids::uuid const& in_id)
+    bool PosixFlowReader::open()
     {
-        _flowData = _manager->openFlow(in_id, AccessMode::READ_ONLY);
+        auto const& flowId = getId();
+        _flowData = _manager->openFlow(flowId, AccessMode::READ_ONLY);
         if (_flowData)
         {
-            setFlowId(in_id);
-
-            auto const accessFile = makeFlowAccessFilePath(_manager->getDomain(), to_string(in_id));
+            auto const accessFile = makeFlowAccessFilePath(_manager->getDomain(), to_string(flowId));
             _accessFileFd = ::open(accessFile.string().c_str(), O_RDWR);
 
             // Opening the access file may fail if the domain is in a read only volume.
@@ -55,10 +54,7 @@ namespace mxl::lib
 
             return true;
         }
-        else
-        {
-            return false;
-        }
+        return false;
     }
 
     FlowInfo PosixFlowReader::getFlowInfo()

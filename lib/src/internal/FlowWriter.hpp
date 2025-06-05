@@ -16,13 +16,13 @@ namespace mxl::lib
         /// \param in_id The flow id.  Must be valid and refer to an existing flow.
         /// \return true on success
         ///
-        virtual bool open(uuids::uuid const& in_id) = 0;
+        virtual bool open() = 0;
 
         ///
         /// Accessor for the flow id;
         /// \return The flow id
         ///
-        uuids::uuid getId() const;
+        uuids::uuid const& getId() const;
 
         ///
         /// Accessor for the current FlowInfo. A copy of the current structure is returned.
@@ -44,12 +44,8 @@ namespace mxl::lib
         virtual ~FlowWriter();
 
     protected:
-        FlowWriter();
         explicit FlowWriter(uuids::uuid&& flowId);
         explicit FlowWriter(uuids::uuid const& flowId);
-
-        void setFlowId(uuids::uuid&& id);
-        void setFlowId(uuids::uuid const& id);
 
     private:
         uuids::uuid _flowId;

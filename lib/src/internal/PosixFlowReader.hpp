@@ -20,12 +20,12 @@ namespace mxl::lib
     {
     public:
         /// Ctor.
-        PosixFlowReader(FlowManager::ptr in_manager);
+        PosixFlowReader(FlowManager::ptr manager, uuids::uuid const& flowId);
 
         ///
         /// \see FlowReader::open
         ///
-        virtual bool open(uuids::uuid const& in_id) override;
+        virtual bool open() override;
 
         ///
         /// Accessor for the current FlowInfo. A copy of the current structure is returned.

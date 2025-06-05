@@ -14,16 +14,15 @@ namespace mxl::lib
         ///
         /// Opens all the required shared memory structures associated with this flow.
         ///
-        /// \param in_id The flow id.  Must be valid and refer to an existing flow.
         /// \return true on success
         ///
-        virtual bool open(uuids::uuid const& in_id) = 0;
+        virtual bool open() = 0;
 
         ///
         /// Accessor for the flow id;
         /// \return The flow id
         ///
-        uuids::uuid getId() const;
+        uuids::uuid const& getId() const;
 
         ///
         /// Accessor for the current FlowInfo. A copy of the current structure is returned.
@@ -65,19 +64,12 @@ namespace mxl::lib
         virtual ~FlowReader();
 
     protected:
-        FlowReader();
         explicit FlowReader(uuids::uuid&& flowId);
         explicit FlowReader(uuids::uuid const& flowId);
         FlowReader(uuids::uuid&& flowId, std::string&& options);
         FlowReader(uuids::uuid&& flowId, std::string const& options);
         FlowReader(uuids::uuid const& flowId, std::string&& options);
         FlowReader(uuids::uuid const& flowId, std::string const& options);
-
-        void setFlowId(uuids::uuid&& id);
-        void setFlowId(uuids::uuid const& id);
-
-        void setOptions(std::string&& options);
-        void setOptions(std::string const& options);
 
     private:
         uuids::uuid _flowId;

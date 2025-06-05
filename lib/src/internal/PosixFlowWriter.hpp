@@ -22,12 +22,12 @@ namespace mxl::lib
         ///
         /// \param in_manager The flow manager
         ///
-        PosixFlowWriter(FlowManager::ptr in_manager);
+        PosixFlowWriter(FlowManager::ptr manager, uuids::uuid const& flowId);
 
         ///
         /// \see FlowWriter::open
         ///
-        virtual bool open(uuids::uuid const& in_id) override;
+        virtual bool open() override;
 
         ///
         /// \see FlowWriter::getFlowInfo
@@ -37,7 +37,7 @@ namespace mxl::lib
         ///
         /// \see FlowWriter::openGrain
         ///
-        virtual mxlStatus openGrain(uint64_t in_index, GrainInfo* out_grainInfo, uint8_t** out_payload) override;
+        virtual mxlStatus openGrain(std::uint64_t in_index, GrainInfo* out_grainInfo, std::uint8_t** out_payload) override;
 
         ///
         /// \see FlowWriter::commit

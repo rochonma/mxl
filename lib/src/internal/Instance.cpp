@@ -103,8 +103,8 @@ namespace mxl::lib
         }
         else
         {
-            auto reader = std::make_unique<PosixFlowReader>(_flowManager);
-            if (reader->open(*id))
+            auto reader = std::make_unique<PosixFlowReader>(_flowManager, *id);
+            if (reader->open())
             {
                 // FIXME: This leaks if the map insertion throws an exception.
                 //     Delegate the watch handling to the reader itself by
@@ -148,8 +148,8 @@ namespace mxl::lib
         }
         else
         {
-            auto writer = std::make_unique<PosixFlowWriter>(_flowManager);
-            if (writer->open(*id))
+            auto writer = std::make_unique<PosixFlowWriter>(_flowManager, *id);
+            if (writer->open())
             {
                 // FIXME: This leaks if the map insertion throws an exception.
                 //     Delegate the watch handling to the writer itself by

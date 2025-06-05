@@ -15,20 +15,18 @@
 
 namespace mxl::lib
 {
-    PosixFlowWriter::PosixFlowWriter(FlowManager::ptr in_manager)
-        : _manager{in_manager}
+    PosixFlowWriter::PosixFlowWriter(FlowManager::ptr manager, uuids::uuid const& flowId)
+        : FlowWriter{flowId}
+        , _manager{manager}
+        , _flowData{}
         , _currentIndex{MXL_UNDEFINED_INDEX}
     {}
 
-    bool PosixFlowWriter::open(uuids::uuid const& in_id)
+    bool PosixFlowWriter::open()
     {
-        _flowData = _manager->openFlow(in_id, AccessMode::READ_WRITE);
-        if (_flowData)
-        {
-            setFlowId(in_id);
-            return true;
-        }
-        return false;
+        auto const& flowId = getId();
+        _flowData = _manager->openFlow(flowId, AccessMode::READ_WRITE);
+        return (_flowData != nullptr);
     }
 
     FlowInfo PosixFlowWriter::getFlowInfo()
