@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <unistd.h>
 #include <uuid.h>
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
