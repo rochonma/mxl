@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
 #include <uuid.h>
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
@@ -66,14 +65,9 @@ namespace mxl::lib
     protected:
         explicit FlowReader(uuids::uuid&& flowId);
         explicit FlowReader(uuids::uuid const& flowId);
-        FlowReader(uuids::uuid&& flowId, std::string&& options);
-        FlowReader(uuids::uuid&& flowId, std::string const& options);
-        FlowReader(uuids::uuid const& flowId, std::string&& options);
-        FlowReader(uuids::uuid const& flowId, std::string const& options);
 
     private:
         uuids::uuid _flowId;
-        std::string _options;
     };
 
 } // namespace mxl::lib

@@ -5,32 +5,10 @@ namespace mxl::lib
 {
     FlowReader::FlowReader(uuids::uuid&& flowId)
         : _flowId{std::move(flowId)}
-        , _options{}
     {}
 
     FlowReader::FlowReader(uuids::uuid const& flowId)
         : _flowId{flowId}
-        , _options{}
-    {}
-
-    FlowReader::FlowReader(uuids::uuid&& flowId, std::string&& options)
-        : _flowId{std::move(flowId)}
-        , _options{std::move(options)}
-    {}
-
-    FlowReader::FlowReader(uuids::uuid&& flowId, std::string const& options)
-        : _flowId{std::move(flowId)}
-        , _options{options}
-    {}
-
-    FlowReader::FlowReader(uuids::uuid const& flowId, std::string&& options)
-        : _flowId{flowId}
-        , _options{std::move(options)}
-    {}
-
-    FlowReader::FlowReader(uuids::uuid const& flowId, std::string const& options)
-        : _flowId{flowId}
-        , _options{options}
     {}
 
     FlowReader::FlowReader::~FlowReader() = default;
