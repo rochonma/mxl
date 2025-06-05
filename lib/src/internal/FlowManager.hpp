@@ -6,21 +6,10 @@
 #include <string>
 #include <vector>
 #include <uuid.h>
-#include "Flow.hpp"
-#include "SharedMemory.hpp"
+#include "DiscreteFlowData.hpp"
 
 namespace mxl::lib
 {
-
-    ///
-    /// Simple structure holding Flows and Grains shared memory resources.
-    ///
-    struct FlowData
-    {
-        SharedMemoryInstance<Flow> flow;
-        std::vector<SharedMemoryInstance<Grain>> grains;
-    };
-
     ///
     /// Performs Flow CRUD operations as well as garbage collection of stale flows.
     ///
@@ -50,8 +39,6 @@ namespace mxl::lib
     class FlowManager
     {
     public:
-        typedef std::shared_ptr<FlowManager> ptr;
-
         ///
         /// Creates a FlowManager.  Ideally there should only be on instance of the manager per instance of the SDK.
         ///
@@ -68,14 +55,15 @@ namespace mxl::lib
         ///
         /// Create a new Flow and associated grains. Opens it in read-write mode
         ///
-        /// \param in_flowId The id of the flow.
-        /// \param in_flowDef The json definition of the flow (NMOS Resource format).  The flow is not parsed or validated. It is written as is.
-        /// \param in_grainCount How many individual grains to create
-        /// \param in_grainRate The grain rate.
-        /// \param in_grainPayloadSize Size of the grain in host memory.  0 if the grain payload lives in device memory.
+        /// \param[in] flowId The id of the flow.
+        /// \param[in] flowDef The json definition of the flow (NMOS Resource format). The flow is not parsed or validated. It is written as is.
+        /// \param[in] flowFormat The flow data format.
+        /// \param[in] grainCount How many individual grains to create.
+        /// \param[in] grainRate The grain rate.
+        /// \param[in] grainPayloadSize Size of the grain in host memory.  0 if the grain payload lives in device memory.
         ///
-        std::unique_ptr<FlowData> createFlow(uuids::uuid const& in_flowId, std::string const& in_flowDef, size_t grainCount, Rational const& in_grainRate,
-            size_t grainPayloadSize);
+        std::unique_ptr<DiscreteFlowData> createFlow(uuids::uuid const& flowId, std::string const& flowDef, mxlDataFormat flowFormat, std::size_t grainCount, Rational const& grainRate,
+            std::size_t grainPayloadSize);
 
         ///
         /// Open an existing flow by id.
@@ -83,7 +71,7 @@ namespace mxl::lib
         /// \param in_flowId The flow to open
         /// \param in_mode The flow access mode
         ///
-        std::unique_ptr<FlowData> openFlow(uuids::uuid const& in_flowId, AccessMode in_mode);
+        std::unique_ptr<DiscreteFlowData> openFlow(uuids::uuid const& in_flowId, AccessMode in_mode);
 
         ///
         /// Delete all resources associated to a flow
@@ -112,13 +100,9 @@ namespace mxl::lib
         ///
         /// Accessor for the mxl domain (base path where shared memory will be stored)
         /// \return The base path
-        std::filesystem::path const& getDomain() const
-        {
-            return _mxlDomain;
-        }
+        std::filesystem::path const& getDomain() const;
 
     private:
         std::filesystem::path _mxlDomain;
     };
-
 } // namespace mxl::lib
