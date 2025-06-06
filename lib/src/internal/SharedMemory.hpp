@@ -15,24 +15,6 @@ namespace mxl::lib
     class SharedMemoryBase
     {
     public:
-        constexpr SharedMemoryBase() noexcept;
-        constexpr SharedMemoryBase(SharedMemoryBase&& other) noexcept;
-        SharedMemoryBase(SharedMemoryBase const& other) = delete;
-
-        /**
-         * Create a shared memory mapping with the specified payload size, or
-         * alterntively open it for reading and writing
-         *
-         * \param path The memory mapping path
-         * \param mode The memory mapping access mode
-         * \param payloadSize The minimum expected size of the shared memory
-         * \throw If opening or creating the shared memory segment fails.
-         */
-        SharedMemoryBase(char const* path, AccessMode mode, std::size_t payloadSize);
-
-        /** Destructor. */
-        ~SharedMemoryBase();
-
         /**
          * Return whether or not this instance currently represents a valid
          * mapping.
@@ -67,6 +49,25 @@ namespace mxl::lib
         void touch();
 
         constexpr void swap(SharedMemoryBase& other) noexcept;
+
+    protected:
+        constexpr SharedMemoryBase() noexcept;
+        constexpr SharedMemoryBase(SharedMemoryBase&& other) noexcept;
+        SharedMemoryBase(SharedMemoryBase const& other) = delete;
+
+        /**
+         * Create a shared memory mapping with the specified payload size, or
+         * alterntively open it for reading and writing
+         *
+         * \param path The memory mapping path
+         * \param mode The memory mapping access mode
+         * \param payloadSize The minimum expected size of the shared memory
+         * \throw If opening or creating the shared memory segment fails.
+         */
+        SharedMemoryBase(char const* path, AccessMode mode, std::size_t payloadSize);
+
+        /** Destructor. */
+        ~SharedMemoryBase();
 
     protected:
         /**
@@ -108,7 +109,10 @@ namespace mxl::lib
     struct SharedMemorySegment
         : SharedMemoryBase
     {
-        using SharedMemoryBase::SharedMemoryBase;
+        constexpr SharedMemorySegment() noexcept;
+        constexpr SharedMemorySegment(SharedMemorySegment&& other) noexcept;
+
+        SharedMemorySegment(char const* path, AccessMode mode, std::size_t payloadSize);
 
         using SharedMemoryBase::data;
         using SharedMemoryBase::cdata;
@@ -242,6 +246,17 @@ namespace mxl::lib
         return _data;
     }
 
+    constexpr SharedMemorySegment::SharedMemorySegment() noexcept
+        : SharedMemoryBase{}
+    {}
+
+    constexpr SharedMemorySegment::SharedMemorySegment(SharedMemorySegment&& other) noexcept
+        : SharedMemoryBase{std::move(other)}
+    {}
+
+    inline SharedMemorySegment::SharedMemorySegment(char const* path, AccessMode mode, std::size_t payloadSize)
+        : SharedMemoryBase{path, mode, payloadSize}
+    {}
 
     inline SharedMemorySegment& SharedMemorySegment::operator=(SharedMemorySegment other) noexcept
     {
