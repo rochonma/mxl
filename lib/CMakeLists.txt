@@ -41,6 +41,8 @@ target_sources(mxl
             src/internal/Instance.cpp
             src/internal/Logging.cpp
             src/internal/PathUtils.cpp
+            src/internal/PosixContinuousFlowReader.cpp
+            src/internal/PosixContinuousFlowWriter.cpp
             src/internal/PosixDiscreteFlowReader.cpp
             src/internal/PosixDiscreteFlowWriter.cpp
             src/internal/PosixFlowIoFactory.cpp

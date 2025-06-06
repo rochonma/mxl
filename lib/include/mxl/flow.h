@@ -1,8 +1,10 @@
 #pragma once
 
 #ifdef __cplusplus
+#   include <cstddef>
 #   include <cstdint>
 #else
+#   include <stddef.h>
 #   include <stdint.h>
 #endif
 
@@ -30,6 +32,91 @@ extern "C"
         PAYLOAD_LOCATION_HOST_MEMORY = 0,
         PAYLOAD_LOCATION_DEVICE_MEMORY = 1,
     } PayloadLocation;
+
+    /**
+     * A helper type used to describe consecutive sequences of bytes in memory.
+     */
+    typedef struct BufferSlice
+    {
+        /** A pointer referring to the beginning of the slice. */
+        void const* pointer;
+        /** The number of bytes that make up this slice. */
+        size_t size;
+    } BufferSlice;
+
+    /**
+     * A helper type used to describe consecutive sequences of mutable bytes in
+     * memory.
+     */
+    typedef struct MutableBufferSlice
+    {
+        /** A pointer referring to the beginning of the slice. */
+        void* pointer;
+        /** The number of bytes that make up this slice. */
+        size_t size;
+    } MutableBufferSlice;
+
+    /**
+     * A helper type used to describe consecutive sequences of bytes
+     * in a ring buffer that may potentially straddle the wrapraround
+     * point of the buffer.
+     */
+    typedef struct WrappedBufferSlice
+    {
+        BufferSlice fragments[2];
+    } WrappedBufferSlice;
+
+    /**
+     * A helper type used to describe consecutive sequences of mutable bytes in
+     * a ring buffer that may potentially straddle the wrapraround point of the
+     * buffer.
+     */
+    typedef struct MutableWrappedBufferSlice
+    {
+        MutableBufferSlice fragments[2];
+    } MutableWrappedBufferSlice;
+
+    /**
+     * A helper type used to describe consecutive sequences of bytes
+     * in memory in consecutive ring buffers separated by the specified
+     * stride of bytes.
+     */
+    typedef struct WrappedMultiBufferSlice
+    {
+        WrappedBufferSlice base;
+
+        /**
+         * The stride in bytes to get from a position in one buffer
+         * to the same position in the following buffer.
+         */
+        size_t stride;
+        /**
+         * The number of buffers following the base buffer.
+         */
+        size_t count;
+    } WrappedMultiBufferSlice;
+
+    /**
+     * A helper type used to describe consecutive sequences of mutable bytes in
+     * memory in consecutive ring buffers separated by the specified stride of
+     * bytes.
+     */
+    typedef struct MutableWrappedMultiBufferSlice
+    {
+        MutableWrappedBufferSlice base;
+
+        /**
+         * The stride in bytes to get from a position in one buffer
+         * to the same position in the following buffer.
+         */
+        size_t stride;
+        /**
+         * The number of buffers following the base buffer.
+         */
+        size_t count;
+    } MutableWrappedMultiBufferSlice;
+
+
 
     typedef struct GrainInfo
     {
@@ -164,6 +251,57 @@ MXL_EXPORT
 MXL_EXPORT
     mxlStatus mxlFlowWriterCommitGrain(mxlFlowWriter writer, GrainInfo const* grain);
 
+
+    /**
+     * Accessor for a specific set of samples across all channels starting at a
+     * specific index.
+     *
+     * \param[in] index The head index of the samples to obtain.
+     * \param[in] count The number of samples to obtain.
+     * \param[out] payloadBuffersSlices A pointer to a wrapped multi buffer
+     *      slice that represents the requested range across all channel
+     *      buffers.
+     *
+     * \return A status code describing the outcome of the call.
+     * \note No guarantees are made as to how long the caller may
+     *      safely hang on to the returned range of samples without the
+     *      risk of these samples being overwritten.
+     */
+    MXL_EXPORT
+    mxlStatus mxlFlowReaderGetSamples(mxlFlowReader reader, uint64_t index, size_t count, WrappedMultiBufferSlice* payloadBuffersSlices);
+
+    /**
+     * Open a specific set of mutable samples across all channels starting at a
+     * specific index for mutation.
+     *
+     * \param[in] index The head index of the samples that will be mutated.
+     * \param[in] count The number of samples in each channel that will be
+     *      mutated.
+     * \param[out] payloadBuffersSlices A pointer to a mutable wrapped multi
+     *      buffer slice that represents the requested range across all channel
+     *      buffers.
+     *
+     * \return A status code describing the outcome of the call.
+     */
+    MXL_EXPORT
+    mxlStatus mxlFlowWriterOpenSamples(mxlFlowWriter writer, uint64_t index, size_t count, MutableWrappedMultiBufferSlice* payloadBuffersSlices);
+
+    /**
+     * Cancel the mutation of the previously opened range of samples.
+     * \param[in] writer A valid flow writer
+     * \return The result code. \see mxlStatus
+     */
+    MXL_EXPORT
+    mxlStatus mxlFlowWriterCancelSamples(mxlFlowWriter writer);
+
+    /**
+     * Inform mxl that a user is done writing the sample range that was previously opened.
+     *
+     * \param[in] writer A valid flow writer
+     * \return The result code. \see mxlStatus
+     */
+    MXL_EXPORT
+    mxlStatus mxlFlowWriterCommitSamples(mxlFlowWriter writer);
 #ifdef __cplusplus
 }
 #endif

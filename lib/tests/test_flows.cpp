@@ -355,6 +355,9 @@ TEST_CASE("Audio Flow : Create/Destroy", "[mxl flows]")
     remove_all(domain);
 
     create_directories(domain);
+    auto instanceReader = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instanceReader != nullptr);
+
     auto instanceWriter = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instanceWriter != nullptr);
 
@@ -368,10 +371,93 @@ TEST_CASE("Audio Flow : Create/Destroy", "[mxl flows]")
         REQUIRE(flowInfo.continuous.bufferLength > 128U);
     }
 
+    mxlFlowReader reader;
+    REQUIRE(mxlCreateFlowReader(instanceReader, flowId, "", &reader) == MXL_STATUS_OK);
+
+    mxlFlowWriter writer;
+    REQUIRE(mxlCreateFlowWriter(instanceWriter, flowId, "", &writer) == MXL_STATUS_OK);
+
+    /// Compute the grain index for the flow rate and current TAI time.
+    auto const rate = Rational{48000, 1};
+    auto const now = mxlGetTime();
+    auto const index = mxlTimestampToHeadIndex(&rate, now);
+    REQUIRE(index != MXL_UNDEFINED_INDEX);
+
+    {
+        /// Open a range of samples for writing
+        MutableWrappedMultiBufferSlice payloadBuffersSlices;
+        REQUIRE(mxlFlowWriterOpenSamples(writer, index, 64U, &payloadBuffersSlices) == MXL_STATUS_OK);
+
+        // Verify that the returned info looks alright
+        REQUIRE(payloadBuffersSlices.count == 1U);
+        REQUIRE((payloadBuffersSlices.base.fragments[0].size + payloadBuffersSlices.base.fragments[1].size) == 256U);
+
+        // Fill some test data
+        for (auto i = 0U; i < payloadBuffersSlices.base.fragments[0].size; ++i)
+        {
+            static_cast<std::uint8_t*>(payloadBuffersSlices.base.fragments[0].pointer)[i] = i;
+        }
+        for (auto i = 0U; i < payloadBuffersSlices.base.fragments[1].size; ++i)
+        {
+            static_cast<std::uint8_t*>(payloadBuffersSlices.base.fragments[0].pointer)[i] = payloadBuffersSlices.base.fragments[0].size + i;
+        }
+
+        /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
+        FlowInfo flowInfo;
+        REQUIRE(mxlFlowReaderGetInfo(reader, &flowInfo) == MXL_STATUS_OK);
+
+        // Verify that the headindex is yet to be modified
+        REQUIRE(flowInfo.continuous.headIndex == 0);
+
+        /// Commit the sample range
+        REQUIRE(mxlFlowWriterCommitSamples(writer) == MXL_STATUS_OK);
+    }
+
+    {
+        /// Open a range of samples for reading
+        WrappedMultiBufferSlice payloadBuffersSlices;
+        REQUIRE(mxlFlowReaderGetSamples(reader, index, 64U, &payloadBuffersSlices) == MXL_STATUS_OK);
+
+        // Verify that the returned info looks alright
+        REQUIRE(payloadBuffersSlices.count == 1U);
+        REQUIRE((payloadBuffersSlices.base.fragments[0].size + payloadBuffersSlices.base.fragments[1].size) == 256U);
+
+        for (auto i = 0U; i < payloadBuffersSlices.base.fragments[0].size; ++i)
+        {
+            REQUIRE(static_cast<std::uint8_t const*>(payloadBuffersSlices.base.fragments[0].pointer)[i] == i);
+        }
+        for (auto i = 0U; i < payloadBuffersSlices.base.fragments[1].size; ++i)
+        {
+            REQUIRE(static_cast<std::uint8_t const*>(payloadBuffersSlices.base.fragments[0].pointer)[i] == payloadBuffersSlices.base.fragments[0].size + i);
+        }
+
+        // Get the updated flow info
+        FlowInfo flowInfo;
+        REQUIRE(mxlFlowReaderGetInfo(reader, &flowInfo) == MXL_STATUS_OK);
+
+        // Confirm that that head has moved.
+        REQUIRE(flowInfo.continuous.headIndex == index);
+    }
+
+    /// Release the reader
+    REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
+
+    {
+        // Use the writer after closing the reader.
+        MutableWrappedMultiBufferSlice payloadBuffersSlices;
+        REQUIRE(mxlFlowWriterOpenSamples(writer, index + 64U, 64U, &payloadBuffersSlices) == MXL_STATUS_OK);
+
+        // Verify that the returned info looks alright
+        REQUIRE(payloadBuffersSlices.count == 1U);
+        REQUIRE((payloadBuffersSlices.base.fragments[0].size + payloadBuffersSlices.base.fragments[1].size) == 256U);
+    }
+
+    REQUIRE(mxlReleaseFlowWriter(instanceWriter, writer) == MXL_STATUS_OK);
     REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_STATUS_OK);
 
     // This should be gone from the filesystem.
     REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_ERR_FLOW_NOT_FOUND);
 
+    mxlDestroyInstance(instanceReader);
     mxlDestroyInstance(instanceWriter);
 }

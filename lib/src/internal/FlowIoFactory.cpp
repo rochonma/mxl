@@ -27,6 +27,10 @@ namespace mxl::lib
         {
             return this->createDiscreteFlowReader(manager, flowId, std::move(discreteData));
         }
+        if (auto continuousData = dynamic_pointer_cast<ContinuousFlowData>(std::move(data)); continuousData)
+        {
+            return this->createContinuousFlowReader(manager, flowId, std::move(continuousData));
+        }
         throw std::runtime_error("Could not create reader, because flow type is not supported.");
     }
 
@@ -35,6 +39,10 @@ namespace mxl::lib
         if (auto discreteData = dynamic_pointer_cast<DiscreteFlowData>(std::move(data)); discreteData)
         {
             return this->createDiscreteFlowWriter(manager, flowId, std::move(discreteData));
+        }
+        if (auto continuousData = dynamic_pointer_cast<ContinuousFlowData>(std::move(data)); continuousData)
+        {
+            return this->createContinuousFlowWriter(manager, flowId, std::move(continuousData));
         }
         throw std::runtime_error("Could not create writer, because flow type is not supported.");
     }

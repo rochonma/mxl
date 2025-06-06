@@ -22,11 +22,13 @@ extern "C"
         /** The flow UUID.  This should be identical to the {flowId} path component. */
         uint8_t id[16];
 
+
         /** The last time a producer wrote to the flow in nanoseconds since the epoch. */
         uint64_t lastWriteTime;
 
         /** The last time a consumer read from the flow in nanoseconds since the epoch. */
         uint64_t lastReadTime;
+
 
         /**
          * The data format of this flow.

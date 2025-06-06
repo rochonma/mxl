@@ -103,10 +103,16 @@ namespace mxl::lib
             auto flowData = _flowManager.openFlow(*id, AccessMode::READ_ONLY);
             auto reader = _flowIoFactory->createFlowReader(_flowManager, *id, std::move(flowData));
 
-            // FIXME: This leaks if the map insertion throws an exception.
-            //     Delegate the watch handling to the reader itself by
-            //     passing it a reference to the DomainWatcher.
-            _watcher->addFlow(*id, WatcherType::READER);
+            if (dynamic_cast<ContinuousFlowReader*>(reader.get()) == nullptr)
+            {
+                // FIXME: This leaks if the map insertion throws an exception.
+                //     Delegate the watch handling to the reader itself by
+                //     passing it a reference to the DomainWatcher.
+                //
+                //     Doing it like this would also get rid of the ugly cast
+                //     to decide whether or not to install the watch.
+                _watcher->addFlow(*id, WatcherType::READER);
+            }
             return (*_readers.try_emplace(pos, *id, std::move(reader))).second.get();
         }
     }
@@ -122,7 +128,10 @@ namespace mxl::lib
             {
                 if ((*pos).second.releaseReference())
                 {
-                    _watcher->removeFlow(id, WatcherType::READER);
+                    if (dynamic_cast<ContinuousFlowReader*>((*pos).second.get()) == nullptr)
+                    {
+                        _watcher->removeFlow(id, WatcherType::READER);
+                    }
                     _readers.erase(pos);
                 }
             }
@@ -146,10 +155,16 @@ namespace mxl::lib
             auto flowData = _flowManager.openFlow(*id, AccessMode::READ_WRITE);
             auto writer = _flowIoFactory->createFlowWriter(_flowManager, *id, std::move(flowData));
 
-            // FIXME: This leaks if the map insertion throws an exception.
-            //     Delegate the watch handling to the writer itself by
-            //     passing it a reference to the DomainWatcher.
-            _watcher->addFlow(*id, WatcherType::WRITER);
+            if (dynamic_cast<ContinuousFlowWriter*>(writer.get()) == nullptr)
+            {
+                // FIXME: This leaks if the map insertion throws an exception.
+                //     Delegate the watch handling to the writer itself by
+                //     passing it a reference to the DomainWatcher.
+                //
+                //     Doing it like this would also get rid of the ugly cast
+                //     to decide whether or not to install the watch.
+                _watcher->addFlow(*id, WatcherType::WRITER);
+            }
             return (*_writers.try_emplace(pos, *id, std::move(writer))).second.get();
         }
     }
@@ -165,7 +180,10 @@ namespace mxl::lib
             {
                 if ((*pos).second.releaseReference())
                 {
-                    _watcher->removeFlow(id, WatcherType::WRITER);
+                    if (dynamic_cast<ContinuousFlowWriter*>((*pos).second.get()) == nullptr)
+                    {
+                        _watcher->removeFlow(id, WatcherType::WRITER);
+                    }
                     _writers.erase(pos);
                 }
             }

@@ -294,3 +294,85 @@ mxlStatus mxlFlowWriterCommitGrain(mxlFlowWriter writer, GrainInfo const* grainI
         return MXL_ERR_UNKNOWN;
     }
 }
+
+extern "C"
+MXL_EXPORT
+mxlStatus mxlFlowReaderGetSamples(mxlFlowReader reader, uint64_t index, size_t count, WrappedMultiBufferSlice* payloadBuffersSlices)
+{
+    try
+    {
+        if (payloadBuffersSlices != nullptr)
+        {
+            if (auto const cppReader = dynamic_cast<ContinuousFlowReader*>(to_FlowReader(reader)); cppReader != nullptr)
+            {
+                return cppReader->getSamples(index, count, *payloadBuffersSlices);
+            }
+
+            return MXL_ERR_INVALID_FLOW_WRITER;
+        }
+        return MXL_ERR_INVALID_ARG;
+    }
+    catch (...)
+    {
+        return MXL_ERR_UNKNOWN;
+    }
+}
+
+extern "C"
+MXL_EXPORT
+mxlStatus mxlFlowWriterOpenSamples(mxlFlowWriter writer, uint64_t index, size_t count, MutableWrappedMultiBufferSlice* payloadBuffersSlices)
+{
+    try
+    {
+        if (payloadBuffersSlices != nullptr)
+        {
+            if (auto const cppWriter = dynamic_cast<ContinuousFlowWriter*>(to_FlowWriter(writer)); cppWriter != nullptr)
+            {
+                return cppWriter->openSamples(index, count, *payloadBuffersSlices);
+            }
+
+            return MXL_ERR_INVALID_FLOW_WRITER;
+        }
+        return MXL_ERR_INVALID_ARG;
+    }
+    catch (...)
+    {
+        return MXL_ERR_UNKNOWN;
+    }
+}
+
+extern "C"
+MXL_EXPORT
+mxlStatus mxlFlowWriterCancelSamples(mxlFlowWriter writer)
+{
+    try
+    {
+        if (auto const cppWriter = dynamic_cast<ContinuousFlowWriter*>(to_FlowWriter(writer)); cppWriter != nullptr)
+        {
+            return cppWriter->commit();
+        }
+        return MXL_ERR_INVALID_FLOW_WRITER;
+    }
+    catch (...)
+    {
+        return MXL_ERR_UNKNOWN;
+    }
+}
+
+extern "C"
+MXL_EXPORT
+mxlStatus mxlFlowWriterCommitSamples(mxlFlowWriter writer)
+{
+    try
+    {
+        if (auto const cppWriter = dynamic_cast<ContinuousFlowWriter*>(to_FlowWriter(writer)); cppWriter != nullptr)
+        {
+            return cppWriter->commit();
+        }
+        return MXL_ERR_INVALID_FLOW_WRITER;
+    }
+    catch (...)
+    {
+        return MXL_ERR_UNKNOWN;
+    }
+}
