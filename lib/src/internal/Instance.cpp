@@ -187,6 +187,21 @@ namespace mxl::lib
 
             return _flowManager.createDiscreteFlow(parser.getId(), flowDef, parser.getFormat(), grainCount, grainRate, parser.getPayloadSize());
         }
+        else if (mxlIsContinuousDataFormat(format))
+        {
+            // Read the mandatory grain_rate field
+            auto const sampleRate = parser.getGrainRate();
+            // Compute the grain count based on our configured history duration
+            auto const bufferLength = _historyDuration * sampleRate.numerator / (1'000'000'000ULL * sampleRate.denominator);
+
+            auto const sampleWordSize = parser.getPayloadSize();
+            // FIXME: The page size is just an educated guess to round to for good measure
+            auto const lengthPerPage = 4096U / sampleWordSize;
+
+            auto const pageAlignedLength = ((bufferLength + lengthPerPage - 1U) / lengthPerPage) * lengthPerPage;
+
+            return _flowManager.createContinuousFlow(parser.getId(), flowDef, parser.getFormat(), sampleRate, parser.getChannelCount(), sampleWordSize, pageAlignedLength);
+        }
         throw std::runtime_error("Unsupported flow format.");
     }
 

@@ -344,3 +344,34 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
 }
 
 #endif
+
+TEST_CASE("Audio Flow : Create/Destroy", "[mxl flows]")
+{
+    auto const opts = "{}";
+    auto const flowId = "b3bb5be7-9fe9-4324-a5bb-4c70e1084449";
+    auto const flowDef = mxl::tests::readFile("data/audio_flow.json");
+
+    auto domain = std::filesystem::path{"./mxl_unittest_domain"}; // Remove that path if it exists.
+    remove_all(domain);
+
+    create_directories(domain);
+    auto instanceWriter = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instanceWriter != nullptr);
+
+    {
+        FlowInfo flowInfo;
+        REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &flowInfo) == MXL_STATUS_OK);
+
+        REQUIRE(flowInfo.continuous.sampleRate.numerator == 48000U);
+        REQUIRE(flowInfo.continuous.sampleRate.denominator == 1U);
+        REQUIRE(flowInfo.continuous.channelCount == 1U);
+        REQUIRE(flowInfo.continuous.bufferLength > 128U);
+    }
+
+    REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_STATUS_OK);
+
+    // This should be gone from the filesystem.
+    REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_ERR_FLOW_NOT_FOUND);
+
+    mxlDestroyInstance(instanceWriter);
+}
