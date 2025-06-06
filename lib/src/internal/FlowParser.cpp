@@ -6,8 +6,9 @@
 #include <string_view>
 #include <utility>
 #include <uuid.h>
-#include <mxl/mxl.h>
+#include <fmt/format.h>
 #include <picojson/picojson.h>
+#include <mxl/mxl.h>
 #include "Rational.hpp"
 
 namespace mxl::lib
@@ -62,7 +63,7 @@ namespace mxl::lib
             auto const it = in_obj.find(in_field);
             if (it == in_obj.end())
             {
-                auto msg = std::string{"Required '"} + in_field + std::string{"' not found."};
+                auto msg = std::string{"Required '"} + in_field + "' not found.";
                 throw std::invalid_argument{std::move(msg)};
             }
             return it;
@@ -240,6 +241,19 @@ namespace mxl::lib
                 throw std::invalid_argument{std::move(msg)};
             }
         }
+        else if (_format == MXL_DATA_FORMAT_AUDIO)
+        {
+            // TODO: Also check the media type once we agreed on how to encode
+            //      single precision IEEE floats.
+            auto const bitDepth = fetchAs<double>(_root, "bit_depth");
+            if ((bitDepth != 32.0) && (bitDepth != 64.0))
+            {
+                auto msg = fmt::format("Unsupported bit depth: {}", bitDepth);
+                throw std::invalid_argument{std::move(msg)};
+            }
+
+            payloadSize = static_cast<std::size_t>(bitDepth) / 8U;
+        }
         else
         {
             /// \todo Implement audio formats.
@@ -247,5 +261,22 @@ namespace mxl::lib
         }
 
         return payloadSize;
+    }
+
+    std::size_t FlowParser::getChannelCount() const
+    {
+        if (auto const it = _root.find("channel_count"); it != _root.end())
+        {
+            if (it->second.is<double>())
+            {
+                if (auto const value = it->second.get<double>(); (value == std::trunc(value)) && (value > 0))
+                {
+                    return static_cast<std::size_t>(value);
+                }
+            }
+            auto msg = fmt::format("Unsupported channel count: {}", it->second.is<std::string>());
+            throw std::invalid_argument{std::move(msg)};
+        }
+        return 1U;
     }
 } // namespace mxl::lib

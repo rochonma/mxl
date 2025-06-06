@@ -23,8 +23,6 @@ namespace mxl::lib
          */
         FlowParser(std::string const& in_flowDef);
 
-        ~FlowParser() = default;
-
         /**
          * Accessor for the 'id' field
          *
@@ -34,9 +32,11 @@ namespace mxl::lib
         uuids::uuid const& getId() const;
 
         /**
-         * Accessor for the 'grain_rate' field
+         * Accessor for the 'grain_rate' field, which either contains the
+         * 'grain rate' for discrete flows, or the 'sample rate' for continuous
+         * floww.s
          *
-         * \return The grain rate if found and valid.
+         * \return The grain rate or sample rate respectively if found and valid.
          */
         [[nodiscard]]
         Rational getGrainRate() const;
@@ -50,9 +50,22 @@ namespace mxl::lib
         mxlDataFormat getFormat() const;
 
         /**
+         * Computes the grain payload size
+         * \return The payload size
+         */
+        [[nodiscard]]
+        std::size_t getPayloadSize() const;
+
+        /**
+         * Get the number of channels in an audio flow.
+         * \return The number of channels in an audio flow, or 0
+         *      if the flow format indicates that this not an audio flow.
+         */
+        [[nodiscard]]
+        std::size_t getChannelCount() const;
+
+        /**
          * Generic accessor for json fields.
-         * - integer fields should be accessed using T=double then cast.
-         * - string fields should be accessed using T=std::string
          *
          * \param in_field The field name.
          * \return The field value if found.
@@ -60,17 +73,7 @@ namespace mxl::lib
          */
         template<typename T>
         [[nodiscard]]
-        T get(std::string const& in_field) const
-        {
-            return _root.at(in_field).get<T>();
-        }
-
-        /**
-         * Computes the grain payload size
-         * \return The payload size
-         */
-        [[nodiscard]]
-        std::size_t getPayloadSize() const;
+        T get(std::string const& field) const;
 
     private:
         /** The flow id read from the 'id' field. */
@@ -85,4 +88,23 @@ namespace mxl::lib
         picojson::object _root;
     };
 
-} // namespace mxl::lib
+
+    /**************************************************************************/
+    /* Inline implementation.                                                 */
+    /**************************************************************************/
+
+    template<typename T>
+    inline T FlowParser::get(std::string const& field) const
+    {
+        if (auto const it = _root.find(field); it != _root.end())
+        {
+            return it->second.get<T>();
+        }
+        else
+        {
+            auto msg = std::string{"Required '"} + field + "' not found.";
+            throw std::invalid_argument{std::move(msg)};
+        }
+    }
+
+}
