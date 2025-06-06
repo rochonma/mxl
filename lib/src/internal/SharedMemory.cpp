@@ -57,34 +57,31 @@ namespace mxl::lib
             }
         }
 
-        if (payloadSize > 0)
+        if (struct stat statBuf; ::fstat(_fd, &statBuf) != -1)
         {
-            if (struct stat statBuf; ::fstat(_fd, &statBuf) != -1)
+            if (static_cast<std::size_t>(statBuf.st_size) >= payloadSize)
             {
-                if (static_cast<std::size_t>(statBuf.st_size) >= payloadSize)
+                auto const shared_data_buffer = ::mmap(nullptr, statBuf.st_size,
+                        PROT_READ | ((mode != AccessMode::READ_ONLY) ? PROT_WRITE : 0),
+                        MAP_FILE | MAP_SHARED, _fd, 0);
+                if (shared_data_buffer != MAP_FAILED)
                 {
-                    auto const shared_data_buffer = ::mmap(nullptr, statBuf.st_size,
-                            PROT_READ | ((mode != AccessMode::READ_ONLY) ? PROT_WRITE : 0),
-                            MAP_FILE | MAP_SHARED, _fd, 0);
-                    if (shared_data_buffer != MAP_FAILED)
-                    {
-                        _data = shared_data_buffer;
-                        _mappedSize = statBuf.st_size;
-                    }
-                    else
-                    {
-                        throw std::system_error(errno, std::generic_category(), "Could not map shared memory segment.");
-                    }
+                    _data = shared_data_buffer;
+                    _mappedSize = statBuf.st_size;
                 }
                 else
                 {
-                    throw std::system_error(ENOMEM, std::generic_category(), "Shared memory segment does not meet the minimum size requirements.");
+                    throw std::system_error(errno, std::generic_category(), "Could not map shared memory segment.");
                 }
             }
             else
             {
-                throw std::system_error(errno, std::generic_category(), "Could not determine size of shared memory segment.");
+                throw std::system_error(ENOMEM, std::generic_category(), "Shared memory segment does not meet the minimum size requirements.");
             }
+        }
+        else
+        {
+            throw std::system_error(errno, std::generic_category(), "Could not determine size of shared memory segment.");
         }
     }
 
