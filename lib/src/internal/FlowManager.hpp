@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <uuid.h>
+#include "ContinuousFlowData.hpp"
 #include "DiscreteFlowData.hpp"
 
 namespace mxl::lib
@@ -48,7 +49,7 @@ namespace mxl::lib
         FlowManager(std::filesystem::path const& in_mxlDomain);
 
         ///
-        /// Create a new discrete flow together with its associated grains and opens it in read-write mode.
+        /// Create a new discrete flow together with its associated grains and open it in read-write mode.
         ///
         /// \param[in] flowId The id of the flow.
         /// \param[in] flowDef The json definition of the flow (NMOS Resource format). The flow is not parsed or validated. It is written as is.
@@ -59,6 +60,20 @@ namespace mxl::lib
         ///
         std::unique_ptr<DiscreteFlowData> createDiscreteFlow(uuids::uuid const& flowId, std::string const& flowDef, mxlDataFormat flowFormat, std::size_t grainCount, Rational const& grainRate,
             std::size_t grainPayloadSize);
+
+        ///
+        /// Create a new continuous flow together with its associated channel store and open it in read-write mode.
+        ///
+        /// \param[in] flowId The id of the flow.
+        /// \param[in] flowDef The json definition of the flow (NMOS Resource format). The flow is not parsed or validated. It is written as is.
+        /// \param[in] flowFormat The flow data format. Must be one of the continuous formats.
+        /// \param[in] sampleRate The sample rate.
+        /// \param[in] channelCount The number of channels in the flow.
+        /// \param[in] sampleWordSize The size of one sample in bytes.
+        /// \param[in] bufferLength The length of each channel buffer in samples.
+        ///
+        std::unique_ptr<ContinuousFlowData> createContinuousFlow(uuids::uuid const& flowId, std::string const& flowDef, mxlDataFormat flowFormat, Rational const& sampleRate,
+            std::size_t channelCount, std::size_t sampleWordSize, std::size_t bufferLength);
 
         /// Open an existing flow by id.
         ///
@@ -98,6 +113,7 @@ namespace mxl::lib
 
     private:
         std::unique_ptr<DiscreteFlowData> openDiscreteFlow(std::filesystem::path const& flowDir, SharedMemoryInstance<Flow>&& sharedFlowInstance);
+        std::unique_ptr<ContinuousFlowData> openContinuousFlow(std::filesystem::path const& flowDir, SharedMemoryInstance<Flow>&& sharedFlowInstance);
 
     private:
         std::filesystem::path _mxlDomain;
