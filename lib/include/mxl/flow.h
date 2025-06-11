@@ -1,65 +1,20 @@
 #pragma once
 
 #ifdef __cplusplus
+#   include <cstddef>
 #   include <cstdint>
 #else
+#   include <stddef.h>
 #   include <stdint.h>
 #endif
 
 #include <mxl/mxl.h>
-#include <mxl/rational.h>
+#include <mxl/flowinfo.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-    /**
-     * Binary structure stored in the Flow shared memory segment.
-     * The flow shared memory will be located in {mxlDomain}/{flowId}
-     * where {mxlDomain} is a filesystem location available to the application
-     */
-    typedef struct FlowInfo
-    {
-        /// Version of the structure. The only currently supported value is 1
-        uint32_t version;
-
-        /// Size of the structure
-        uint32_t size;
-
-        /// The flow uuid.  This should be identical to the {flowId} path component described above.
-        uint8_t id[16];
-
-        /// The current head index of the ringbuffer
-        uint64_t headIndex;
-
-        /// The 'edit rate' of the grains expressed as a rational.  For VIDEO and ANC this value must match the editRate found in the flow descriptor.
-        /// \todo Handle non-grain aligned sound access
-        Rational grainRate;
-
-        /// How many grains in the ring buffer. This should be identical to the number of entries in the {mxlDomain}/{flowId}/grains/ folder.
-        /// Accessing the shared memory section for that specific grain should be predictable
-        uint32_t grainCount;
-
-        /// no flags defined yet.
-        uint32_t flags;
-
-        /// The last time a producer wrote to the flow in nanoseconds since the
-        /// epoch.
-        uint64_t lastWriteTime;
-
-        /// The last time a consumer read from the flow in nanoseconds since the
-        /// epoch.
-        uint64_t lastReadTime;
-
-        /// 32 bit word used syncronization between a writer and multiple readers.  This value can be used by futexes.
-        // When a FlowWriter commits some data (a grain, a slice, etc) it will increment this value and then wake all FlowReaders waiting on this
-        // memory address.
-        uint32_t syncCounter;
-
-        /// User data space
-        uint8_t userData[4020];
-    } FlowInfo;
 
 /*
  * A grain can be marked as invalid for multiple reasons. for example, an input application may have
@@ -77,6 +32,91 @@ extern "C"
         PAYLOAD_LOCATION_HOST_MEMORY = 0,
         PAYLOAD_LOCATION_DEVICE_MEMORY = 1,
     } PayloadLocation;
+
+    /**
+     * A helper type used to describe consecutive sequences of bytes in memory.
+     */
+    typedef struct BufferSlice
+    {
+        /** A pointer referring to the beginning of the slice. */
+        void const* pointer;
+        /** The number of bytes that make up this slice. */
+        size_t size;
+    } BufferSlice;
+
+    /**
+     * A helper type used to describe consecutive sequences of mutable bytes in
+     * memory.
+     */
+    typedef struct MutableBufferSlice
+    {
+        /** A pointer referring to the beginning of the slice. */
+        void* pointer;
+        /** The number of bytes that make up this slice. */
+        size_t size;
+    } MutableBufferSlice;
+
+    /**
+     * A helper type used to describe consecutive sequences of bytes
+     * in a ring buffer that may potentially straddle the wrapraround
+     * point of the buffer.
+     */
+    typedef struct WrappedBufferSlice
+    {
+        BufferSlice fragments[2];
+    } WrappedBufferSlice;
+
+    /**
+     * A helper type used to describe consecutive sequences of mutable bytes in
+     * a ring buffer that may potentially straddle the wrapraround point of the
+     * buffer.
+     */
+    typedef struct MutableWrappedBufferSlice
+    {
+        MutableBufferSlice fragments[2];
+    } MutableWrappedBufferSlice;
+
+    /**
+     * A helper type used to describe consecutive sequences of bytes
+     * in memory in consecutive ring buffers separated by the specified
+     * stride of bytes.
+     */
+    typedef struct WrappedMultiBufferSlice
+    {
+        WrappedBufferSlice base;
+
+        /**
+         * The stride in bytes to get from a position in one buffer
+         * to the same position in the following buffer.
+         */
+        size_t stride;
+        /**
+         * The number of buffers following the base buffer.
+         */
+        size_t count;
+    } WrappedMultiBufferSlice;
+
+    /**
+     * A helper type used to describe consecutive sequences of mutable bytes in
+     * memory in consecutive ring buffers separated by the specified stride of
+     * bytes.
+     */
+    typedef struct MutableWrappedMultiBufferSlice
+    {
+        MutableWrappedBufferSlice base;
+
+        /**
+         * The stride in bytes to get from a position in one buffer
+         * to the same position in the following buffer.
+         */
+        size_t stride;
+        /**
+         * The number of buffers following the base buffer.
+         */
+        size_t count;
+    } MutableWrappedMultiBufferSlice;
+
+
 
     typedef struct GrainInfo
     {
@@ -105,97 +145,163 @@ extern "C"
     ///
     /// Create a flow using a json flow definition
     ///
-    /// \param in_instance The mxl instance created using mxlCreateInstance
-    /// \param in_flowDef A flow definition in the NMOS Flow json format.  The flow ID is read from the <id> field of this json object.
-    /// \param in_options Additional options (undefined). \todo Specify and used the additional options.
-    /// \param out_info A pointer to a FlowInfo structure.  If not nullptr, this structure will be updated with the flow information after the flow is
+    /// \param[in] instance The mxl instance created using mxlCreateInstance
+    /// \param[in] flowDef A flow definition in the NMOS Flow json format.  The flow ID is read from the <id> field of this json object.
+    /// \param[in] options Additional options (undefined). \todo Specify and used the additional options.
+    /// \param[out] info A pointer to a FlowInfo structure.  If not nullptr, this structure will be updated with the flow information after the flow is
     /// created.
 MXL_EXPORT
-    mxlStatus mxlCreateFlow(mxlInstance in_instance, char const* in_flowDef, char const* in_options, FlowInfo* out_info);
+    mxlStatus mxlCreateFlow(mxlInstance instance, char const* flowDef, char const* options, FlowInfo* info);
 
     MXL_EXPORT
-    mxlStatus mxlDestroyFlow(mxlInstance in_instance, char const* in_flowId);
+    mxlStatus mxlDestroyFlow(mxlInstance instance, char const* flowId);
 
     MXL_EXPORT
-    mxlStatus mxlCreateFlowReader(mxlInstance in_instance, char const* in_flowId, char const* in_options, mxlFlowReader* out_reader);
+    mxlStatus mxlCreateFlowReader(mxlInstance instance, char const* flowId, char const* options, mxlFlowReader* reader);
 
     MXL_EXPORT
-    mxlStatus mxlReleaseFlowReader(mxlInstance in_instance, mxlFlowReader in_reader);
+    mxlStatus mxlReleaseFlowReader(mxlInstance instance, mxlFlowReader reader);
 
     MXL_EXPORT
-    mxlStatus mxlCreateFlowWriter(mxlInstance in_instance, char const* flowId, char const* in_options, mxlFlowWriter* out_writer);
+    mxlStatus mxlCreateFlowWriter(mxlInstance instance, char const* flowId, char const* options, mxlFlowWriter* writer);
 
     MXL_EXPORT
-    mxlStatus mxlReleaseFlowWriter(mxlInstance in_instance, mxlFlowWriter in_writer);
+    mxlStatus mxlReleaseFlowWriter(mxlInstance instance, mxlFlowWriter writer);
 
     /**
-     * Get the current head and tail values of a Flow
+     * Get a copy of the current descriptive header of a Flow
      *
-     * \param in_reader A valid flow reader
-     * \param out_info A valid pointer to a FlowInfo structure. on return, the structure will be updated with a copy of the current flow info value.
+     * \param[in] reader A valid flow reader
+     * \param[out] info A valid pointer to a FlowInfo structure. on return, the structure will be updated with a copy of the current flow info value.
      * \return The result code. \see mxlStatus
      */
 MXL_EXPORT
-    mxlStatus mxlFlowReaderGetInfo(mxlFlowReader in_reader, FlowInfo* out_info);
+    mxlStatus mxlFlowReaderGetInfo(mxlFlowReader reader, FlowInfo* info);
 
     /**
-     * Accessor for a flow grain at a specific index
+     * Accessors for a flow grain at a specific index
      *
-     * \param in_reader A valid flow reader
-     * \param in_index The index of the grain to obtain
-     * \param in_timeoutNs How long should we wait for the grain (in nanoseconds)
-     * \param out_grain The requested GrainInfo structure.
-     * \param out_payload The requested grain payload.
+     * \param[in] reader A valid discrete flow reader.
+     * \param[in] index The index of the grain to obtain
+     * \param[in] timeoutNs How long should we wait for the grain (in nanoseconds)
+     * \param[out] grain The requested GrainInfo structure.
+     * \param[out] payload The requested grain payload.
      * \return The result code. \see mxlStatus
+     * \note Please note that this function can only be called on readers that
+     *      operate on discrete flows. Any attempt to call this function on a
+     *      reader that operates on another type of flow will result in an
+     *      error.
      */
 MXL_EXPORT
-    mxlStatus mxlFlowReaderGetGrain(mxlFlowReader in_reader, uint64_t in_index, uint64_t in_timeoutNs, GrainInfo* out_grain,
-        uint8_t** out_payload);
+    mxlStatus mxlFlowReaderGetGrain(mxlFlowReader reader, uint64_t index, uint64_t timeoutNs, GrainInfo* grain,
+        uint8_t** payload);
 
     /**
-     * Non-blocking accessor for a flow grain at a specific index
+     * Non-blocking accessors for a flow grain at a specific index
      *
-     * \param in_reader A valid flow reader
-     * \param in_index The index of the grain to obtain
-     * \param out_grain The requested GrainInfo structure.
-     * \param out_payload The requested grain payload.
+     * \param[in] reader A valid flow reader
+     * \param[in] index The index of the grain to obtain
+     * \param[out] grain The requested GrainInfo structure.
+     * \param[out] payload The requested grain payload.
      * \return The result code. \see mxlStatus
+     * \note Please note that this function can only be called on readers that
+     *      operate on discrete flows. Any attempt to call this function on a
+     *      reader that operates on another type of flow will result in an
+     *      error.
      */
 MXL_EXPORT
-    mxlStatus mxlFlowReaderGetGrainNonBlocking(mxlFlowReader in_reader, uint64_t in_index, GrainInfo* out_grain,
-        uint8_t** out_payload);
+    mxlStatus mxlFlowReaderGetGrainNonBlocking(mxlFlowReader reader, uint64_t index, GrainInfo* grain,
+        uint8_t** payload);
 
     /**
      * Open a grain for mutation.  The flow writer will remember which index is currently opened. Before opening a new grain
-     * for mutation, the user must either cancel the mutation using mxlFlowWriterCancel or mxlFlowWriterCommit
+     * for mutation, the user must either cancel the mutation using mxlFlowWriterCancelGrain or mxlFlowWriterCommitGrain.
      *
-     * \param in_writer A valid flow writer
-     * \param in_index The index of the grain to obtain
-     * \param out_grainInfo The requested GrainInfo structure.
-     * \param out_payload The requested grain payload.
+     * \todo Allow operating on multiple grains simultaneously, by making this function return a handle that has to be passed
+     *      to mxlFlowWriterCommitGrain or mxlFlowWriterCancelGrain to identify the grain the call refers to.
+     *
+     * \param[in] writer A valid flow writer
+     * \param[in] index The index of the grain to obtain
+     * \param[out] grainInfo The requested GrainInfo structure.
+     * \param[out] payload The requested grain payload.
      * \return The result code. \see mxlStatus
+     * \note Please note that this function can only be called on writers that
+     *      operate on discrete flows. Any attempt to call this function on a
+     *      writer that operates on another type of flow will result in an
+     *      error.
      */
 MXL_EXPORT
-    mxlStatus mxlFlowWriterOpenGrain(mxlFlowWriter in_writer, uint64_t in_index, GrainInfo* out_grainInfo,
-        uint8_t** out_payload);
+    mxlStatus mxlFlowWriterOpenGrain(mxlFlowWriter writer, uint64_t index, GrainInfo* grainInfo,
+        uint8_t** payload);
 
     /**
      *
-     * \param in_writer A valid flow writer
+     * \param[in] writer A valid flow writer
      */
 MXL_EXPORT
-    mxlStatus mxlFlowWriterCancel(mxlFlowWriter in_writer);
+    mxlStatus mxlFlowWriterCancelGrain(mxlFlowWriter writer);
 
     /**
      * Inform mxl that a user is done writing the grain that was previously opened.  This will in turn signal all readers waiting on the ringbuffer
-     * that a new grain is available.  The graininfo flags field in shared memory will be updated based on in_grain->flags This will increase the head
+     * that a new grain is available.  The graininfo flags field in shared memory will be updated based on grain->flags This will increase the head
      * and potentially the tail IF this grain is the new head.
      *
      * \return The result code. \see mxlStatus
      */
 MXL_EXPORT
-    mxlStatus mxlFlowWriterCommit(mxlFlowWriter in_writer, GrainInfo const* in_grain);
+    mxlStatus mxlFlowWriterCommitGrain(mxlFlowWriter writer, GrainInfo const* grain);
 
+
+    /**
+     * Accessor for a specific set of samples across all channels starting at a
+     * specific index.
+     *
+     * \param[in] index The head index of the samples to obtain.
+     * \param[in] count The number of samples to obtain.
+     * \param[out] payloadBuffersSlices A pointer to a wrapped multi buffer
+     *      slice that represents the requested range across all channel
+     *      buffers.
+     *
+     * \return A status code describing the outcome of the call.
+     * \note No guarantees are made as to how long the caller may
+     *      safely hang on to the returned range of samples without the
+     *      risk of these samples being overwritten.
+     */
+    MXL_EXPORT
+    mxlStatus mxlFlowReaderGetSamples(mxlFlowReader reader, uint64_t index, size_t count, WrappedMultiBufferSlice* payloadBuffersSlices);
+
+    /**
+     * Open a specific set of mutable samples across all channels starting at a
+     * specific index for mutation.
+     *
+     * \param[in] index The head index of the samples that will be mutated.
+     * \param[in] count The number of samples in each channel that will be
+     *      mutated.
+     * \param[out] payloadBuffersSlices A pointer to a mutable wrapped multi
+     *      buffer slice that represents the requested range across all channel
+     *      buffers.
+     *
+     * \return A status code describing the outcome of the call.
+     */
+    MXL_EXPORT
+    mxlStatus mxlFlowWriterOpenSamples(mxlFlowWriter writer, uint64_t index, size_t count, MutableWrappedMultiBufferSlice* payloadBuffersSlices);
+
+    /**
+     * Cancel the mutation of the previously opened range of samples.
+     * \param[in] writer A valid flow writer
+     * \return The result code. \see mxlStatus
+     */
+    MXL_EXPORT
+    mxlStatus mxlFlowWriterCancelSamples(mxlFlowWriter writer);
+
+    /**
+     * Inform mxl that a user is done writing the sample range that was previously opened.
+     *
+     * \param[in] writer A valid flow writer
+     * \return The result code. \see mxlStatus
+     */
+    MXL_EXPORT
+    mxlStatus mxlFlowWriterCommitSamples(mxlFlowWriter writer);
 #ifdef __cplusplus
 }
 #endif

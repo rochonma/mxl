@@ -32,6 +32,8 @@ target_sources(mxl
             src/time.cpp
             src/internal/DomainWatcher.cpp
             src/internal/Flow.cpp
+            src/internal/FlowData.cpp
+            src/internal/FlowIoFactory.cpp
             src/internal/FlowManager.cpp
             src/internal/FlowParser.cpp
             src/internal/FlowReader.cpp
@@ -39,8 +41,11 @@ target_sources(mxl
             src/internal/Instance.cpp
             src/internal/Logging.cpp
             src/internal/PathUtils.cpp
-            src/internal/PosixFlowReader.cpp
-            src/internal/PosixFlowWriter.cpp
+            src/internal/PosixContinuousFlowReader.cpp
+            src/internal/PosixContinuousFlowWriter.cpp
+            src/internal/PosixDiscreteFlowReader.cpp
+            src/internal/PosixDiscreteFlowWriter.cpp
+            src/internal/PosixFlowIoFactory.cpp
             src/internal/SharedMemory.cpp
             src/internal/Sync.cpp
             src/internal/Thread.cpp

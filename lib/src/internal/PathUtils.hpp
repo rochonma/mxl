@@ -10,6 +10,7 @@ namespace mxl::lib
     constexpr auto const FLOW_ACCESS_FILE_NAME      = ".access";
     constexpr auto const GRAIN_DIRECTORY_NAME       = "grains";
     constexpr auto const GRAIN_DATA_FILE_NAME_STEM  = "data";
+    constexpr auto const CHANNEL_DATA_FILE_NAME     = "channels";
 
 
     std::filesystem::path makeFlowDirectoryName(std::filesystem::path const& domain, std::string const& uuid);
@@ -28,6 +29,9 @@ namespace mxl::lib
 
     std::filesystem::path makeGrainDataFilePath(std::filesystem::path const& grainDirectory, unsigned int index);
     std::filesystem::path makeGrainDataFilePath(std::filesystem::path const& domain, std::string const& uuid, unsigned int index);
+
+    std::filesystem::path makeChannelDataFilePath(std::filesystem::path const& flowDirectory);
+    std::filesystem::path makeChannelDataFilePath(std::filesystem::path const& domain, std::string const& uuid);
 
 
     /**************************************************************************/
@@ -57,5 +61,10 @@ namespace mxl::lib
     inline std::filesystem::path makeGrainDataFilePath(std::filesystem::path const& domain, std::string const& uuid, unsigned int index)
     {
         return makeGrainDataFilePath(makeGrainDirectoryName(domain, uuid), index);
+    }
+
+    inline std::filesystem::path makeChannelDataFilePath(std::filesystem::path const& domain, std::string const& uuid)
+    {
+        return makeChannelDataFilePath(makeFlowDirectoryName(domain, uuid));
     }
 }

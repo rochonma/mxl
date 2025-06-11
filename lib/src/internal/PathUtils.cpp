@@ -32,4 +32,9 @@ namespace mxl::lib
     {
         return grainDirectory / fmt::format("{}.{}", GRAIN_DATA_FILE_NAME_STEM, index);
     }
+
+    std::filesystem::path makeChannelDataFilePath(std::filesystem::path const& flowDirectory)
+    {
+        return flowDirectory / CHANNEL_DATA_FILE_NAME;
+    }
 }

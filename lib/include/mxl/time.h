@@ -17,41 +17,52 @@ extern "C"
 #define MXL_UNDEFINED_INDEX UINT64_MAX
 
     /**
-     * Get the current grain index based on the current system TAI time
-     * 0 = first grain since epoch as defined by SMPTE ST 2059
+     * Get the current head index based on the current system TAI time
+     * Index 0 is defined to be index at the beginning of the epoch as defined by SMPTE ST 2059
      *
-     * \param in_editRate The edit rate of the Flow
-     * \return The grain index or MXL_UNDEFINED_INDEX if in_grainRate is null or invalid (0 denominator, 0/1, etc.)
+     * \param[in] editRate The edit rate of the Flow
+     * \return The head index or MXL_UNDEFINED_INDEX if editRate is null or invalid
      */
 MXL_EXPORT
-    uint64_t mxlGetCurrentGrainIndex(Rational const* in_editRate);
+    uint64_t mxlGetCurrentHeadIndex(Rational const* editRate);
 
     /**
-     * Utility method to help compute how many nanoseconds we need to wait until the beginning of the specified grain
-     * \param in_index The grain to wait for
-     * \param in_editRate The edit rate of the Flow
-     * \return How many nanoseconds to wait or MXL_UNDEFINED_INDEX if in_grainRate is null or invalid (0 denominator, 0/1, etc.)
+     * Utility method to help compute how many nanoseconds we need to wait until the beginning of the specified index
+     * \param[in] index The head to wait for
+     * \param[in] editRate The edit rate of the Flow
+     * \return How many nanoseconds to wait or MXL_UNDEFINED_INDEX if editRate is null or invalid
      */
 MXL_EXPORT
-    uint64_t mxlGetNsUntilGrainIndex(uint64_t in_index, Rational const* in_editRate);
+    uint64_t mxlGetNsUntilHeadIndex(uint64_t index, Rational const* editRate);
 
     /**
-     * Get the current grain index based on the user provided timespec
-     * 0 = first grain since epoch as defined by SMPTE ST 2059
+     * Get the current head index based on the user provided timespec
+     * Index 0 is defined to be index at the beginning of the epoch as defined by SMPTE ST 2059
      *
-     * \param in_editRate The edit rate of the Flow
-     * \param in_timestamp The time stamp in nanoseconds since the epoch.
-     * \return The grain index or MXL_UNDEFINED_INDEX if in_grainRate is null or invalid (0 denominator, 0/1, etc.)
+     * \param[in] editRate The edit rate of the Flow
+     * \param[in] timestamp The time stamp in nanoseconds since the epoch.
+     * \return The head index or MXL_UNDEFINED_INDEX if editRate is null or invalid
      */
 MXL_EXPORT
-    uint64_t mxlTimestampToGrainIndex(Rational const* in_editRate, uint64_t in_timestamp);
+    uint64_t mxlTimestampToHeadIndex(Rational const* editRate, uint64_t timestamp);
+
+    /**
+     * Get the current timestamp based on the user provided head index.
+     * Index 0 is defined to be index at the beginning of the epoch as defined by SMPTE ST 2059
+     *
+     * \param[in] editRate The edit rate of the Flow
+     * \param[in] index The head index of the flow.
+     * \return The time stamp in nanoseconds since the epoch or MXL_UNDEFINED_INDEX if editRate is null or invalid
+     */
+MXL_EXPORT
+    uint64_t mxlHeadIndexToTimestamp(Rational const* editRate, uint64_t index);
 
     /**
      * Sleep for a specific amount of time.
-     * \param in_ns How long to sleep for, in nanoseconds.
+     * \param[in] ns How long to sleep for, in nanoseconds.
      */
 MXL_EXPORT
-    void mxlSleepForNs(uint64_t in_ns);
+    void mxlSleepForNs(uint64_t ns);
 
     /**
      * Get the current time using the most appropriate clock for the platform.

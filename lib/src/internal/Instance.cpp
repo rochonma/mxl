@@ -25,15 +25,13 @@
 #include "FlowParser.hpp"
 #include "Logging.hpp"
 #include "PathUtils.hpp"
-#include "PosixFlowReader.hpp"
-#include "PosixFlowWriter.hpp"
+#include "PosixDiscreteFlowReader.hpp"
+#include "PosixDiscreteFlowWriter.hpp"
 
 namespace mxl::lib
 {
-
     namespace
     {
-
         std::once_flag loggingFlag;
 
         void initializeLogging()
@@ -42,24 +40,23 @@ namespace mxl::lib
             spdlog::set_default_logger(console);
             spdlog::cfg::load_env_levels("MXL_LOG_LEVEL");
         }
+    }
 
-    } // namespace
-
-    Instance::Instance(std::filesystem::path const& in_mxlDomain, std::string const& in_options)
-        : _readers{}
+    Instance::Instance(std::filesystem::path const& mxlDomain, std::string const& options, std::unique_ptr<FlowIoFactory>&& flowIoFactory)
+        : _flowManager{mxlDomain}
+        , _flowIoFactory{std::move(flowIoFactory)}
+        , _readers{}
         , _writers{}
         , _mutex{}
-        , _options{in_options}
-        , _flowManager{}
+        , _options{options}
         , _historyDuration{100'000'000ULL}
         , _watcher{}
         , _stopping{false}
     {
         std::call_once(loggingFlag, [&]() { initializeLogging(); });
-        _flowManager = std::make_shared<FlowManager>(in_mxlDomain);
-        _watcher = std::make_shared<DomainWatcher>(in_mxlDomain,
-            [this](auto const& in_uuid, auto in_type) { fileChangedCallback(in_uuid, in_type); });
-        MXL_DEBUG("Instance created. MXL Domain: {}", in_mxlDomain.string());
+        _watcher = std::make_shared<DomainWatcher>(mxlDomain,
+            [this](auto const& uuid, auto type) { fileChangedCallback(uuid, type); });
+        MXL_DEBUG("Instance created. MXL Domain: {}", mxlDomain.string());
     }
 
     Instance::~Instance()
@@ -70,18 +67,18 @@ namespace mxl::lib
         spdlog::default_logger()->flush();
     }
 
-    void Instance::fileChangedCallback(uuids::uuid const& in_flowId, WatcherType in_type)
+    void Instance::fileChangedCallback(uuids::uuid const& flowId, WatcherType type)
     {
         if (!_stopping)
         {
             std::lock_guard<std::mutex> lock(_mutex);
 
             // Someone wrote to the flow. let the readers know.
-            if (in_type == WatcherType::WRITER)
+            if (type == WatcherType::WRITER)
 
             {
                 // Someone read the grain and touched the ".access" file.  let update the last read count.
-                if (auto const found = _writers.find(in_flowId); found != _writers.end())
+                if (auto const found = _writers.find(flowId); found != _writers.end())
                 {
                     found->second.get()->flowRead();
                 }
@@ -103,16 +100,20 @@ namespace mxl::lib
         }
         else
         {
-            auto reader = std::make_unique<PosixFlowReader>(_flowManager, *id);
-            if (reader->open())
+            auto flowData = _flowManager.openFlow(*id, AccessMode::READ_ONLY);
+            auto reader = _flowIoFactory->createFlowReader(_flowManager, *id, std::move(flowData));
+
+            if (dynamic_cast<ContinuousFlowReader*>(reader.get()) == nullptr)
             {
                 // FIXME: This leaks if the map insertion throws an exception.
                 //     Delegate the watch handling to the reader itself by
                 //     passing it a reference to the DomainWatcher.
+                //
+                //     Doing it like this would also get rid of the ugly cast
+                //     to decide whether or not to install the watch.
                 _watcher->addFlow(*id, WatcherType::READER);
-                return (*_readers.try_emplace(pos, *id, std::move(reader))).second.get();
             }
-            throw std::runtime_error("Failed to open flow " + flowId);
+            return (*_readers.try_emplace(pos, *id, std::move(reader))).second.get();
         }
     }
 
@@ -127,7 +128,10 @@ namespace mxl::lib
             {
                 if ((*pos).second.releaseReference())
                 {
-                    _watcher->removeFlow(id, WatcherType::READER);
+                    if (dynamic_cast<ContinuousFlowReader*>((*pos).second.get()) == nullptr)
+                    {
+                        _watcher->removeFlow(id, WatcherType::READER);
+                    }
                     _readers.erase(pos);
                 }
             }
@@ -148,16 +152,20 @@ namespace mxl::lib
         }
         else
         {
-            auto writer = std::make_unique<PosixFlowWriter>(_flowManager, *id);
-            if (writer->open())
+            auto flowData = _flowManager.openFlow(*id, AccessMode::READ_WRITE);
+            auto writer = _flowIoFactory->createFlowWriter(_flowManager, *id, std::move(flowData));
+
+            if (dynamic_cast<ContinuousFlowWriter*>(writer.get()) == nullptr)
             {
                 // FIXME: This leaks if the map insertion throws an exception.
                 //     Delegate the watch handling to the writer itself by
                 //     passing it a reference to the DomainWatcher.
+                //
+                //     Doing it like this would also get rid of the ugly cast
+                //     to decide whether or not to install the watch.
                 _watcher->addFlow(*id, WatcherType::WRITER);
-                return (*_writers.try_emplace(pos, *id, std::move(writer))).second.get();
             }
-            throw std::runtime_error("Failed to open flow " + flowId);
+            return (*_writers.try_emplace(pos, *id, std::move(writer))).second.get();
         }
     }
 
@@ -172,47 +180,52 @@ namespace mxl::lib
             {
                 if ((*pos).second.releaseReference())
                 {
-                    _watcher->removeFlow(id, WatcherType::WRITER);
+                    if (dynamic_cast<ContinuousFlowWriter*>((*pos).second.get()) == nullptr)
+                    {
+                        _watcher->removeFlow(id, WatcherType::WRITER);
+                    }
                     _writers.erase(pos);
                 }
             }
         }
     }
 
-    std::unique_ptr<FlowData> Instance::createFlow(std::string const& in_flowDef)
+    std::unique_ptr<FlowData> Instance::createFlow(std::string const& flowDef)
     {
         // Parse the json flow resource
-        FlowParser parser{in_flowDef};
-        // Read the mandatory grain_rate field
-        Rational grainRate = parser.getGrainRate();
-        // Read the mandatory id field
-        auto id = parser.getId();
-        // Compute the grain count based on our configured history duration
-        auto const grainCount = _historyDuration * grainRate.numerator / (1'000'000'000ULL * grainRate.denominator);
+        auto const parser = FlowParser{flowDef};
 
         // Create the flow using the flow manager
-        auto flowData = _flowManager->createFlow(id, in_flowDef, grainCount, grainRate, parser.getPayloadSize());
-        auto info = flowData->flow.get()->info;
+        if (auto const format = parser.getFormat(); mxlIsDiscreteDataFormat(format))
+        {
+            // Read the mandatory grain_rate field
+            auto const grainRate = parser.getGrainRate();
+            // Compute the grain count based on our configured history duration
+            auto const grainCount = _historyDuration * grainRate.numerator / (1'000'000'000ULL * grainRate.denominator);
 
-        // Populate the flowinfo structure. This structure will be visible through the C api.
-        info.version = 1;
-        info.size = sizeof(FlowInfo);
-        auto idSpan = id.as_bytes();
-        std::memcpy(info.id, idSpan.data(), idSpan.size());
-        info.flags = 0;
-        info.headIndex = 0;
-        info.grainRate = grainRate;
-        info.grainCount = grainCount;
+            return _flowManager.createDiscreteFlow(parser.getId(), flowDef, parser.getFormat(), grainCount, grainRate, parser.getPayloadSize());
+        }
+        else if (mxlIsContinuousDataFormat(format))
+        {
+            // Read the mandatory grain_rate field
+            auto const sampleRate = parser.getGrainRate();
+            // Compute the grain count based on our configured history duration
+            auto const bufferLength = _historyDuration * sampleRate.numerator / (1'000'000'000ULL * sampleRate.denominator);
 
-        info.lastWriteTime = mxlGetTime();
-        info.lastReadTime = info.lastWriteTime;
+            auto const sampleWordSize = parser.getPayloadSize();
+            // FIXME: The page size is just an educated guess to round to for good measure
+            auto const lengthPerPage = 4096U / sampleWordSize;
 
-        return flowData;
+            auto const pageAlignedLength = ((bufferLength + lengthPerPage - 1U) / lengthPerPage) * lengthPerPage;
+
+            return _flowManager.createContinuousFlow(parser.getId(), flowDef, parser.getFormat(), sampleRate, parser.getChannelCount(), sampleWordSize, pageAlignedLength);
+        }
+        throw std::runtime_error("Unsupported flow format.");
     }
 
-    bool Instance::deleteFlow(uuids::uuid const& in_id)
+    bool Instance::deleteFlow(uuids::uuid const& flowId)
     {
-        return _flowManager->deleteFlow(in_id);
+        return _flowManager.deleteFlow(flowId);
     }
 
     // This function is performed in a 'collaborative best effort' way.
@@ -224,7 +237,7 @@ namespace mxl::lib
 
         try
         {
-            auto base = std::filesystem::path{_flowManager->getDomain()};
+            auto base = std::filesystem::path{_flowManager.getDomain()};
             if (exists(base) && is_directory(base))
             {
                 for (auto const& entry : std::filesystem::directory_iterator{base})
@@ -233,7 +246,7 @@ namespace mxl::lib
                     {
                         // Try to obtain an exclusive lock on the flow data file.  If we can obtain one it means that no
                         // other process is writing to the flow.
-                        auto const flowDataFile = mxl::lib::makeFlowDataFilePath(_flowManager->getDomain(), entry.path().stem().string());
+                        auto const flowDataFile = mxl::lib::makeFlowDataFilePath(_flowManager.getDomain(), entry.path().stem().string());
 
                         // Check if the flow data file exists
                         if (!std::filesystem::exists(flowDataFile))

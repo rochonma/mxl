@@ -13,22 +13,25 @@ TEST_CASE("Invalid Times", "[time]")
 
     auto const now = mxlGetTime();
 
-    REQUIRE(mxlTimestampToGrainIndex(nullptr,         now) == MXL_UNDEFINED_INDEX);
-    REQUIRE(mxlTimestampToGrainIndex(&badRate,        now) == MXL_UNDEFINED_INDEX);
-    REQUIRE(mxlTimestampToGrainIndex(&badNumerator,   now) == MXL_UNDEFINED_INDEX);
-    REQUIRE(mxlTimestampToGrainIndex(&badDenominator, now) == MXL_UNDEFINED_INDEX);
-    REQUIRE(mxlTimestampToGrainIndex(&goodRate,       now) != MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToHeadIndex(nullptr,         now) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToHeadIndex(&badRate,        now) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToHeadIndex(&badNumerator,   now) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToHeadIndex(&badDenominator, now) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToHeadIndex(&goodRate,       now) != MXL_UNDEFINED_INDEX);
 }
 
-TEST_CASE("Grain 0 and 1", "[time]")
+TEST_CASE("Index 0 and 1", "[time]")
 {
     auto const rate = Rational{30000, 1001};
 
-    auto const firstGrainTimeNs  = 0ULL;
-    auto const secondGrainTimeNs = rate.denominator * 1000000000ULL / rate.numerator;
+    auto const firstIndexTimeNs  = 0ULL;
+    auto const secondIndexTimeNs = rate.denominator * 1'000'000'000ULL / rate.numerator;
 
-    REQUIRE(mxlTimestampToGrainIndex(&rate, firstGrainTimeNs ) == 0);
-    REQUIRE(mxlTimestampToGrainIndex(&rate, secondGrainTimeNs) == 1);
+    REQUIRE(mxlTimestampToHeadIndex(&rate, firstIndexTimeNs ) == 0);
+    REQUIRE(mxlTimestampToHeadIndex(&rate, secondIndexTimeNs) == 1);
+
+    REQUIRE(mxlHeadIndexToTimestamp(&rate, 0) == firstIndexTimeNs );
+    REQUIRE(mxlHeadIndexToTimestamp(&rate, 1) == secondIndexTimeNs);
 }
 
 TEST_CASE("Test TAI Epoch", "[time]")

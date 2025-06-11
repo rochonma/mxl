@@ -3,29 +3,27 @@
 #include <cstdint>
 #include <memory>
 #include <uuid.h>
-#include <condition_variable>
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
-#include "FlowManager.hpp"
-#include "FlowReader.hpp"
+#include "DiscreteFlowReader.hpp"
+#include "DiscreteFlowData.hpp"
 
 namespace mxl::lib
 {
+    class FlowManager;
 
     ///
     /// Implementation of a flow reader based on POSIX shared memory.
     ///
-    class PosixFlowReader final
-        : public FlowReader
+    class PosixDiscreteFlowReader final
+        : public DiscreteFlowReader
     {
     public:
-        /// Ctor.
-        PosixFlowReader(FlowManager::ptr manager, uuids::uuid const& flowId);
-
         ///
-        /// \see FlowReader::open
+        /// \param[in] manager A referene to the flow manager used to obtain
+        ///         additional information about the flows context.
         ///
-        virtual bool open() override;
+        PosixDiscreteFlowReader(FlowManager const& manager, uuids::uuid const& flowId, std::unique_ptr<DiscreteFlowData>&& data);
 
         ///
         /// Accessor for the current FlowInfo. A copy of the current structure is returned.
@@ -62,8 +60,7 @@ namespace mxl::lib
         virtual mxlStatus getGrain(std::uint64_t in_index, GrainInfo* out_grainInfo, std::uint8_t** out_payload) override;
 
     private:
-        FlowManager::ptr _manager;
-        std::unique_ptr<FlowData> _flowData;
+        std::unique_ptr<DiscreteFlowData> _flowData;
         int _accessFileFd;
     };
 

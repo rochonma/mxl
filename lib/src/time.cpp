@@ -11,57 +11,66 @@ uint64_t mxlGetTime()
 
 extern "C"
 MXL_EXPORT
-uint64_t mxlGetCurrentGrainIndex(Rational const* in_editRate)
+uint64_t mxlGetCurrentHeadIndex(Rational const* editRate)
 {
-    if ((in_editRate == nullptr) || (in_editRate->denominator == 0) || (in_editRate->numerator == 0))
+    if ((editRate == nullptr) || (editRate->denominator == 0) || (editRate->numerator == 0))
     {
         return MXL_UNDEFINED_INDEX;
     }
 
     auto const now = currentTime(mxl::lib::Clock::TAI);
     return now
-        ? mxlTimestampToGrainIndex(in_editRate, now.value)
+        ? mxlTimestampToHeadIndex(editRate, now.value)
         : MXL_UNDEFINED_INDEX;
 }
 
 extern "C"
 MXL_EXPORT
-uint64_t mxlTimestampToGrainIndex(Rational const* in_editRate, uint64_t in_timestamp)
+uint64_t mxlTimestampToHeadIndex(Rational const* editRate, uint64_t timestamp)
 {
-    if ((in_editRate == nullptr) || (in_editRate->denominator == 0) || (in_editRate->numerator == 0))
+    if ((editRate == nullptr) || (editRate->denominator == 0) || (editRate->numerator == 0))
     {
         return MXL_UNDEFINED_INDEX;
     }
 
-    auto const grainDurationNs = in_editRate->denominator * 1'000'000'000ULL / in_editRate->numerator;
-    return in_timestamp / grainDurationNs;
+    return (timestamp * editRate->numerator + 500'000'000ULL * editRate->denominator) / (1'000'000'000ULL * editRate->denominator);
 }
 
 extern "C"
 MXL_EXPORT
-uint64_t mxlGetNsUntilGrainIndex(uint64_t in_index, Rational const* in_editRate)
+uint64_t mxlHeadIndexToTimestamp(Rational const* editRate, uint64_t index)
 {
     // Validate the edit rate
-    if ((in_editRate == nullptr) || (in_editRate->denominator == 0) || (in_editRate->numerator == 0))
+    if ((editRate == nullptr) || (editRate->denominator == 0) || (editRate->numerator == 0))
     {
         return MXL_UNDEFINED_INDEX;
     }
 
-    // Compute how many nanoseconds a grain lasts
-    auto const grainDurationNs = in_editRate->denominator * 1'000'000'000ULL / in_editRate->numerator;
+    return (index * editRate->denominator * 1'000'000'000ULL) / editRate->numerator;
+}
+
+extern "C"
+MXL_EXPORT
+uint64_t mxlGetNsUntilHeadIndex(uint64_t index, Rational const* editRate)
+{
+    // Validate the edit rate
+    if ((editRate == nullptr) || (editRate->denominator == 0) || (editRate->numerator == 0))
+    {
+        return MXL_UNDEFINED_INDEX;
+    }
 
     // Compute the total nanosecond value since the epoch of the target grain
-    auto const targetGrainNs = in_index * grainDurationNs;
+    auto const targetNs = (index * editRate->denominator * 1'000'000'000ULL) / editRate->numerator;
 
     auto const nowNs = static_cast<std::uint64_t>(currentTime(mxl::lib::Clock::TAI).value);
-    return ((nowNs != 0ULL) && (targetGrainNs >= nowNs))
-        ? targetGrainNs - nowNs
+    return ((nowNs != 0ULL) && (targetNs >= nowNs))
+        ? targetNs - nowNs
         : 0ULL;
 }
 
 extern "C"
 MXL_EXPORT
-void mxlSleepForNs(uint64_t in_ns)
+void mxlSleepForNs(uint64_t ns)
 {
-    mxl::lib::this_thread::sleep(mxl::lib::Duration(in_ns), mxl::lib::Clock::TAI);
+    mxl::lib::this_thread::sleep(mxl::lib::Duration(ns), mxl::lib::Clock::TAI);
 }

@@ -53,7 +53,7 @@ TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
     /// Compute the grain index for the flow rate and current TAI time.
     auto const rate = Rational{60000, 1001};
     auto const now = mxlGetTime();
-    uint64_t index = mxlTimestampToGrainIndex(&rate, now);
+    uint64_t index = mxlTimestampToHeadIndex(&rate, now);
     REQUIRE(index != MXL_UNDEFINED_INDEX);
 
     /// Open the grain.
@@ -69,11 +69,11 @@ TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
     FlowInfo fInfo1;
     REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
-    REQUIRE(fInfo1.headIndex == 0);
+    REQUIRE(fInfo1.discrete.headIndex == 0);
 
     /// Mark the grain as invalid
     gInfo.flags |= GRAIN_FLAG_INVALID;
-    REQUIRE(mxlFlowWriterCommit(writer, &gInfo) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowWriterCommitGrain(writer, &gInfo) == MXL_STATUS_OK);
 
     /// Create back the grain using a flow reader.
     REQUIRE(mxlFlowReaderGetGrain(reader, index, 16, &gInfo, &buffer) == MXL_STATUS_OK);
@@ -93,13 +93,13 @@ TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
     REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo2) == MXL_STATUS_OK);
 
     /// Confirm that that head has moved.
-    REQUIRE(fInfo2.headIndex == index);
+    REQUIRE(fInfo2.discrete.headIndex == index);
 
     // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
-    REQUIRE(fInfo2.lastReadTime > fInfo1.lastReadTime);
+    REQUIRE(fInfo2.common.lastReadTime > fInfo1.common.lastReadTime);
 
     // We commited a new grain. This should have increased the lastWriteTime field.
-    REQUIRE(fInfo2.lastWriteTime > fInfo1.lastWriteTime);
+    REQUIRE(fInfo2.common.lastWriteTime > fInfo1.common.lastWriteTime);
 
     /// Release the reader
     REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
@@ -200,7 +200,7 @@ TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
     /// Compute the grain index for the flow rate and current TAI time.
     auto const rate = Rational{60000, 1001};
     auto const now = mxlGetTime();
-    uint64_t index = mxlTimestampToGrainIndex(&rate, now);
+    uint64_t index = mxlTimestampToHeadIndex(&rate, now);
     REQUIRE(index != MXL_UNDEFINED_INDEX);
 
     /// Open the grain.
@@ -218,11 +218,11 @@ TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
     FlowInfo fInfo1;
     REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
-    REQUIRE(fInfo1.headIndex == 0);
+    REQUIRE(fInfo1.discrete.headIndex == 0);
 
     /// Mark the grain as invalid
     gInfo.flags |= GRAIN_FLAG_INVALID;
-    REQUIRE(mxlFlowWriterCommit(writer, &gInfo) == MXL_STATUS_OK);
+    REQUIRE(mxlFlowWriterCommitGrain(writer, &gInfo) == MXL_STATUS_OK);
 
     /// Create back the grain using a flow reader.
     REQUIRE(mxlFlowReaderGetGrain(reader, index, 16, &gInfo, &buffer) == MXL_STATUS_OK);
@@ -241,13 +241,13 @@ TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
     REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo2) == MXL_STATUS_OK);
 
     /// Confirm that that head has moved.
-    REQUIRE(fInfo2.headIndex == index);
+    REQUIRE(fInfo2.discrete.headIndex == index);
 
     // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
-    REQUIRE(fInfo2.lastReadTime > fInfo1.lastReadTime);
+    REQUIRE(fInfo2.common.lastReadTime > fInfo1.common.lastReadTime);
 
     // We commited a new grain. This should have increased the lastWriteTime field.
-    REQUIRE(fInfo2.lastWriteTime > fInfo1.lastWriteTime);
+    REQUIRE(fInfo2.common.lastWriteTime > fInfo1.common.lastWriteTime);
 
     /// Delete the reader
     REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
@@ -293,7 +293,7 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
     /// Compute the grain index for the flow rate and current TAI time.
     auto const rate = Rational{60000, 1001};
     auto const now = mxlGetTime();
-    uint64_t index = mxlTimestampToGrainIndex(&rate, now);
+    uint64_t index = mxlTimestampToHeadIndex(&rate, now);
     REQUIRE(index != MXL_UNDEFINED_INDEX);
 
     /// Open the grain.
@@ -304,7 +304,7 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
     FlowInfo fInfo1;
     REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
-    REQUIRE(fInfo1.headIndex == 0);
+    REQUIRE(fInfo1.discrete.headIndex == 0);
 
     size_t const maxSlice = 8;
     auto sliceSize = gInfo.grainSize / maxSlice;
@@ -312,14 +312,14 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
     {
         /// Write a slice to the grain.
         gInfo.commitedSize += sliceSize;
-        REQUIRE(mxlFlowWriterCommit(writer, &gInfo) == MXL_STATUS_OK);
+        REQUIRE(mxlFlowWriterCommitGrain(writer, &gInfo) == MXL_STATUS_OK);
 
         FlowInfo sliceFlowInfo;
         REQUIRE(mxlFlowReaderGetInfo(reader, &sliceFlowInfo) == MXL_STATUS_OK);
-        REQUIRE(sliceFlowInfo.headIndex == index);
+        REQUIRE(sliceFlowInfo.discrete.headIndex == index);
 
         // We commited data to a grain. This should have increased the lastWriteTime field.
-        REQUIRE(sliceFlowInfo.lastWriteTime > fInfo1.lastWriteTime);
+        REQUIRE(sliceFlowInfo.common.lastWriteTime > fInfo1.common.lastWriteTime);
 
         /// Read back the partial grain using the flow reader.
         REQUIRE(mxlFlowReaderGetGrain(reader, index, 8, &gInfo, &buffer) == MXL_STATUS_OK);
@@ -332,7 +332,7 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
 
         // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
         REQUIRE(mxlFlowReaderGetInfo(reader, &sliceFlowInfo) == MXL_STATUS_OK);
-        REQUIRE(sliceFlowInfo.lastReadTime > fInfo1.lastReadTime);
+        REQUIRE(sliceFlowInfo.common.lastReadTime > fInfo1.common.lastReadTime);
     }
 
     REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
@@ -344,3 +344,120 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
 }
 
 #endif
+
+TEST_CASE("Audio Flow : Create/Destroy", "[mxl flows]")
+{
+    auto const opts = "{}";
+    auto const flowId = "b3bb5be7-9fe9-4324-a5bb-4c70e1084449";
+    auto const flowDef = mxl::tests::readFile("data/audio_flow.json");
+
+    auto domain = std::filesystem::path{"./mxl_unittest_domain"}; // Remove that path if it exists.
+    remove_all(domain);
+
+    create_directories(domain);
+    auto instanceReader = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instanceReader != nullptr);
+
+    auto instanceWriter = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instanceWriter != nullptr);
+
+    {
+        FlowInfo flowInfo;
+        REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &flowInfo) == MXL_STATUS_OK);
+
+        REQUIRE(flowInfo.continuous.sampleRate.numerator == 48000U);
+        REQUIRE(flowInfo.continuous.sampleRate.denominator == 1U);
+        REQUIRE(flowInfo.continuous.channelCount == 1U);
+        REQUIRE(flowInfo.continuous.bufferLength > 128U);
+    }
+
+    mxlFlowReader reader;
+    REQUIRE(mxlCreateFlowReader(instanceReader, flowId, "", &reader) == MXL_STATUS_OK);
+
+    mxlFlowWriter writer;
+    REQUIRE(mxlCreateFlowWriter(instanceWriter, flowId, "", &writer) == MXL_STATUS_OK);
+
+    /// Compute the grain index for the flow rate and current TAI time.
+    auto const rate = Rational{48000, 1};
+    auto const now = mxlGetTime();
+    auto const index = mxlTimestampToHeadIndex(&rate, now);
+    REQUIRE(index != MXL_UNDEFINED_INDEX);
+
+    {
+        /// Open a range of samples for writing
+        MutableWrappedMultiBufferSlice payloadBuffersSlices;
+        REQUIRE(mxlFlowWriterOpenSamples(writer, index, 64U, &payloadBuffersSlices) == MXL_STATUS_OK);
+
+        // Verify that the returned info looks alright
+        REQUIRE(payloadBuffersSlices.count == 1U);
+        REQUIRE((payloadBuffersSlices.base.fragments[0].size + payloadBuffersSlices.base.fragments[1].size) == 256U);
+
+        // Fill some test data
+        for (auto i = 0U; i < payloadBuffersSlices.base.fragments[0].size; ++i)
+        {
+            static_cast<std::uint8_t*>(payloadBuffersSlices.base.fragments[0].pointer)[i] = i;
+        }
+        for (auto i = 0U; i < payloadBuffersSlices.base.fragments[1].size; ++i)
+        {
+            static_cast<std::uint8_t*>(payloadBuffersSlices.base.fragments[0].pointer)[i] = payloadBuffersSlices.base.fragments[0].size + i;
+        }
+
+        /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
+        FlowInfo flowInfo;
+        REQUIRE(mxlFlowReaderGetInfo(reader, &flowInfo) == MXL_STATUS_OK);
+
+        // Verify that the headindex is yet to be modified
+        REQUIRE(flowInfo.continuous.headIndex == 0);
+
+        /// Commit the sample range
+        REQUIRE(mxlFlowWriterCommitSamples(writer) == MXL_STATUS_OK);
+    }
+
+    {
+        /// Open a range of samples for reading
+        WrappedMultiBufferSlice payloadBuffersSlices;
+        REQUIRE(mxlFlowReaderGetSamples(reader, index, 64U, &payloadBuffersSlices) == MXL_STATUS_OK);
+
+        // Verify that the returned info looks alright
+        REQUIRE(payloadBuffersSlices.count == 1U);
+        REQUIRE((payloadBuffersSlices.base.fragments[0].size + payloadBuffersSlices.base.fragments[1].size) == 256U);
+
+        for (auto i = 0U; i < payloadBuffersSlices.base.fragments[0].size; ++i)
+        {
+            REQUIRE(static_cast<std::uint8_t const*>(payloadBuffersSlices.base.fragments[0].pointer)[i] == i);
+        }
+        for (auto i = 0U; i < payloadBuffersSlices.base.fragments[1].size; ++i)
+        {
+            REQUIRE(static_cast<std::uint8_t const*>(payloadBuffersSlices.base.fragments[0].pointer)[i] == payloadBuffersSlices.base.fragments[0].size + i);
+        }
+
+        // Get the updated flow info
+        FlowInfo flowInfo;
+        REQUIRE(mxlFlowReaderGetInfo(reader, &flowInfo) == MXL_STATUS_OK);
+
+        // Confirm that that head has moved.
+        REQUIRE(flowInfo.continuous.headIndex == index);
+    }
+
+    /// Release the reader
+    REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
+
+    {
+        // Use the writer after closing the reader.
+        MutableWrappedMultiBufferSlice payloadBuffersSlices;
+        REQUIRE(mxlFlowWriterOpenSamples(writer, index + 64U, 64U, &payloadBuffersSlices) == MXL_STATUS_OK);
+
+        // Verify that the returned info looks alright
+        REQUIRE(payloadBuffersSlices.count == 1U);
+        REQUIRE((payloadBuffersSlices.base.fragments[0].size + payloadBuffersSlices.base.fragments[1].size) == 256U);
+    }
+
+    REQUIRE(mxlReleaseFlowWriter(instanceWriter, writer) == MXL_STATUS_OK);
+    REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_STATUS_OK);
+
+    // This should be gone from the filesystem.
+    REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_ERR_FLOW_NOT_FOUND);
+
+    mxlDestroyInstance(instanceReader);
+    mxlDestroyInstance(instanceWriter);
+}

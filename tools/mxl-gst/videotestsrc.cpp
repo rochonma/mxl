@@ -308,7 +308,7 @@ int main(int argc, char** argv)
         gst_sample = gst_pipeline.pullSample();
         if (gst_sample)
         {
-            grain_index = mxlGetCurrentGrainIndex(&frame_rate);
+            grain_index = mxlGetCurrentHeadIndex(&frame_rate);
 
             gst_buffer = gst_sample_get_buffer(gst_sample);
             if (gst_buffer)
@@ -331,7 +331,7 @@ int main(int argc, char** argv)
                     ::memcpy(mxl_buffer, map_info.data, gInfo.grainSize);
 
                     gInfo.commitedSize = gInfo.grainSize;
-                    if (mxlFlowWriterCommit(writer, &gInfo) != MXL_STATUS_OK)
+                    if (mxlFlowWriterCommitGrain(writer, &gInfo) != MXL_STATUS_OK)
                     {
                         MXL_ERROR("Failed to open grain at index '{}'", grain_index);
                         break;
@@ -344,7 +344,7 @@ int main(int argc, char** argv)
 
             gst_sample_unref(gst_sample);
 
-            auto ns = mxlGetNsUntilGrainIndex(grain_index++, &frame_rate);
+            auto ns = mxlGetNsUntilHeadIndex(grain_index++, &frame_rate);
             mxlSleepForNs(ns);
         }
     }
