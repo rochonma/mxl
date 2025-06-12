@@ -1,11 +1,11 @@
 {
-    "name": "mxl - Ubuntu 24.04",
+    "name": "mxl - Ubuntu 25.10",
     "build": {
         "dockerfile": "../Dockerfile",
         "context": "../",
         "args": {
-            "BASE_IMAGE_VERSION": "24.04"
-        }
+            "BASE_IMAGE_VERSION": "25.10"
+        }        
     },
     "runArgs": [
         "--security-opt",
