@@ -193,7 +193,7 @@ private:
     GstElement* _pipeline{nullptr};
 };
 
-int real_main(int argc, char** argv)
+int real_main(int argc, char** argv, void*)
 {
     std::signal(SIGINT, &signal_handler);
     std::signal(SIGTERM, &signal_handler);
@@ -321,8 +321,8 @@ int main(int argc, char* argv[])
 {
 #if defined(__APPLE__) && TARGET_OS_MAC && !TARGET_OS_IPHONE
     // macOS needs an NSApp event loop.  This gst function sets it up.
-    return gst_macos_main((GstMainFunc)real_main, argc, argv, NULL);
+    return gst_macos_main((GstMainFunc)real_main, argc, argv, nullptr);
 #else
-    return real_main(argc, argv);
+    return real_main(argc, argv, nullptr);
 #endif
 }
