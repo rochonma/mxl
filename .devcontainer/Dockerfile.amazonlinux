@@ -3,9 +3,7 @@ FROM amazonlinux:${BASE_IMAGE_VERSION}
 
 
 # Configure sysctl parameters
-RUN echo "vm.swappiness=0" >> /etc/sysctl.conf \
- && echo "kernel.shm_rmid_forced=1" >> /etc/sysctl.conf \
- && echo "kernel.shmmax=2147483648" >> /etc/sysctl.conf
+RUN echo "vm.swappiness=0" >> /etc/sysctl.conf
 
 # Install dependencies
 RUN dnf install -y \

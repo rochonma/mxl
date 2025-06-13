@@ -1,11 +1,11 @@
 {
-    "name": "mxl - Amazon Linux",
+    "name": "mxl - Ubuntu 25.10",
     "build": {
-        "dockerfile": "../Dockerfile.amazonlinux",
+        "dockerfile": "../Dockerfile",
         "context": "../",
         "args": {
-            "BASE_IMAGE_VERSION": "2023"
-        }
+            "BASE_IMAGE_VERSION": "25.10"
+        }        
     },
     "runArgs": [
         "--security-opt",

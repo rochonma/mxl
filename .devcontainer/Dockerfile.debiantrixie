@@ -2,9 +2,7 @@ FROM debian:trixie-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN echo 'vm.swappiness=0'          >> /etc/sysctl.conf \
- && echo 'kernel.shm_rmid_forced=1' >> /etc/sysctl.conf \
- && echo 'kernel.shmmax=2147483648' >> /etc/sysctl.conf
+RUN echo 'vm.swappiness=0'          >> /etc/sysctl.conf
 
 # Install basic and runtime dependencies
 RUN apt-get update \

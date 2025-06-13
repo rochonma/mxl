@@ -15,11 +15,11 @@
     },
     {
       "name": "spdlog",
-      "version>=": "1.15.2#0"
+      "version>=": "1.15.3#0"
     },
     {
       "name": "fmt",
-      "version>=": "11.0.2#0"
+      "version>=": "11.0.2#1"
     },
     {
       "name": "picojson",
@@ -31,9 +31,9 @@
     },
     {
       "name": "pcapplusplus",
-      "version>=": "24.9#0",
+      "version>=": "25.5#0",
       "platform": "linux"
     }
   ],
-  "builtin-baseline": "bc994510d2eb11aac7b43b03f67a7751d5bfe0e4"
+  "builtin-baseline": "189fcdcb953b871d206ffada6db047496fc3f496"
 }
