@@ -22,18 +22,15 @@ permissions:
 
 jobs:
   build:
-    name: Build on Ubuntu ${{ matrix.ubuntu_version }} - ${{ matrix.architecture }}
+    name: Build on Ubuntu ${{ matrix.os }} - ${{matrix.version}} - ${{ matrix.architecture }} - ${{ matrix.compiler }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - ubuntu_version: 24.04
-            runner: ubuntu-latest
-            architecture: x86_64
+          os: [ubuntu]    
+          version: [24.04]
+          architecture: [x86_64, arm64]
+          compiler: [Linux-GCC-Release, Linux-Clang-Release]
 
-          - ubuntu_version: 24.04
-            runner: ubuntu-24.04
-            architecture: arm64
     env:
       DOCKER_BUILDKIT: 1
 
@@ -65,7 +62,7 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --build-arg BASE_IMAGE_VERSION=${{ matrix.ubuntu_version }} \
+            --build-arg BASE_IMAGE_VERSION=${{ matrix.version }} \
             --build-arg USER_UID=${{ steps.vars.outputs.uid }} \
             --build-arg USER_GID=${{ steps.vars.outputs.gid }} \
             -t mxl_build_container_with_source \
@@ -77,20 +74,18 @@ jobs:
           docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
             -i mxl_build_container_with_source \
             bash -c "
-              cmake -S /workspace/mxl -B /workspace/mxl/build/Linux-Clang-Release \
-                --preset Linux-Clang-Release \
+              cmake -S /workspace/mxl -B /workspace/mxl/build/${{ matrix.compiler }} \
+                --preset ${{ matrix.compiler }} \
                 -DMXL_BUILD_NUMBER=${{ github.run_number }} \
                 -DCMAKE_INSTALL_PREFIX=/workspace/mxl/install
             "
 
       - name: Build Project
-        env:
-          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"          
         run: |
           docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
             -i mxl_build_container_with_source \
             bash -c "
-              cmake --build /workspace/mxl/build/Linux-Clang-Release -t all doc install package
+              cmake --build /workspace/mxl/build/${{ matrix.compiler }} -t all doc install package
             "
 
       - name: Run Tests
@@ -98,7 +93,7 @@ jobs:
           docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
             -i mxl_build_container_with_source \
             bash -c "
-              cd /workspace/mxl/build/Linux-Clang-Release && \
+              cd /workspace/mxl/build/${{ matrix.compiler }} && \
               ctest --output-junit test-results.xml
             "
 
@@ -113,7 +108,7 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-ubuntu-${{ matrix.ubuntu_version }}-${{ matrix.architecture }}-artifacts
+          name: build-ubuntu-${{ matrix.os }}-${{ matrix.architecture }}-${{matrix.compiler}} artifacts
           path: |
-            ${{ github.workspace }}/build/Linux-Clang-Release/*.deb
+            ${{ github.workspace }}/build/${{ matrix.compiler }}/*.deb
             ${{ github.workspace }}/install/
