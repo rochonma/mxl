@@ -32,7 +32,8 @@ RUN apt clean all && apt-get update \
     pkg-config \
     bison \
     flex \
-    htop
+    htop \
+    ccache
 
 ARG CLANG_VERSION=19
 RUN apt-get install -y --no-install-recommends \

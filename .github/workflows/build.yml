@@ -3,8 +3,8 @@ name: Build and Test the MXL Project
 #
 # A few ideas for improvements:
 # - Avoid rebuilding the image if it already exists (test if exists, if not build it and push it to the github registry, if it does, pull it)
-# - This workflow tries to leverage binary caching of vcpkg artefacts. unfortunalely there is a known issue with the 'gha' provider (github actions).
-#   See : https://github.com/microsoft/vcpkg/issues/45116#issuecomment-2829014919
+# - This workflow tries to leverage binary caching of vcpkg artefacts. unfortunately the vcpkg 'gha' provider (github actions) was recently removed.
+#   It should be possible to use this approach instead : https://github.com/lukka/run-cmake/issues/152#issuecomment-2833729132
 #
 
 on:
@@ -38,13 +38,6 @@ jobs:
       DOCKER_BUILDKIT: 1
 
     steps:
-      - name: Export GitHub Actions cache environment variables
-        uses: actions/github-script@v7
-        with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -80,15 +73,8 @@ jobs:
             .devcontainer
 
       - name: Configure CMake
-        env:
-          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
-          VCPKG_FEATURE_FLAGS: binarycaching
         run: |
           docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
-            -e VCPKG_BINARY_SOURCES \
-            -e ACTIONS_CACHE_URL \
-            -e ACTIONS_RUNTIME_TOKEN \
-            -e VCPKG_FEATURE_FLAGS \
             -i mxl_build_container_with_source \
             bash -c "
               cmake -S /workspace/mxl -B /workspace/mxl/build/Linux-Clang-Release \
@@ -102,9 +88,6 @@ jobs:
           VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"          
         run: |
           docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
-            -e VCPKG_BINARY_SOURCES \
-            -e ACTIONS_CACHE_URL \
-            -e ACTIONS_RUNTIME_TOKEN \
             -i mxl_build_container_with_source \
             bash -c "
               cmake --build /workspace/mxl/build/Linux-Clang-Release -t all doc install package
