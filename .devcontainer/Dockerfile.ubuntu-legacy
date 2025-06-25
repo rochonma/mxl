@@ -32,7 +32,8 @@ RUN apt clean all && apt-get update \
     pkg-config \
     htop \
     bison \
-    flex
+    flex \
+    ccache
 
 RUN apt-get update || true \
  && apt-get -y install libgstreamer1.0-dev \
