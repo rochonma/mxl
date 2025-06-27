@@ -90,7 +90,7 @@ namespace mxl::lib
         auto const id = uuids::uuid::from_string(flowId);
         // FIXME: Check result of the from_string operation.
 
-        auto const lock = std::lock_guard<std::mutex>{_mutex};
+        auto const lock = std::lock_guard{_mutex};
         if (auto const pos = _readers.lower_bound(*id); pos != _readers.end())
         {
             auto& v = (*pos).second;
@@ -122,7 +122,7 @@ namespace mxl::lib
         {
             auto const& id = reader->getId();
 
-            auto const lock = std::lock_guard<std::mutex>{_mutex};
+            auto const lock = std::lock_guard{_mutex};
             if (auto const pos = _readers.find(id); pos != _readers.end())
             {
                 if ((*pos).second.releaseReference())
@@ -142,7 +142,7 @@ namespace mxl::lib
         auto const id = uuids::uuid::from_string(flowId);
         // FIXME: Check result of the from_string operation.
 
-        auto const lock = std::lock_guard<std::mutex>{_mutex};
+        auto const lock = std::lock_guard{_mutex};
         if (auto const pos = _writers.lower_bound(*id); pos != _writers.end())
         {
             auto& v = (*pos).second;
@@ -175,7 +175,7 @@ namespace mxl::lib
             auto const& id = writer->getId();
             auto removeFlowWatch = false;
             {
-                auto const lock = std::lock_guard<std::mutex>{_mutex};
+                auto const lock = std::lock_guard{_mutex};
                 if (auto const pos = _writers.find(id); pos != _writers.end())
                 {
                     if ((*pos).second.releaseReference())
