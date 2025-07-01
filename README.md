@@ -67,12 +67,6 @@ cmake --build build/Linux-Clang-Debug --target all
 
 1. Install the [Homebrew](https://brew.sh) package manager
 2. Install doxygen and ccache through brew: `brew install doxygen ccache`
-3. Install the GStreamer runtime and developement packages according to [these instructions](https://gstreamer.freedesktop.org/documentation/installing/on-mac-osx.html?gi-language=c#download-and-install-the-sdk)
-
-### macOS notes
-
-1. Install the [Homebrew](https://brew.sh) package manager
-2. Install doxygen and ccache through brew: `brew install doxygen ccache`
 3. Install the GStreamer runtime and development packages according to [these instructions](https://gstreamer.freedesktop.org/documentation/installing/on-mac-osx.html?gi-language=c#download-and-install-the-sdk)
 
 ## Using with CMake
