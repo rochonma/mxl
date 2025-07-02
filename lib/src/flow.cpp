@@ -347,7 +347,7 @@ mxlStatus mxlFlowWriterCancelSamples(mxlFlowWriter writer)
     {
         if (auto const cppWriter = dynamic_cast<ContinuousFlowWriter*>(to_FlowWriter(writer)); cppWriter != nullptr)
         {
-            return cppWriter->commit();
+            return cppWriter->cancel();
         }
         return MXL_ERR_INVALID_FLOW_WRITER;
     }
