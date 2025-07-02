@@ -108,8 +108,8 @@ namespace mxl::lib
     {
         static_assert(sizeof(T) == sizeof(std::uint32_t), "Only 32-bit types are supported.");
 
-        MXL_TRACE("Wake all waiting on = {}, val : {}", static_cast<void const*>(in_addr), *in_addr);
-        do_wake_all(in_addr);
+        MXL_TRACE("Wake one waiting on = {}, val : {}", static_cast<void const*>(in_addr), *in_addr);
+        do_wake_one(in_addr);
     }
 
     template<typename T>
@@ -117,8 +117,8 @@ namespace mxl::lib
     {
         static_assert(sizeof(T) == sizeof(std::uint32_t), "Only 32-bit types are supported.");
 
-        MXL_TRACE("Wake one waiting on = {}, val : {}", static_cast<void const*>(in_addr), *in_addr);
-        do_wake_one(in_addr);
+        MXL_TRACE("Wake all waiting on = {}, val : {}", static_cast<void const*>(in_addr), *in_addr);
+        do_wake_all(in_addr);
     }
 
     // Explicit template instantiations
