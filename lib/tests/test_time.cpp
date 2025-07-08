@@ -47,3 +47,13 @@ TEST_CASE("Test TAI Epoch", "[time]")
     REQUIRE(t.tm_min == 0);
     REQUIRE(t.tm_sec == 0);
 }
+
+TEST_CASE("Index <-> Timestamp roundtrip", "[time]")
+{
+    auto const rate = Rational{30000, 1001};
+    auto const currentHeadIndex = mxlGetCurrentHeadIndex(&rate);
+    auto const timestamp = mxlHeadIndexToTimestamp(&rate, currentHeadIndex);
+    auto const calculatedHeadIndex = mxlTimestampToHeadIndex(&rate, timestamp);
+    REQUIRE(calculatedHeadIndex == currentHeadIndex);
+    REQUIRE(mxlGetNsUntilHeadIndex(currentHeadIndex + 33, &rate) > 0);
+}
