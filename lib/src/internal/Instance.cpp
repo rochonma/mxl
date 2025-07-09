@@ -55,8 +55,10 @@ namespace mxl::lib
             std::string err = picojson::parse(parsed, options);
             if (!err.empty())
             {
+                MXL_ERROR("Failed to parse options json: {}", err);
                 return false;
             }
+
             if (!parsed.is<picojson::object>())
             {
                 return false;
@@ -371,7 +373,7 @@ namespace mxl::lib
             }
         }
 
-        // If we have am instance level options string, parse it as well.
+        // If we have an instance level options string, parse it as well.
         if (!options.empty())
         {
             picojson::object config;
@@ -391,7 +393,7 @@ namespace mxl::lib
         MXL_DEBUG("History duration set to {} ns", historyDuration);
     }
 
-    std::uint64_t Instance::getHistoryDuration() const
+    std::uint64_t Instance::getHistoryDurationNs() const
     {
         return _historyDuration;
     }

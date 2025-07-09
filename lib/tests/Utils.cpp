@@ -19,7 +19,7 @@ std::string mxl::tests::readFile(std::filesystem::path const& filepath)
 /// Simple utility function to get the domain path for the tests.
 /// This will return a path to /dev/shm/mxl_domain on Linux and a path in the user's
 /// home directory ($HOME/mxl_domain) on macOS.
-/// \return the path to the mxl domain directory.  The directory may not exist yet.
+/// \return The path to the mxl domain directory.  The directory may not exist yet.
 auto mxl::tests::getDomainPath() -> std::filesystem::path
 {
 #ifdef __linux__

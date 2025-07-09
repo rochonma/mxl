@@ -99,7 +99,7 @@ namespace mxl::lib
 
         /// Accessor for the history duration value
         /// \return The history duration in nanoseconds
-        std::uint64_t getHistoryDuration() const;
+        std::uint64_t getHistoryDurationNs() const;
 
     private:
         template<typename T>

@@ -29,7 +29,7 @@ TEST_CASE("Options : Default value", "[options]")
     auto flowIoFactory = std::make_unique<mxl::lib::PosixFlowIoFactory>();
     auto const instance = std::make_shared<Instance>(domain, "", std::move(flowIoFactory));
 
-    REQUIRE(instance->getHistoryDuration() == 100'000'000ULL); // default value
+    REQUIRE(instance->getHistoryDurationNs() == 100'000'000ULL); // default value
 
     // cleanup
     remove_all(domain);
@@ -55,7 +55,7 @@ TEST_CASE("Options : Domain config", "[options]")
     auto flowIoFactory = std::make_unique<mxl::lib::PosixFlowIoFactory>();
     auto const instance = std::make_shared<Instance>(domain, "", std::move(flowIoFactory));
 
-    REQUIRE(instance->getHistoryDuration() == 500'000'000ULL); // domain value
+    REQUIRE(instance->getHistoryDurationNs() == 500'000'000ULL); // domain value
 
     // cleanup
     remove_all(domain);
@@ -76,7 +76,7 @@ TEST_CASE("Options : Instance config", "[options]")
 
     // We should get the default value, not the instance config value.
     // We don't want per-instance history durations.
-    REQUIRE(instance->getHistoryDuration() == 100'000'000ULL);
+    REQUIRE(instance->getHistoryDurationNs() == 100'000'000ULL);
 
     // cleanup
     remove_all(domain);
@@ -103,7 +103,7 @@ TEST_CASE("Options : Domain + Instance config", "[options]")
     auto const instance = std::make_shared<Instance>(domain, options_250, std::move(flowIoFactory));
 
     // We should use the domain config, not the instance config.  We don't want per-instance history durations.
-    REQUIRE(instance->getHistoryDuration() == 500'000'000ULL);
+    REQUIRE(instance->getHistoryDurationNs() == 500'000'000ULL);
 
     // cleanup
     remove_all(domain);
@@ -129,7 +129,7 @@ TEST_CASE("Options : invalid configs", "[options]")
     auto flowIoFactory = std::make_unique<mxl::lib::PosixFlowIoFactory>();
     auto const instance = std::make_shared<Instance>(domain, "def", std::move(flowIoFactory));
 
-    REQUIRE(instance->getHistoryDuration() == 100'000'000ULL); // default value
+    REQUIRE(instance->getHistoryDurationNs() == 100'000'000ULL); // default value
 
     // Clean up the domain path
     remove_all(domain);
