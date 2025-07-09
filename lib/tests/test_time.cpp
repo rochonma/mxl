@@ -13,11 +13,11 @@ TEST_CASE("Invalid Times", "[time]")
 
     auto const now = mxlGetTime();
 
-    REQUIRE(mxlTimestampToHeadIndex(nullptr, now) == MXL_UNDEFINED_INDEX);
-    REQUIRE(mxlTimestampToHeadIndex(&badRate, now) == MXL_UNDEFINED_INDEX);
-    REQUIRE(mxlTimestampToHeadIndex(&badNumerator, now) == MXL_UNDEFINED_INDEX);
-    REQUIRE(mxlTimestampToHeadIndex(&badDenominator, now) == MXL_UNDEFINED_INDEX);
-    REQUIRE(mxlTimestampToHeadIndex(&goodRate, now) != MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToIndex(nullptr, now) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToIndex(&badRate, now) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToIndex(&badNumerator, now) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToIndex(&badDenominator, now) == MXL_UNDEFINED_INDEX);
+    REQUIRE(mxlTimestampToIndex(&goodRate, now) != MXL_UNDEFINED_INDEX);
 }
 
 TEST_CASE("Index 0 and 1", "[time]")
@@ -27,11 +27,11 @@ TEST_CASE("Index 0 and 1", "[time]")
     auto const firstIndexTimeNs = 0ULL;
     auto const secondIndexTimeNs = rate.denominator * 1'000'000'000ULL / rate.numerator;
 
-    REQUIRE(mxlTimestampToHeadIndex(&rate, firstIndexTimeNs) == 0);
-    REQUIRE(mxlTimestampToHeadIndex(&rate, secondIndexTimeNs) == 1);
+    REQUIRE(mxlTimestampToIndex(&rate, firstIndexTimeNs) == 0);
+    REQUIRE(mxlTimestampToIndex(&rate, secondIndexTimeNs) == 1);
 
-    REQUIRE(mxlHeadIndexToTimestamp(&rate, 0) == firstIndexTimeNs);
-    REQUIRE(mxlHeadIndexToTimestamp(&rate, 1) == secondIndexTimeNs);
+    REQUIRE(mxlIndexToTimestamp(&rate, 0) == firstIndexTimeNs);
+    REQUIRE(mxlIndexToTimestamp(&rate, 1) == secondIndexTimeNs);
 }
 
 TEST_CASE("Test TAI Epoch", "[time]")
@@ -51,9 +51,9 @@ TEST_CASE("Test TAI Epoch", "[time]")
 TEST_CASE("Index <-> Timestamp roundtrip", "[time]")
 {
     auto const rate = Rational{30000, 1001};
-    auto const currentHeadIndex = mxlGetCurrentHeadIndex(&rate);
-    auto const timestamp = mxlHeadIndexToTimestamp(&rate, currentHeadIndex);
-    auto const calculatedHeadIndex = mxlTimestampToHeadIndex(&rate, timestamp);
-    REQUIRE(calculatedHeadIndex == currentHeadIndex);
-    REQUIRE(mxlGetNsUntilHeadIndex(currentHeadIndex + 33, &rate) > 0);
+    auto const currentIndex = mxlGetCurrentIndex(&rate);
+    auto const timestamp = mxlIndexToTimestamp(&rate, currentIndex);
+    auto const calculatedIndex = mxlTimestampToIndex(&rate, timestamp);
+    REQUIRE(calculatedIndex == currentIndex);
+    REQUIRE(mxlGetNsUntilIndex(currentIndex + 33, &rate) > 0);
 }

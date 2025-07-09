@@ -11,7 +11,7 @@ uint64_t mxlGetTime()
 
 extern "C"
 MXL_EXPORT
-uint64_t mxlGetCurrentHeadIndex(Rational const* editRate)
+uint64_t mxlGetCurrentIndex(Rational const* editRate)
 {
     if ((editRate == nullptr) || (editRate->denominator == 0) || (editRate->numerator == 0))
     {
@@ -19,12 +19,12 @@ uint64_t mxlGetCurrentHeadIndex(Rational const* editRate)
     }
 
     auto const now = currentTime(mxl::lib::Clock::TAI);
-    return now ? mxlTimestampToHeadIndex(editRate, now.value) : MXL_UNDEFINED_INDEX;
+    return now ? mxlTimestampToIndex(editRate, now.value) : MXL_UNDEFINED_INDEX;
 }
 
 extern "C"
 MXL_EXPORT
-uint64_t mxlTimestampToHeadIndex(Rational const* editRate, uint64_t timestamp)
+uint64_t mxlTimestampToIndex(Rational const* editRate, uint64_t timestamp)
 {
     if ((editRate == nullptr) || (editRate->denominator == 0) || (editRate->numerator == 0))
     {
@@ -36,7 +36,7 @@ uint64_t mxlTimestampToHeadIndex(Rational const* editRate, uint64_t timestamp)
 
 extern "C"
 MXL_EXPORT
-uint64_t mxlHeadIndexToTimestamp(Rational const* editRate, uint64_t index)
+uint64_t mxlIndexToTimestamp(Rational const* editRate, uint64_t index)
 {
     // Validate the edit rate
     if ((editRate == nullptr) || (editRate->denominator == 0) || (editRate->numerator == 0))
@@ -49,7 +49,7 @@ uint64_t mxlHeadIndexToTimestamp(Rational const* editRate, uint64_t index)
 
 extern "C"
 MXL_EXPORT
-uint64_t mxlGetNsUntilHeadIndex(uint64_t index, Rational const* editRate)
+uint64_t mxlGetNsUntilIndex(uint64_t index, Rational const* editRate)
 {
     // Validate the edit rate
     if ((editRate == nullptr) || (editRate->denominator == 0) || (editRate->numerator == 0))
@@ -57,9 +57,7 @@ uint64_t mxlGetNsUntilHeadIndex(uint64_t index, Rational const* editRate)
         return MXL_UNDEFINED_INDEX;
     }
 
-    // Compute the total nanosecond value since the epoch of the target grain
-    auto const targetNs = (index * editRate->denominator * 1'000'000'000ULL) / editRate->numerator;
-
+    auto const targetNs = mxlIndexToTimestamp(editRate, index);
     auto const nowNs = static_cast<std::uint64_t>(currentTime(mxl::lib::Clock::TAI).value);
     return ((nowNs != 0ULL) && (targetNs >= nowNs)) ? targetNs - nowNs : 0ULL;
 }
