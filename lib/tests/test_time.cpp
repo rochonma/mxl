@@ -48,12 +48,29 @@ TEST_CASE("Test TAI Epoch", "[time]")
     REQUIRE(t.tm_sec == 0);
 }
 
-TEST_CASE("Index <-> Timestamp roundtrip", "[time]")
+TEST_CASE("Index <-> Timestamp roundtrip (current)", "[time]")
 {
     auto const rate = Rational{30000, 1001};
+
+    auto const currentTime = mxlGetTime();
     auto const currentIndex = mxlGetCurrentIndex(&rate);
     auto const timestamp = mxlIndexToTimestamp(&rate, currentIndex);
     auto const calculatedIndex = mxlTimestampToIndex(&rate, timestamp);
+
+    auto const timeDelta = (currentTime > timestamp) ? currentTime - timestamp : timestamp - currentTime;
+    REQUIRE(timeDelta < 500'000'000U);
     REQUIRE(calculatedIndex == currentIndex);
     REQUIRE(mxlGetNsUntilIndex(currentIndex + 33, &rate) > 0);
+}
+
+TEST_CASE("Index <-> Timestamp roundtrip (others)", "[time]")
+{
+    auto const editRate = Rational{30000, 1001};
+
+    for (auto i = 30'000'000U; i < 60'000'000U; ++i)
+    {
+        auto const ts = mxlIndexToTimestamp(&editRate, i);
+        auto const rti = mxlTimestampToIndex(&editRate, ts);
+        REQUIRE(i == rti);
+    }
 }
