@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <system_error>
 #include <thread>
 #include <utility>
 #include <fcntl.h>
@@ -28,6 +29,24 @@ namespace mxl::lib
         , _callback{std::move(in_callback)}
         , _running{true}
     {
+        // Validate that the domain path exists and is a directory
+        std::error_code ec;
+        if (!std::filesystem::exists(in_domain, ec))
+        {
+            throw std::filesystem::filesystem_error(
+                "Domain path does not exist", 
+                in_domain,
+                std::make_error_code(std::errc::no_such_file_or_directory)
+            );
+        }
+        if (!std::filesystem::is_directory(in_domain, ec))
+        {
+            throw std::filesystem::filesystem_error(
+                "Domain path is not a directory", 
+                in_domain,
+                std::make_error_code(std::errc::not_a_directory)
+            );
+        }
 #ifdef __APPLE__
         /* Open a kernel queue. */
         if ((_kq = kqueue()) < 0)
@@ -36,11 +55,21 @@ namespace mxl::lib
         }
 #elif defined __linux__
         _inotifyFd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
-        _epollFd = epoll_create1(0);
-
-        if (_inotifyFd == -1 || _epollFd == -1)
+        if (_inotifyFd == -1)
         {
-            throw std::runtime_error("Failed to initialize inotify or epoll");
+            MXL_ERROR("DomainWatcher: inotify_init1 failed: {}", strerror(errno));
+            throw std::runtime_error(std::string("inotify_init1: ") + strerror(errno));
+        }   
+
+        // Create epoll instance (close-on-exec), so child processes do not inherit it.
+        // This is necessary to avoid file descriptor leaks in child processes.
+        _epollFd = epoll_create1(EPOLL_CLOEXEC);
+        if (_epollFd == -1)
+        {
+            MXL_ERROR("DomainWatcher: epoll_create1 failed (errno {}: {})", errno, strerror(errno));
+            // Clean up inotify FD before throwing
+            close(_inotifyFd);
+            throw std::runtime_error(std::string("epoll_create1 failed: ") + strerror(errno));
         }
 
         // Add inotify file descriptor to epoll
@@ -49,12 +78,27 @@ namespace mxl::lib
         event.data.fd = _inotifyFd;
         if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, _inotifyFd, &event) == -1)
         {
-            throw std::runtime_error("Failed to add inotify FD to epoll");
+            MXL_ERROR("DomainWatcher: epoll_ctl ADD(inotify) failed: {}", strerror(errno));
+            close(_inotifyFd);
+            close(_epollFd);
+            throw std::runtime_error(std::string("epoll_ctl ADD inotify: ") + strerror(errno));
         }
 #endif
 
         // Start event processing thread
-        _watchThread = std::thread{&DomainWatcher::processEvents, this};
+        try
+        {
+            _watchThread = std::thread(&DomainWatcher::processEvents, this);
+        }
+        catch (const std::system_error &e)
+        {
+            MXL_ERROR("DomainWatcher: failed to start watcher thread: {}", e.what());
+            close(_inotifyFd);
+            close(_epollFd);
+            throw std::runtime_error(
+                std::string{"DomainWatcher: failed to start watcher thread: "} + e.what()
+            );
+        }
     }
 
     DomainWatcher::~DomainWatcher()
@@ -68,12 +112,22 @@ namespace mxl::lib
 #ifdef __APPLE__
         close(_kq);
 #elif defined __linux__
+        // Linux: remove all inotify watches and close FDs
         for (const auto& [wd, rec] : _watches)
         {
-            inotify_rm_watch(_inotifyFd, wd);
+            if (inotify_rm_watch(_inotifyFd, wd) == -1)
+            {
+                MXL_ERROR("DomainWatcher: Error removing inotify watch (wd={}): {}", wd, strerror(errno));
+            }
         }
-        close(_inotifyFd);
-        close(_epollFd);
+        if (close(_inotifyFd) == -1)
+        {
+            MXL_ERROR("DomainWatcher: Error closing inotify FD: {}", strerror(errno));
+        }
+        if (close(_epollFd) == -1)
+        {
+            MXL_ERROR("DomainWatcher: Error closing epoll FD: {}", strerror(errno));
+        }
 #endif
     }
 
@@ -95,6 +149,8 @@ namespace mxl::lib
         std::lock_guard<std::mutex> lock(_mutex);
         int16_t useCount = 0;
         bool found = false;
+
+        // Check if this flow is already being watched
         for (auto const& [wd, rec] : _watches)
         {
             if (*rec == *record)
@@ -107,7 +163,7 @@ namespace mxl::lib
 
         if (!found)
         {
-            MXL_DEBUG("Record for {} not found, creating one.", id);
+            MXL_DEBUG("DomainWatcher: Record for {} not found, creating one.", id);
             record->count = 1;
 
 #ifdef __APPLE__
@@ -118,13 +174,14 @@ namespace mxl::lib
 #endif
             if (wd == -1)
             {
-                throw std::runtime_error("Failed to add watch for file: " + record->fileName);
+                MXL_ERROR("DomainWatcher: Failed to add watch for file '{}': {}", record->fileName, strerror(errno));
+                throw std::runtime_error("DomainWatcher: Failed to add watch for file: " + record->fileName);
             }
             else
             {
-                MXL_DEBUG("Added watch {} for file: {}", wd, record->fileName);
+                MXL_DEBUG("DomainWatcher: Added watch {} for file: {}", wd, record->fileName);
             }
-            _watches.insert({wd, record});
+            _watches.emplace(wd, record);
             useCount = record->count;
         }
         return useCount;
@@ -144,6 +201,7 @@ namespace mxl::lib
         int16_t useCount = -1;
         std::lock_guard<std::mutex> lock(_mutex);
 
+        // Find the watch record that matches this flow
         for (auto const& [wd, rec] : _watches)
         {
             if (*rec == *record)
@@ -151,9 +209,17 @@ namespace mxl::lib
                 if (rec->count == 1)
                 {
 #ifdef __APPLE__
-                    close(wd);
+                if (close(wd) == -1)
+                {
+                    MXL_ERROR("DomainWatcher: Error closing file descriptor {} for '{}'", wd, rec->fileName);
+                }
 #elif defined __linux__
-                    inotify_rm_watch(_inotifyFd, wd);
+                if (inotify_rm_watch(_inotifyFd, wd) == -1)
+                {
+                    MXL_ERROR("DomainWatcher: Failed to remove inotify watch (wd={}) for '{}': {}", 
+                              wd, rec->fileName, strerror(errno));
+                    // Continue with cleanup despite failure
+                }
 #endif
                     rec->count--;
                     useCount = rec->count;
@@ -171,7 +237,7 @@ namespace mxl::lib
                 }
                 else if (rec->count == 0)
                 {
-                    MXL_DEBUG("Should not have 0 use-count record");
+                    MXL_DEBUG("DomainWatcher: Should not have 0 use-count record");
                     useCount = -1;
                 }
                 else
@@ -236,20 +302,39 @@ namespace mxl::lib
 
 #elif defined __linux__
         epoll_event events[1];
-        alignas(alignof(struct inotify_event)) char buffer[406] = {};
+        alignas(alignof(struct inotify_event)) char buffer[4096] = {};
 
         while (_running)
         {
             int nfds = epoll_wait(_epollFd, events, 1, 250);
-            if (nfds <= 0)
+            if (nfds == -1)
             {
-                continue;
+                if (errno == EINTR)
+                {
+                    continue;  // interrupted by signal, retry loop
+                }
+                MXL_ERROR("epoll_wait failed: {}", strerror(errno));
+                break;  // exit thread on critical epoll error
+            }
+            if (nfds == 0)
+            {
+                continue;  // no events, continue looping
             }
 
+            // We have an inotify event ready
             ssize_t length = read(_inotifyFd, buffer, sizeof(buffer));
-            if (length <= 0 || !_running)
+            if (length == -1)
             {
-                continue;
+                if (errno == EINTR || errno == EAGAIN)
+                {
+                    continue;  // spurious interrupt or non-blocking empty read, retry
+                }
+                MXL_ERROR("Error reading inotify events: {}", strerror(errno));
+                break;  // break on critical read error
+            }
+            if (length == 0)
+            {
+                continue;  // nothing to read (should not happen if nfds > 0)
             }
 
             std::lock_guard<std::mutex> lock(_mutex);
@@ -262,7 +347,16 @@ namespace mxl::lib
                 {
                     if ((event->mask & (IN_ACCESS | IN_MODIFY | IN_ATTRIB)) != 0)
                     {
-                        _callback(it->second->id, it->second->type);
+                        try
+                        {
+                            _callback(it->second->id, it->second->type);
+                        } catch (const std::exception& e)
+                        {
+                            MXL_ERROR("Exception in DomainWatcher callback: {}", e.what());
+                        } catch (...)
+                        {
+                            MXL_ERROR("Unknown exception in DomainWatcher callback");
+                        }
                     }
                 }
                 ptr += sizeof(struct inotify_event) + event->len;
