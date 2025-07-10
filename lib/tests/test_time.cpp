@@ -25,7 +25,7 @@ TEST_CASE("Index 0 and 1", "[time]")
     auto const rate = Rational{30000, 1001};
 
     auto const firstIndexTimeNs = 0ULL;
-    auto const secondIndexTimeNs = rate.denominator * 1'000'000'000ULL / rate.numerator;
+    auto const secondIndexTimeNs = (rate.denominator * 1'000'000'000ULL + (rate.numerator / 2)) / rate.numerator;
 
     REQUIRE(mxlTimestampToIndex(&rate, firstIndexTimeNs) == 0);
     REQUIRE(mxlTimestampToIndex(&rate, secondIndexTimeNs) == 1);

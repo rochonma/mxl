@@ -18,8 +18,8 @@ uint64_t mxlGetCurrentIndex(Rational const* editRate)
         return MXL_UNDEFINED_INDEX;
     }
 
-    auto const now = currentTime(mxl::lib::Clock::TAI);
-    return now ? mxlTimestampToIndex(editRate, now.value) : MXL_UNDEFINED_INDEX;
+    auto const now = mxlGetTime();
+    return now ? mxlTimestampToIndex(editRate, now) : MXL_UNDEFINED_INDEX;
 }
 
 extern "C"
@@ -31,7 +31,8 @@ uint64_t mxlTimestampToIndex(Rational const* editRate, uint64_t timestamp)
         return MXL_UNDEFINED_INDEX;
     }
 
-    return (timestamp * editRate->numerator + 500'000'000ULL * editRate->denominator) / (1'000'000'000ULL * editRate->denominator);
+    return static_cast<uint64_t>((timestamp * __int128_t{editRate->numerator} + 500'000'000 * __int128_t{editRate->denominator}) /
+                                 (1'000'000'000 * __int128_t{editRate->denominator}));
 }
 
 extern "C"
@@ -44,7 +45,8 @@ uint64_t mxlIndexToTimestamp(Rational const* editRate, uint64_t index)
         return MXL_UNDEFINED_INDEX;
     }
 
-    return (index * editRate->denominator * 1'000'000'000ULL) / editRate->numerator;
+    return static_cast<uint64_t>(
+        (index * __int128_t{editRate->denominator} * 1'000'000'000 + __int128_t{editRate->numerator} / 2) / __int128_t{editRate->numerator});
 }
 
 extern "C"
@@ -58,7 +60,7 @@ uint64_t mxlGetNsUntilIndex(uint64_t index, Rational const* editRate)
     }
 
     auto const targetNs = mxlIndexToTimestamp(editRate, index);
-    auto const nowNs = static_cast<std::uint64_t>(currentTime(mxl::lib::Clock::TAI).value);
+    auto const nowNs = mxlGetTime();
     return ((nowNs != 0ULL) && (targetNs >= nowNs)) ? targetNs - nowNs : 0ULL;
 }
 
