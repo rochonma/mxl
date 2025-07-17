@@ -3,3 +3,6 @@ build
 install
 
 CMakeUserPresets.json
+
+.idea
+.vscode
