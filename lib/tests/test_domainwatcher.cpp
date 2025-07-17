@@ -50,8 +50,6 @@ TEST_CASE("Directory Watcher", "[directory watcher]")
     REQUIRE(-1 == watcher.removeFlow(flowId, WatcherType::WRITER));
 }
 
-#ifdef __linux__ // The following tests apply only to Linux (inotify) implementation
-
 TEST_CASE("DomainWatcher triggers callback on file modifications", "[domainwatcher]")
 {
     // This test checks that modifying a watched file triggers the callback with correct UUID and WatcherType.
@@ -216,6 +214,7 @@ TEST_CASE("DomainWatcher error handling for invalid inputs", "[domainwatcher]")
     REQUIRE(emptyWatcher.removeFlow(randomId, mxl::lib::WatcherType::READER) == -1);
 }
 
+#ifdef __linux__ // This test uses /proc/self/fd which is Linux-specific
 TEST_CASE("DomainWatcher cleans up file descriptors on destruction", "[domainwatcher]")
 {
     // This test verifies that DomainWatcher closes its inotify/epoll descriptors upon destruction,
@@ -263,6 +262,7 @@ TEST_CASE("DomainWatcher cleans up file descriptors on destruction", "[domainwat
     // (The DomainWatcher should have closed the two fds it opened: inotify and epoll)
     REQUIRE(fdsAfter == fdsBefore);
 }
+#endif // __linux__
 
 TEST_CASE("DomainWatcher supports concurrent add/remove operations", "[domainwatcher]")
 {
@@ -478,5 +478,3 @@ TEST_CASE("DomainWatcher constructor throws on invalid domain path", "[domainwat
     // Clean up
     remove_all(bad2);
 }
-
-#endif // __linux__
