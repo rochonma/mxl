@@ -386,22 +386,22 @@ TEST_CASE("DomainWatcher triggers WRITER callback on access file modifications",
 {
     // Ensure a WRITER‐type watcher actually fires when the .access file changes
     char const* homeDir = std::getenv("HOME");
-    REQUIRE(homeDir);
+    REQUIRE(homeDir != nullptr);
 
     auto domainPath = std::filesystem::path{homeDir} / "mxl_test_writer_event";
-    std::filesystem::remove_all(domainPath);
-    std::filesystem::create_directories(domainPath);
+    remove_all(domainPath);
+    create_directories(domainPath);
 
     // Synchronization primitives for the callback
     std::mutex mtx;
     std::condition_variable cv;
     bool notified = false;
     uuids::uuid cbId;
-    WatcherType cbType;
+    mxl::lib::WatcherType cbType;
 
     // Install watcher
-    DomainWatcher watcher(domainPath,
-        [&](uuids::uuid id, WatcherType type)
+    mxl::lib::DomainWatcher watcher(domainPath,
+        [&](uuids::uuid id, mxl::lib::WatcherType type)
         {
             std::lock_guard lock(mtx);
             notified = true;
@@ -413,7 +413,7 @@ TEST_CASE("DomainWatcher triggers WRITER callback on access file modifications",
     // Prepare flow directory & files
     std::string flowIdStr = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
     auto flowDir = makeFlowDirectoryName(domainPath, flowIdStr);
-    std::filesystem::create_directories(flowDir);
+    create_directories(flowDir);
     auto flowId = *uuids::uuid::from_string(flowIdStr);
     auto dataFile = makeFlowDataFilePath(flowDir);
     auto accFile = makeFlowAccessFilePath(flowDir);
@@ -421,7 +421,7 @@ TEST_CASE("DomainWatcher triggers WRITER callback on access file modifications",
     std::ofstream(accFile).close();
 
     // Add a WRITER watch
-    REQUIRE(watcher.addFlow(flowId, WatcherType::WRITER) == 1);
+    REQUIRE(watcher.addFlow(flowId, mxl::lib::WatcherType::WRITER) == 1);
 
     // Give the thread time to register
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -445,38 +445,38 @@ TEST_CASE("DomainWatcher triggers WRITER callback on access file modifications",
         bool got = cv.wait_for(lock, std::chrono::seconds(1), [&] { return notified; });
         REQUIRE(got);
         REQUIRE(cbId == flowId);
-        REQUIRE(cbType == WatcherType::WRITER);
+        REQUIRE(cbType == mxl::lib::WatcherType::WRITER);
     }
 
     // Clean up
-    REQUIRE(watcher.removeFlow(flowId, WatcherType::WRITER) == 0);
+    REQUIRE(watcher.removeFlow(flowId, mxl::lib::WatcherType::WRITER) == 0);
 }
 
 TEST_CASE("DomainWatcher constructor throws on invalid domain path", "[domainwatcher]")
 {
     // Ensure constructing on a non‐existent or non‐directory path throws
     char const* homeDir = std::getenv("HOME");
-    REQUIRE(homeDir);
+    REQUIRE(homeDir != nullptr);
 
     // Case: path does not exist
     auto bad1 = std::filesystem::path{homeDir} / "mxl_nonexistent_domain";
-    std::filesystem::remove_all(bad1);
+    remove_all(bad1);
     REQUIRE(!std::filesystem::exists(bad1));
-    REQUIRE_THROWS_AS(DomainWatcher(bad1, nullptr), std::filesystem::filesystem_error);
+    REQUIRE_THROWS_AS(mxl::lib::DomainWatcher(bad1, nullptr), std::filesystem::filesystem_error);
 
     // Case: path exists but is a regular file
     auto bad2 = std::filesystem::path{homeDir} / "mxl_not_a_dir";
-    std::filesystem::remove_all(bad2);
+    remove_all(bad2);
     {
         std::ofstream touch(bad2);
         touch << "notadir";
     }
     REQUIRE(std::filesystem::exists(bad2));
     REQUIRE(std::filesystem::is_regular_file(bad2));
-    REQUIRE_THROWS_AS(DomainWatcher(bad2, nullptr), std::filesystem::filesystem_error);
+    REQUIRE_THROWS_AS(mxl::lib::DomainWatcher(bad2, nullptr), std::filesystem::filesystem_error);
 
     // Clean up
-    std::filesystem::remove_all(bad2);
+    remove_all(bad2);
 }
 
 #endif // __linux__
