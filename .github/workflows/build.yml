@@ -3,8 +3,8 @@ name: Build and Test the MXL Project
 #
 # A few ideas for improvements:
 # - Avoid rebuilding the image if it already exists (test if exists, if not build it and push it to the github registry, if it does, pull it)
-# - This workflow tries to leverage binary caching of vcpkg artefacts. unfortunalely there is a known issue with the 'gha' provider (github actions).
-#   See : https://github.com/microsoft/vcpkg/issues/45116#issuecomment-2829014919
+# - This workflow tries to leverage binary caching of vcpkg artefacts. unfortunately the vcpkg 'gha' provider (github actions) was recently removed.
+#   It should be possible to use this approach instead : https://github.com/lukka/run-cmake/issues/152#issuecomment-2833729132
 #
 
 on:
@@ -19,37 +19,56 @@ permissions:
   issues: read
   checks: write
   pull-requests: write
+  packages: write
 
 jobs:
   build:
-    name: Build on Ubuntu ${{ matrix.ubuntu_version }} - ${{ matrix.architecture }}
+    name: Build on Ubuntu ${{ matrix.os }} - ${{matrix.version}} - ${{ matrix.architecture }} - ${{ matrix.compiler }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - ubuntu_version: 24.04
-            runner: ubuntu-latest
-            architecture: x86_64
+          os: [ubuntu]    
+          version: [24.04]
+          architecture: [x86_64, arm64]
+          compiler: [Linux-GCC-Release, Linux-Clang-Release]
 
-          - ubuntu_version: 24.04
-            runner: ubuntu-24.04
-            architecture: arm64
     env:
       DOCKER_BUILDKIT: 1
 
     steps:
-      - name: Export GitHub Actions cache environment variables
-        uses: actions/github-script@v7
-        with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Initialize Git Submodules (if needed)
         run: git submodule update --init --recursive
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Calculate Docker image hash
+        id: docker-hash
+        run: |
+          # Create a hash based on Dockerfile content and matrix parameters
+          HASH_INPUT=$(cat .devcontainer/Dockerfile .devcontainer/register-clang-version.sh)
+          HASH_INPUT="${HASH_INPUT}${{ matrix.version }}${{ matrix.architecture }}${{ matrix.compiler }}"
+          DOCKER_HASH=$(echo -n "$HASH_INPUT" | sha256sum | cut -d' ' -f1)
+          echo "hash=$DOCKER_HASH" >> $GITHUB_OUTPUT
+          echo "image-tag=ghcr.io/${{ github.repository_owner }}/mxl-build:$DOCKER_HASH" >> $GITHUB_OUTPUT
+
+      - name: Check if Docker image exists
+        id: check-image
+        run: |
+          if docker manifest inspect ${{ steps.docker-hash.outputs.image-tag }} >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Docker image ${{ steps.docker-hash.outputs.image-tag }} already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Docker image ${{ steps.docker-hash.outputs.image-tag }} does not exist"
+          fi
 
       - name: Get runner UID and GID
         id: vars
@@ -70,44 +89,54 @@ jobs:
           chmod g+s ${{ github.workspace }}/install
 
       - name: Build Docker image
+        if: steps.check-image.outputs.exists == 'false'
         run: |
           docker build \
-            --build-arg BASE_IMAGE_VERSION=${{ matrix.ubuntu_version }} \
+            --build-arg BASE_IMAGE_VERSION=${{ matrix.version }} \
             --build-arg USER_UID=${{ steps.vars.outputs.uid }} \
             --build-arg USER_GID=${{ steps.vars.outputs.gid }} \
+            -t ${{ steps.docker-hash.outputs.image-tag }} \
             -t mxl_build_container_with_source \
             -f .devcontainer/Dockerfile \
             .devcontainer
 
-      - name: Configure CMake
-        env:
-          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
-          VCPKG_FEATURE_FLAGS: binarycaching
+      - name: Push Docker image to registry
+        if: steps.check-image.outputs.exists == 'false'
+        run: |
+          docker push ${{ steps.docker-hash.outputs.image-tag }}
+
+      - name: Pull Docker image from registry
+        if: steps.check-image.outputs.exists == 'true'
+        run: |
+          docker pull ${{ steps.docker-hash.outputs.image-tag }}
+          docker tag ${{ steps.docker-hash.outputs.image-tag }} mxl_build_container_with_source
+
+      - name: Run clang-format
         run: |
           docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
-            -e VCPKG_BINARY_SOURCES \
-            -e ACTIONS_CACHE_URL \
-            -e ACTIONS_RUNTIME_TOKEN \
-            -e VCPKG_FEATURE_FLAGS \
             -i mxl_build_container_with_source \
             bash -c "
-              cmake -S /workspace/mxl -B /workspace/mxl/build/Linux-Clang-Release \
-                --preset Linux-Clang-Release \
+              cd /workspace/mxl && \
+              find lib tools -iregex '.*\.\(h\|c\|hpp\|cpp\)' | xargs clang-format --dry-run --Werror
+            "
+
+      - name: Configure CMake
+        run: |
+          docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
+            -i mxl_build_container_with_source \
+            bash -c "
+              cmake -S /workspace/mxl -B /workspace/mxl/build/${{ matrix.compiler }} \
+                --preset ${{ matrix.compiler }} \
                 -DMXL_BUILD_NUMBER=${{ github.run_number }} \
                 -DCMAKE_INSTALL_PREFIX=/workspace/mxl/install
             "
 
       - name: Build Project
-        env:
-          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"          
         run: |
           docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
-            -e VCPKG_BINARY_SOURCES \
-            -e ACTIONS_CACHE_URL \
-            -e ACTIONS_RUNTIME_TOKEN \
             -i mxl_build_container_with_source \
             bash -c "
-              cmake --build /workspace/mxl/build/Linux-Clang-Release -t all doc install package
+              cmake --build /workspace/mxl/build/${{ matrix.compiler }} -t all doc install package
             "
 
       - name: Run Tests
@@ -115,7 +144,7 @@ jobs:
           docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
             -i mxl_build_container_with_source \
             bash -c "
-              cd /workspace/mxl/build/Linux-Clang-Release && \
+              cd /workspace/mxl/build/${{ matrix.compiler }} && \
               ctest --output-junit test-results.xml
             "
 
@@ -130,7 +159,7 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-ubuntu-${{ matrix.ubuntu_version }}-${{ matrix.architecture }}-artifacts
+          name: build-ubuntu-${{ matrix.os }}-${{ matrix.architecture }}-${{matrix.compiler}} artifacts
           path: |
-            ${{ github.workspace }}/build/Linux-Clang-Release/*.deb
+            ${{ github.workspace }}/build/${{ matrix.compiler }}/*.deb
             ${{ github.workspace }}/install/
