@@ -397,10 +397,10 @@ TEST_CASE("DomainWatcher triggers WRITER callback on access file modifications",
     std::condition_variable cv;
     bool notified = false;
     uuids::uuid cbId;
-    mxl::lib::WatcherType cbType;
+    auto cbType = mxl::lib::WatcherType{};
 
     // Install watcher
-    mxl::lib::DomainWatcher watcher(domainPath,
+    auto watcher = mxl::lib::DomainWatcher{domainPath,
         [&](uuids::uuid id, mxl::lib::WatcherType type)
         {
             std::lock_guard lock(mtx);
@@ -408,7 +408,7 @@ TEST_CASE("DomainWatcher triggers WRITER callback on access file modifications",
             cbId = id;
             cbType = type;
             cv.notify_one();
-        });
+        }};
 
     // Prepare flow directory & files
     std::string flowIdStr = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
