@@ -84,15 +84,23 @@ namespace mxl::lib
         catch (std::exception const& e)
         {
             MXL_ERROR("DomainWatcher: failed to start watcher thread: {}", e.what());
+#ifdef __APPLE__
+            ::close(_kq);
+#elif defined __linux__
             ::close(_inotifyFd);
             ::close(_epollFd);
+#endif
             throw;
         }
         catch (...)
         {
             MXL_ERROR("DomainWatcher: failed to start watcher thread: unknown exception");
+#ifdef __APPLE__
+            ::close(_kq);
+#elif defined __linux__
             ::close(_inotifyFd);
             ::close(_epollFd);
+#endif
             throw;
         }
     }
