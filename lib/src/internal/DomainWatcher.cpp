@@ -29,14 +29,8 @@ namespace mxl::lib
         , _callback{std::move(in_callback)}
         , _running{true}
     {
-        // Validate that the domain path exists and is a directory
-        std::error_code ec;
-        if (!std::filesystem::exists(in_domain, ec))
-        {
-            throw std::filesystem::filesystem_error(
-                "Domain path does not exist", in_domain, std::make_error_code(std::errc::no_such_file_or_directory));
-        }
-        if (!std::filesystem::is_directory(in_domain, ec))
+        // Validate that the domain path is a directory
+        if (!std::filesystem::is_directory(in_domain))
         {
             throw std::filesystem::filesystem_error("Domain path is not a directory", in_domain, std::make_error_code(std::errc::not_a_directory));
         }
@@ -44,14 +38,16 @@ namespace mxl::lib
         /* Open a kernel queue. */
         if ((_kq = kqueue()) < 0)
         {
-            throw std::runtime_error("Failed to create a kqueue");
+            auto const error = errno;
+            throw std::system_error(error, std::generic_category(), "Failed to create a kqueue");
         }
 #elif defined __linux__
         _inotifyFd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
         if (_inotifyFd == -1)
         {
-            MXL_ERROR("DomainWatcher: inotify_init1 failed: {}", strerror(errno));
-            throw std::runtime_error(std::string("inotify_init1: ") + strerror(errno));
+            auto const error = errno;
+            MXL_ERROR("DomainWatcher: inotify_init1 failed: {}", std::strerror(error));
+            throw std::system_error(error, std::generic_category(), "inotify_init1 failed");
         }
 
         // Create epoll instance (close-on-exec), so child processes do not inherit it.
@@ -59,10 +55,11 @@ namespace mxl::lib
         _epollFd = epoll_create1(EPOLL_CLOEXEC);
         if (_epollFd == -1)
         {
-            MXL_ERROR("DomainWatcher: epoll_create1 failed (errno {}: {})", errno, strerror(errno));
+            auto const error = errno;
+            MXL_ERROR("DomainWatcher: epoll_create1 failed (errno {}: {})", error, std::strerror(error));
             // Clean up inotify FD before throwing
-            close(_inotifyFd);
-            throw std::runtime_error(std::string("epoll_create1 failed: ") + strerror(errno));
+            ::close(_inotifyFd);
+            throw std::system_error(error, std::generic_category(), "epoll_create1 failed");
         }
 
         // Add inotify file descriptor to epoll
@@ -71,10 +68,11 @@ namespace mxl::lib
         event.data.fd = _inotifyFd;
         if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, _inotifyFd, &event) == -1)
         {
-            MXL_ERROR("DomainWatcher: epoll_ctl ADD(inotify) failed: {}", strerror(errno));
-            close(_inotifyFd);
-            close(_epollFd);
-            throw std::runtime_error(std::string("epoll_ctl ADD inotify: ") + strerror(errno));
+            auto const error = errno;
+            MXL_ERROR("DomainWatcher: epoll_ctl ADD(inotify) failed: {}", std::strerror(error));
+            ::close(_inotifyFd);
+            ::close(_epollFd);
+            throw std::system_error(error, std::generic_category(), "epoll_ctl ADD inotify failed");
         }
 #endif
 
@@ -83,12 +81,19 @@ namespace mxl::lib
         {
             _watchThread = std::thread(&DomainWatcher::processEvents, this);
         }
-        catch (std::system_error const& e)
+        catch (std::exception const& e)
         {
             MXL_ERROR("DomainWatcher: failed to start watcher thread: {}", e.what());
-            close(_inotifyFd);
-            close(_epollFd);
-            throw std::runtime_error(std::string{"DomainWatcher: failed to start watcher thread: "} + e.what());
+            ::close(_inotifyFd);
+            ::close(_epollFd);
+            throw;
+        }
+        catch (...)
+        {
+            MXL_ERROR("DomainWatcher: failed to start watcher thread: unknown exception");
+            ::close(_inotifyFd);
+            ::close(_epollFd);
+            throw;
         }
     }
 
@@ -101,23 +106,26 @@ namespace mxl::lib
         }
 
 #ifdef __APPLE__
-        close(_kq);
+        ::close(_kq);
 #elif defined __linux__
         // Linux: remove all inotify watches and close FDs
         for (auto const& [wd, rec] : _watches)
         {
             if (inotify_rm_watch(_inotifyFd, wd) == -1)
             {
-                MXL_ERROR("DomainWatcher: Error removing inotify watch (wd={}): {}", wd, strerror(errno));
+                auto const error = errno;
+                MXL_ERROR("DomainWatcher: Error removing inotify watch (wd={}): {}", wd, std::strerror(error));
             }
         }
-        if (close(_inotifyFd) == -1)
+        if (::close(_inotifyFd) == -1)
         {
-            MXL_ERROR("DomainWatcher: Error closing inotify FD: {}", strerror(errno));
+            auto const error = errno;
+            MXL_ERROR("DomainWatcher: Error closing inotify FD: {}", std::strerror(error));
         }
-        if (close(_epollFd) == -1)
+        if (::close(_epollFd) == -1)
         {
-            MXL_ERROR("DomainWatcher: Error closing epoll FD: {}", strerror(errno));
+            auto const error = errno;
+            MXL_ERROR("DomainWatcher: Error closing epoll FD: {}", std::strerror(error));
         }
 #endif
     }
@@ -165,8 +173,9 @@ namespace mxl::lib
 #endif
             if (wd == -1)
             {
-                MXL_ERROR("DomainWatcher: Failed to add watch for file '{}': {}", record->fileName, strerror(errno));
-                throw std::runtime_error("DomainWatcher: Failed to add watch for file: " + record->fileName);
+                auto const error = errno;
+                MXL_ERROR("DomainWatcher: Failed to add watch for file '{}': {}", record->fileName, std::strerror(error));
+                throw std::system_error(error, std::generic_category(), "Failed to add watch for file: " + record->fileName);
             }
             else
             {
@@ -200,14 +209,15 @@ namespace mxl::lib
                 if (rec->count == 1)
                 {
 #ifdef __APPLE__
-                    if (close(wd) == -1)
+                    if (::close(wd) == -1)
                     {
                         MXL_ERROR("DomainWatcher: Error closing file descriptor {} for '{}'", wd, rec->fileName);
                     }
 #elif defined __linux__
                     if (inotify_rm_watch(_inotifyFd, wd) == -1)
                     {
-                        MXL_ERROR("DomainWatcher: Failed to remove inotify watch (wd={}) for '{}': {}", wd, rec->fileName, strerror(errno));
+                        auto const error = errno;
+                        MXL_ERROR("DomainWatcher: Failed to remove inotify watch (wd={}) for '{}': {}", wd, rec->fileName, std::strerror(error));
                         // Continue with cleanup despite failure
                     }
 #endif
@@ -277,7 +287,8 @@ namespace mxl::lib
             int eventCount = kevent(_kq, eventsToMonitor.data(), watchCount, eventData.data(), watchCount, &timeout);
             if (eventCount < 0)
             {
-                MXL_ERROR("kevent error {}", strerror(errno));
+                auto const error = errno;
+                MXL_ERROR("kevent error {}", std::strerror(error));
                 break;
             }
             else if (eventCount)
@@ -299,11 +310,12 @@ namespace mxl::lib
             int nfds = epoll_wait(_epollFd, events, 1, 250);
             if (nfds == -1)
             {
-                if (errno == EINTR)
+                auto const error = errno;
+                if (error == EINTR)
                 {
                     continue; // interrupted by signal, retry loop
                 }
-                MXL_ERROR("epoll_wait failed: {}", strerror(errno));
+                MXL_ERROR("epoll_wait failed: {}", std::strerror(error));
                 break; // exit thread on critical epoll error
             }
             if (nfds == 0)
@@ -315,11 +327,12 @@ namespace mxl::lib
             ssize_t length = read(_inotifyFd, buffer, sizeof(buffer));
             if (length == -1)
             {
-                if (errno == EINTR || errno == EAGAIN)
+                auto const error = errno;
+                if ((error == EINTR) || (error == EAGAIN))
                 {
                     continue; // spurious interrupt or non-blocking empty read, retry
                 }
-                MXL_ERROR("Error reading inotify events: {}", strerror(errno));
+                MXL_ERROR("Error reading inotify events: {}", std::strerror(error));
                 break; // break on critical read error
             }
             if (length == 0)
