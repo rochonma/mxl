@@ -1,7 +1,7 @@
 <!-- SPDX-FileCopyrightText: 2025 Contributors to the Media eXchange Layer project. -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# MXL : Media Exchange Layer
+# MXL : Media eXchange Layer
 
 [![Build Pipeline](https://github.com/dmf-mxl/mxl/actions/workflows/build.yml/badge.svg)](https://github.com/dmf-mxl/mxl/actions/workflows/build.yml)
 [![GitHub release](https://img.shields.io/github/v/release/dmf-mxl/mxl)](https://github.com/dmf-mxl/mxl/releases)
@@ -14,7 +14,7 @@ Rapid advances in computing power and network infrastructure are transforming th
 
 To address these challenges, the [EBU Dynamic Media Facility (DMF)](https://tech.ebu.ch/groups/dmf) initiative proposes a standardised architecture inspired by the cloud-hyperscaler model. In this architecture, discrete “media functions”, the modular building blocks responsible for ingesting, processing, and delivering content, are deployed onto a common container-based platform. These functions can be provisioned and scaled on-demand, and strategically placed wherever compute, storage, and bandwidth are most readily available, whether on-premises, at the network edge, or in public or private clouds.
 
-At the heart of the [DMF architecture](https://tech.ebu.ch/publications/white-paper-2024-09-03) lies the Media Exchange Layer (MXL), a high-performance data plane designed to simplify and accelerate communication between these distributed media functions. The MXL enables entirely new production paradigms, including asynchronous “faster-than-live” workflows, allowing teams to produce content more flexibly and quickly than traditional linear models permit. Moreover, its extensible design supports evolving transport mechanisms and new media formats as they emerge, ensuring that the architecture is well equipped to evolve alongside technological progress.
+At the heart of the [DMF architecture](https://tech.ebu.ch/publications/white-paper-2024-09-03) lies the Media eXchange Layer (MXL), a high-performance data plane designed to simplify and accelerate communication between these distributed media functions. The MXL enables entirely new production paradigms, including asynchronous “faster-than-live” workflows, allowing teams to produce content more flexibly and quickly than traditional linear models permit. Moreover, its extensible design supports evolving transport mechanisms and new media formats as they emerge, ensuring that the architecture is well equipped to evolve alongside technological progress.
 
 ![docs/Media eXchange Layer.png](https://github.com/dmf-mxl/mxl/blob/53e889c888b2daceb4bf550943f3a194f559f182/docs/Media%20eXchange%20Layer.png "MXL Layer Diagram")
 

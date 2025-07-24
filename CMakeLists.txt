@@ -126,7 +126,7 @@ endif()
 # CPack Configuration
 set(CPACK_PACKAGE_NAME "dmfmxl-dev")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-set(CPACK_PACKAGE_DESCRIPTION "EBU DMF Media Exchange Layer SDK development package")
+set(CPACK_PACKAGE_DESCRIPTION "EBU DMF Media eXchange Layer SDK development package")
 set(CPACK_PACKAGE_VENDOR "EBU.ch")
 set(CPACK_PACKAGE_CONTACT "DMF MXL <mxl@ebu.ch>")
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}")
