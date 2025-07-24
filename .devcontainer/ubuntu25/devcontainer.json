@@ -5,7 +5,7 @@
         "context": "../",
         "args": {
             "BASE_IMAGE_VERSION": "25.10"
-        }        
+        }
     },
     "runArgs": [
         "--security-opt",
@@ -13,9 +13,7 @@
         "-e",
         "NVIDIA_DRIVER_CAPABILITIES=all",
         "-e",
-        "NVIDIA_VISIBLE_DEVICES=all",
-        "--gpus",
-        "all"
+        "NVIDIA_VISIBLE_DEVICES=all"
     ],
     "mounts": [
         // These 2 mount points are required for GUI applications to work in WSL2. Remove them if you are not using WSL2.
@@ -47,6 +45,9 @@
         "NINJA_STATUS": "[%r processes, %f/%t @ %o/s : %es] ",
         "CCACHE_DIR": "${containerWorkspaceFolder}/.cache/ccache",
         "DISPLAY": "${localEnv:DISPLAY}"
+    },
+    "hostRequirements": {
+        "gpu": "optional"
     },
     "remoteUser": "devcontainer"
 }
