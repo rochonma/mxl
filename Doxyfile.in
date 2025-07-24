@@ -2,7 +2,7 @@
 # located in the lib/ and mxlapp/ subdirectories.
 
 # Project settings
-PROJECT_NAME           = "MXL : Media Exchange Layer"
+PROJECT_NAME           = "MXL : Media eXchange Layer"
 PROJECT_BRIEF          = "MXL"
 OUTPUT_DIRECTORY       = docs
 OUTPUT_LANGUAGE        = English
