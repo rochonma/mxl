@@ -1,5 +1,5 @@
 {
-  "$copyright": "SPDX-FileCopyrightText: 2025 Contributors to the Media eXchange Layer project https://github.com/dmf-mxl/mxl/contributors.md",
+  "$copyright": "SPDX-FileCopyrightText: 2025 Contributors to the Media eXchange Layer project.",
   "$license": "SPDX-License-Identifier: Apache-2.0",
   "description": "MXL Audio Flow",
   "format": "urn:x-nmos:format:audio",
