@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2025 Contributors to the Media eXchange Layer project. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # MXL Project Governance
 
 MXL is a Linux Foundation project.
@@ -95,12 +98,13 @@ Members serve one-year terms and may be reappointed or removed by the TSC.
 ## RC Members
 
 - Peter Brightwell (BBC)
+- Michael Cronk (TVU Networks)
 - Thomas Edwards (AWS)
 - Zakarias Faust (SR)
 - Ian Fletcher (Grass Valley)
 - Pavlo Kondratenko (EBU)
 - John Mailhot (Imagine Communications)
-- Marcel Malchau (SWR)
+- Marcel Briesch (SWR)
 - Phil Myers (Lawo)
 - Mathieu Rochon (CBC/Radio Canada)
 - Willem Vermost (EBU)

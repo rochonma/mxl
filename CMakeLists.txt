@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the Media eXchange Layer project.
+# SPDX-License-Identifier: Apache-2.0
+
 cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
 # Allow version in project definition
@@ -11,7 +14,7 @@ cmake_policy(SET CMP0076 NEW)
 # Set the timestamps of all extracted contents to the time of the extraction
 cmake_policy(SET CMP0135 NEW)
 
-set(mxl_VERSION 0.6.1)
+set(mxl_VERSION 0.6.2)
 
 if(DEFINED MXL_BUILD_NUMBER)
     string(APPEND mxl_VERSION ".${MXL_BUILD_NUMBER}")
@@ -123,7 +126,7 @@ endif()
 # CPack Configuration
 set(CPACK_PACKAGE_NAME "dmfmxl-dev")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-set(CPACK_PACKAGE_DESCRIPTION "EBU DMF Media Exchange Layer SDK development package")
+set(CPACK_PACKAGE_DESCRIPTION "EBU DMF Media eXchange Layer SDK development package")
 set(CPACK_PACKAGE_VENDOR "EBU.ch")
 set(CPACK_PACKAGE_CONTACT "DMF MXL <mxl@ebu.ch>")
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}")

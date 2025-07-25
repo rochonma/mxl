@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the Media eXchange Layer project.
+# SPDX-License-Identifier: Apache-2.0
+
 build
 .cache
 install
@@ -6,4 +9,10 @@ CMakeUserPresets.json
 
 .idea
 .vscode
-vcpkg_cache
+
+vcpkg_cache 
+.DS_Store
+install_amd64
+install_x86_64
+install_arm64
+
