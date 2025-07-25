@@ -6,3 +6,4 @@ CMakeUserPresets.json
 
 .idea
 .vscode
+vcpkg_cache
