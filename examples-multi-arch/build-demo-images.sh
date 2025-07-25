@@ -12,11 +12,15 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "Script directory: ${SCRIPT_DIR}"
 
-# Default values
 ARCHITECTURES=("x86_64" "arm64")  # Changed amd64 to x86_64 to match build_all.sh
 COMPILERS=("Linux-GCC-Release" "Linux-Clang-Release")
 DEFAULT_COMPILER="Linux-Clang-Release"
 DEFAULT_ARCH="x86_64"  # Changed amd64 to x86_64 to match build_all.sh
+# Default Docker Hub username (can be overridden by environment variable)
+DOCKER_HUB_USERNAME="yourusername"
+if [ -n "$DOCKER_HUB_USERNAME_OVERRIDE" ]; then
+  DOCKER_HUB_USERNAME="$DOCKER_HUB_USERNAME_OVERRIDE"
+fi
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -151,9 +155,15 @@ build_multiarch_image() {
     $build_args \
     --tag "mxl-$service:$tag" \
     --file "$temp_dockerfile" \
-    --push=false \
-    --load \
+    --push \
     ${ROOT_DIR}
+
+  # Tag and push to Docker Hub if DOCKER_HUB_USERNAME is set
+  if [ -n "$DOCKER_HUB_USERNAME" ]; then
+    docker tag "mxl-$service:$tag" "$DOCKER_HUB_USERNAME/mxl-$service:$tag"
+    echo "Pushing $DOCKER_HUB_USERNAME/mxl-$service:$tag to Docker Hub..."
+    docker push "$DOCKER_HUB_USERNAME/mxl-$service:$tag"
+  fi
   
   # Clean up temporary Dockerfile
   rm -f "$temp_dockerfile"
