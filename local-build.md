@@ -55,3 +55,26 @@
    cd /workspace/mxl/build/${COMPILER} && \
    ctest --output-junit test-results.xml"
    ```
+1. [Enable containerd image store on Docker Engine](https://docs.docker.com/engine/storage/containerd/)
+   ```sh
+   sudo touch /etc/docker/daemon.json && sudo chmod 666 /etc/docker/daemon.json && sudo echo '{
+   "features": {
+    "containerd-snapshotter": true
+    }
+   }' > /etc/docker/daemon.json
+   ```
+1. [Build lightweight images](//examples-multi-arch/build-demo-images.sh)
+1. Create tar.gz file the MXL reader for x86 platform
+   ```sh
+   mkdir ../portable-mxl-reader
+   cp ./build/Linux-Clang-Release_x86_64/lib/*.so* ../portable-mxl-reader/
+   cp ./build/Linux-Clang-Release_x86_64/tools/mxl-info/mxl-info ../portable-mxl-reader/
+   cp ./build/Linux-Clang-Release_x86_64/tools/mxl-gst/mxl-gst-videosink ../portable-mxl-reader/
+   cp ./build/Linux-Clang-Release_x86_64/lib/tests/data/*.json ../portable-mxl-reader/
+   tar czf ../portable-mxl-reader.tar.gz --directory=../portable-mxl-reader/ .
+   ```
+1. Manualy replace the tar.gz in the hands-on repo
+1. Clean up folders that needs to be deleted (install... vcpkg_cache and build)
+   ```sh
+   shopt -s dotglob && rm -r ./install/* && rm -r ./install_arm64/* && rm -r install_x86_64/* && rm -r ./vcpkg_cache/* && rm -r ./build/*
+   ```
