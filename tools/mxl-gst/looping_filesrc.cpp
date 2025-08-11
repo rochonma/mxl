@@ -401,9 +401,8 @@ private:
                 }
 
                 auto ns = mxlGetNsUntilIndex(grainIndex, &videoGrainRate);
-                mxlSleepForNs(ns);
-
                 gst_sample_unref(sample);
+                mxlSleepForNs(ns);
             }
             else
             {
