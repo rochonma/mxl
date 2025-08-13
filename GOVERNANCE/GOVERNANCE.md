@@ -99,7 +99,7 @@ Members serve one-year terms and may be reappointed or removed by the TSC.
 
 - [Willem Vermost (EBU)](https://github.com/wvermost) - Chair
 - [Phil Myers (Lawo)](https://github.com/philjmyers) - Vice Chair
-- Marcel Briesch (SWR)
+- [Marcel Briesch (SWR)](https://github.com/mbriesch)
 - [Peter Brightwell (BBC)](https://github.com/peterbrightwell)
 - [Michael Cronk (TVU Networks)](https://github.com/michaelcronk01)
 - Thomas Edwards (AWS)
