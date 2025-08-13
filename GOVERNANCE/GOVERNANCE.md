@@ -97,18 +97,18 @@ Members serve one-year terms and may be reappointed or removed by the TSC.
 
 ## RC Members
 
-- Peter Brightwell (BBC)
-- Michael Cronk (TVU Networks)
-- Thomas Edwards (AWS)
-- Zakarias Faust (SR)
-- Ian Fletcher (Grass Valley)
-- Pavlo Kondratenko (EBU)
-- John Mailhot (Imagine Communications)
+- [Willem Vermost (EBU)](https://github.com/wvermost) - Chair
+- [Phil Myers (Lawo)](https://github.com/philjmyers) - Vice Chair
 - Marcel Briesch (SWR)
-- Phil Myers (Lawo)
-- Mathieu Rochon (CBC/Radio Canada)
-- Willem Vermost (EBU)
-- Ian Wagdin (Appear)
+- [Peter Brightwell (BBC)](https://github.com/peterbrightwell)
+- [Michael Cronk (TVU Networks)](https://github.com/michaelcronk01)
+- Thomas Edwards (AWS)
+- [Zakarias Faust (SR)](https://github.com/zakariasfaust)
+- Ian Fletcher (Grass Valley)
+- [Pavlo Kondratenko (EBU)](https://github.com/paulvko)
+- John Mailhot (Imagine Communications)
+- [Mathieu Rochon (CBC/Radio Canada)](https://github.com/rochonma)
+- [Ian Wagdin (Appear)](https://github.com/Ianwagdin)
 
 # Meetings
 
