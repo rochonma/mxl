@@ -102,7 +102,7 @@ Members serve one-year terms and may be reappointed or removed by the TSC.
 - [Marcel Briesch (SWR)](https://github.com/mbriesch)
 - [Peter Brightwell (BBC)](https://github.com/peterbrightwell)
 - [Michael Cronk (TVU Networks)](https://github.com/michaelcronk01)
-- Thomas Edwards (AWS)
+- [Thomas Edwards (AWS)](https://github.com/Thomas-video)
 - [Zakarias Faust (SR)](https://github.com/zakariasfaust)
 - Ian Fletcher (Grass Valley)
 - [Pavlo Kondratenko (EBU)](https://github.com/paulvko)
