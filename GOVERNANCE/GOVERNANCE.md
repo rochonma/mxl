@@ -106,7 +106,7 @@ Members serve one-year terms and may be reappointed or removed by the TSC.
 - [Zakarias Faust (SR)](https://github.com/zakariasfaust)
 - Ian Fletcher (Grass Valley)
 - [Pavlo Kondratenko (EBU)](https://github.com/paulvko)
-- John Mailhot (Imagine Communications)
+- [John Mailhot (Imagine Communications)](https://github.com/jmailhot)
 - [Mathieu Rochon (CBC/Radio Canada)](https://github.com/rochonma)
 - [Ian Wagdin (Appear)](https://github.com/Ianwagdin)
 
