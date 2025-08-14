@@ -30,7 +30,7 @@ namespace mxl::lib
             {
                 auto const minIndex = (headIndex >= (_bufferLength / 2U)) ? (headIndex - (_bufferLength / 2U)) : std::uint64_t{0};
 
-                if (index >= minIndex)
+                if ((index >= minIndex) || ((index - minIndex) > count))
                 {
                     auto const startOffset = (index + _bufferLength - count) % _bufferLength;
                     auto const endOffset = (index % _bufferLength);
