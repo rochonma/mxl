@@ -227,7 +227,7 @@ TEST_CASE("Flow Manager : Open, List, and Error Conditions", "[flow manager]")
     // start clean
     auto ec = std::error_code{};
     remove_all(domain, ec);
-    REQUIRE(std::filesystem::create_directory(domain));
+    REQUIRE(create_directory(domain));
 
     auto manager = std::make_shared<FlowManager>(domain);
 
@@ -376,8 +376,8 @@ TEST_CASE("FlowManager: corrupted flow with missing descriptor", "[flow manager]
     // Manually remove the descriptor JSON to simulate corruption
     auto flowDir = makeFlowDirectoryName(domain, uuids::to_string(id));
     auto descFile = makeFlowDescriptorFilePath(flowDir);
-    REQUIRE(std::filesystem::exists(descFile));
-    std::filesystem::remove(descFile);
+    REQUIRE(exists(descFile));
+    remove(descFile);
 
     // By design decision, corrupted flows are not filtered out
     auto ids = mgr->listFlows();
@@ -460,6 +460,19 @@ TEST_CASE("FlowManager: deleteFlow on read-only domain", "[flow manager][deletio
 
     // Since deletion failed due to permissions, the flow should still exist
     REQUIRE(mgr->listFlows().size() == 1);
+    remove_all(domain);
+}
+
+TEST_CASE("FlowManager: deleteFlow returns false for non-existent flow", "[flow manager][deletion]")
+{
+    auto domain = makeTempDomain();
+    auto mgr = std::make_shared<FlowManager>(domain);
+    auto const nonExistentId = *uuids::uuid::from_string("99999999-9999-9999-9999-999999999999");
+
+    // Try to delete a flow that doesn't exist
+    REQUIRE(mgr->deleteFlow(nonExistentId) == false);
+
+    // Cleanup
     remove_all(domain);
 }
 

@@ -323,7 +323,7 @@ namespace mxl::lib
 
         // Compute the flow directory path
         auto const flowPath = makeFlowDirectoryName(_mxlDomain, uuid);
-        auto const removed = std::filesystem::remove_all(flowPath);
+        auto const removed = remove_all(flowPath);
         if (removed == 0)
         {
             MXL_TRACE("Flow not found or already deleted: {}", uuid);
