@@ -321,15 +321,24 @@ namespace mxl::lib
         auto uuid = uuids::to_string(flowId);
         MXL_TRACE("Delete flow: {}", uuid);
 
-        // Compute the flow directory path
-        auto const flowPath = makeFlowDirectoryName(_mxlDomain, uuid);
-        auto const removed = remove_all(flowPath);
-        if (removed == 0)
+        try
         {
-            MXL_TRACE("Flow not found or already deleted: {}", uuid);
+            // Compute the flow directory path
+            auto const flowPath = makeFlowDirectoryName(_mxlDomain, uuid);
+            auto const removed = remove_all(flowPath);
+            if (removed == 0)
+            {
+                MXL_TRACE("Flow not found or already deleted: {}", uuid);
+                return false;
+            }
+            return true;
+        }
+        catch (...)
+        {
+            // Convert any filesystem exception to false return
+            // This makes the method effectively noexcept while indicating failure
             return false;
         }
-        return true;
     }
 
     void FlowManager::garbageCollect()
