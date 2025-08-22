@@ -77,9 +77,9 @@ namespace mxl::lib
             }
         }
 
-        CommonFlowInfo initCommonFlowInfo(uuids::uuid const& flowId, mxlDataFormat format)
+        mxlCommonFlowInfo initCommonFlowInfo(uuids::uuid const& flowId, mxlDataFormat format)
         {
-            auto result = CommonFlowInfo{};
+            auto result = mxlCommonFlowInfo{};
 
             auto const idSpan = flowId.as_bytes();
             std::memcpy(result.id, idSpan.data(), idSpan.size());
@@ -103,7 +103,7 @@ namespace mxl::lib
     }
 
     std::unique_ptr<DiscreteFlowData> FlowManager::createDiscreteFlow(uuids::uuid const& flowId, std::string const& flowDef, mxlDataFormat flowFormat,
-        std::size_t grainCount, Rational const& grainRate, std::size_t grainPayloadSize)
+        std::size_t grainCount, mxlRational const& grainRate, std::size_t grainPayloadSize)
     {
         auto const uuidString = uuids::to_string(flowId);
         MXL_DEBUG("Create discrete flow. id: {}, grainCount: {}, grain payload size: {}", uuidString, grainCount, grainPayloadSize);
@@ -174,7 +174,7 @@ namespace mxl::lib
     }
 
     std::unique_ptr<ContinuousFlowData> FlowManager::createContinuousFlow(uuids::uuid const& flowId, std::string const& flowDef,
-        mxlDataFormat flowFormat, Rational const& sampleRate, std::size_t channelCount, std::size_t sampleWordSize, std::size_t bufferLength)
+        mxlDataFormat flowFormat, mxlRational const& sampleRate, std::size_t channelCount, std::size_t sampleWordSize, std::size_t bufferLength)
     {
         auto const uuidString = uuids::to_string(flowId);
         MXL_DEBUG("Create continuous flow. id: {}, channel count: {}, word size: {}, buffer length: {}",
