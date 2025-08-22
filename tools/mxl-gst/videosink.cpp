@@ -52,7 +52,7 @@ struct GstreamerPipelineConfig
 {
     uint64_t frame_width;
     uint64_t frame_height;
-    Rational frame_rate;
+    mxlRational frame_rate;
 };
 
 class GstreamerPipeline final
@@ -236,7 +236,7 @@ int real_main(int argc, char** argv, void*)
     int exit_status = EXIT_SUCCESS;
     mxlStatus ret;
 
-    Rational rate;
+    mxlRational rate;
     std::uint64_t editUnitDurationNs = 33'000'000LL;
     std::uint64_t grain_index = 0;
 
@@ -258,8 +258,8 @@ int real_main(int argc, char** argv, void*)
         goto mxl_cleanup;
     }
 
-    // Extract the FlowInfo structure.
-    FlowInfo flow_info;
+    // Extract the mxlFlowInfo structure.
+    mxlFlowInfo flow_info;
     ret = mxlFlowReaderGetInfo(reader, &flow_info);
     if (ret != MXL_STATUS_OK)
     {
@@ -276,7 +276,7 @@ int real_main(int argc, char** argv, void*)
     grain_index = mxlGetCurrentIndex(&flow_info.discrete.grainRate);
     while (!g_exit_requested)
     {
-        GrainInfo grain_info;
+        mxlGrainInfo grain_info;
         uint8_t* payload;
         auto ret = mxlFlowReaderGetGrain(reader, grain_index, editUnitDurationNs, &grain_info, &payload);
         if (ret != MXL_STATUS_OK)
