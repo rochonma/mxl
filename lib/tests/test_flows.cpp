@@ -48,7 +48,7 @@ TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
     mxlFlowInfo fInfo;
     REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
 
-    // We created the flow but no writer yet. The flow should not be active.
+    // We created the flow but it does not have a writer yet. The flow should not be active.
     bool active = true;
     REQUIRE(mxlIsFlowActive(instanceReader, flowId, &active) == MXL_STATUS_OK);
     REQUIRE(active == false);
@@ -59,7 +59,7 @@ TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
     mxlFlowWriter writer;
     REQUIRE(mxlCreateFlowWriter(instanceWriter, flowId, "", &writer) == MXL_STATUS_OK);
 
-    // The writer is now open. The flow should be active.
+    // The writer is now created. The flow should be active.
     REQUIRE(mxlIsFlowActive(instanceReader, flowId, &active) == MXL_STATUS_OK);
     REQUIRE(active == true);
 
