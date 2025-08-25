@@ -63,14 +63,13 @@ mxlStatus mxlIsFlowActive(mxlInstance instance, char const* flowId, bool* isActi
                         // other process is writing to the flow.
                         auto flowDataFile = mxl::lib::makeFlowDataFilePath(domain, flowId);
 
-                        // Check if the flow data file exists
-                        if (!std::filesystem::exists(flowDataFile))
+                        int fd = open(flowDataFile.c_str(), O_RDONLY | O_CLOEXEC);
+                        if (fd < 0)
                         {
-                            MXL_DEBUG("Flow data file {} does not exist", flowDataFile.string());
+                            MXL_ERROR("Failed to open flow data file {} : {}", flowDataFile.string(), std::strerror(errno));
                             return MXL_ERR_FLOW_NOT_FOUND;
                         }
 
-                        int fd = open(flowDataFile.c_str(), O_RDONLY | O_CLOEXEC);
                         // Try to obtain an exclusive lock on the file descriptor. Do not block if the lock cannot be obtained.
                         bool active = flock(fd, LOCK_EX | LOCK_NB) < 0;
                         close(fd);
