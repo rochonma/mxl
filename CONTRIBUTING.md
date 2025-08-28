@@ -7,23 +7,20 @@ Thank you for your interest in contributing to MXL. This document explains our c
 For a description of the roles and responsibilities of the various members of the MXL community, see the GOVERNANCE file, and for further details, see the project's Technical
 Charter. Briefly, Contributors submit content to the project, Maintainers review and approve these submissions, and the Technical Steering Committee (TSC) oversees the project as a whole.
 
-## Getting Information
+## How to engage with the project
 
 There are several ways to connect with the MXL project:
 
-- The MXL [GitHub discussions](https://github.com/dmf-mxl/mxl/discussions)
-- The email distribution list. To join the email distribution list, please click the "Join our group" button at the [EBU MXL group page](https://tech.ebu.ch/dmf/mxl). The EBU MXL group is free to join for everyone. You will receive the distribution list address as well as the link to register for the TSC meetings, the link to register for the RC meetings, and the link to join the MXL Slack workspace in the confirmation email after joining the group. Please note that you will need to create an account on the EBU page to proceed.
-- [GitHub Issues](https://github.com/dmf-mxl/mxl/issues) (used to track both bugs and feature requests)
-- Slack workspace. To join the MXL Slack workspace, please follow the procedure above for joining the email distribution list.
-- The regular TSC meetings are free to attend for all interested parties
+- Join the email distribution list. To do so, please click the "Join our group" button at the [EBU MXL group page](https://tech.ebu.ch/dmf/mxl). You will receive the distribution list address, as well as links to register for the TSC meetings, the RC meetings, and to join the MXL Slack workspace, in the confirmation email after joining the group. The regular TSC and RC meetings are free to attend for all interested parties. Please note that you will need to create an account on the EBU page to proceed.
+- Slack workspace. To join the MXL Slack workspace, please follow the procedure above for joining the email distribution list. We use a Slack workspace for punctual questions and direct messages only, as the conversation history will not be retained. In contrast, important questions should be documented in GitHub discussions (see the section below). 
 
 ## How to Ask for Help
 
 If you have questions about implementing, using, or extending MXL, please use the MXL [GitHub discussions](https://github.com/dmf-mxl/mxl/discussions).
 
-## How to Report a Bug
+## How to Report a Bug or Request a Feature
 
-MXL use GitHub's issue tracking system for bugs and enhancements: <https://github.com/dmf-mxl/mxl/issues>.
+MXL utilises GitHub's issue tracking system for bug reports and feature requests: <https://github.com/dmf-mxl/mxl/issues>.
 If submitting a bug report, include:
 
 - Which plug-in(s) and host products are involved
