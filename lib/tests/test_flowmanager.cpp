@@ -7,9 +7,7 @@
 #include <atomic>
 #include <filesystem>
 #include <memory>
-#include <string>
 #include <thread>
-#include <unistd.h>
 #include <uuid.h>
 #include <catch2/catch_test_macros.hpp>
 #include <fmt/format.h>
@@ -18,17 +16,6 @@
 #include "Utils.hpp"
 
 using namespace mxl::lib;
-
-namespace
-{
-    // Helper to make a unique temp domain
-    std::filesystem::path makeTempDomain()
-    {
-        char tmpl[] = "/dev/shm/mxl_test_domainXXXXXX";
-        REQUIRE(::mkdtemp(tmpl) != nullptr);
-        return std::filesystem::path{tmpl};
-    }
-}
 
 TEST_CASE("Flow Manager : Create Manager", "[flow manager]")
 {
@@ -336,7 +323,7 @@ TEST_CASE("Flow Manager : Open, List, and Error Conditions", "[flow manager]")
 // Re-creation after deletion
 TEST_CASE("FlowManager: re-create flow after deletion", "[flow manager][reuse]")
 {
-    auto domain = makeTempDomain();
+    auto domain = mxl::tests::makeTempDomain();
     auto mgr = std::make_shared<FlowManager>(domain);
     auto const id = *uuids::uuid::from_string("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     auto const def = mxl::tests::readFile("data/v210_flow.json");
@@ -363,7 +350,7 @@ TEST_CASE("FlowManager: re-create flow after deletion", "[flow manager][reuse]")
 // Test robustness: corrupted flow directory with missing descriptor
 TEST_CASE("FlowManager: corrupted flow with missing descriptor", "[flow manager][corruption]")
 {
-    auto domain = makeTempDomain();
+    auto domain = mxl::tests::makeTempDomain();
     auto mgr = std::make_shared<FlowManager>(domain);
     auto const id = *uuids::uuid::from_string("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     auto const def = mxl::tests::readFile("data/v210_flow.json");
@@ -396,7 +383,7 @@ TEST_CASE("FlowManager: corrupted flow with missing descriptor", "[flow manager]
 // Concurrent createDiscreteFlow with same UUID
 TEST_CASE("FlowManager: concurrent createDiscreteFlow same UUID", "[flow manager][concurrency]")
 {
-    auto domain = makeTempDomain();
+    auto domain = mxl::tests::makeTempDomain();
     auto mgr = std::make_shared<FlowManager>(domain);
     auto const id = *uuids::uuid::from_string("cccccccc-cccc-cccc-cccc-cccccccccccc");
     auto const def = mxl::tests::readFile("data/v210_flow.json");
@@ -436,7 +423,7 @@ TEST_CASE("FlowManager: concurrent createDiscreteFlow same UUID", "[flow manager
 // deleteFlow on read-only domain
 TEST_CASE("FlowManager: deleteFlow on read-only domain", "[flow manager][deletion]")
 {
-    auto domain = makeTempDomain();
+    auto domain = mxl::tests::makeTempDomain();
     auto mgr = std::make_shared<FlowManager>(domain);
     auto const id = *uuids::uuid::from_string("dddddddd-dddd-dddd-dddd-dddddddddddd");
     auto const def = mxl::tests::readFile("data/v210_flow.json");
@@ -466,7 +453,7 @@ TEST_CASE("FlowManager: deleteFlow on read-only domain", "[flow manager][deletio
 
 TEST_CASE("FlowManager: deleteFlow returns false for non-existent flow", "[flow manager][deletion]")
 {
-    auto domain = makeTempDomain();
+    auto domain = mxl::tests::makeTempDomain();
     auto mgr = std::make_shared<FlowManager>(domain);
     auto const nonExistentId = *uuids::uuid::from_string("99999999-9999-9999-9999-999999999999");
 
@@ -480,7 +467,7 @@ TEST_CASE("FlowManager: deleteFlow returns false for non-existent flow", "[flow 
 // Concurrent listFlows + deleteFlow does not crash
 TEST_CASE("FlowManager: concurrent listFlows and deleteFlow", "[flow manager][concurrency]")
 {
-    auto domain = makeTempDomain();
+    auto domain = mxl::tests::makeTempDomain();
     auto mgr = std::make_shared<FlowManager>(domain);
     auto ids = std::vector<uuids::uuid>{};
     for (int i = 0; i < 5; ++i)
@@ -518,7 +505,7 @@ TEST_CASE("FlowManager: concurrent listFlows and deleteFlow", "[flow manager][co
 // Multiple FlowManager instances on same domain
 TEST_CASE("FlowManager: multiple instances share domain", "[flow manager]")
 {
-    auto domain = makeTempDomain();
+    auto domain = mxl::tests::makeTempDomain();
     auto mgr1 = std::make_shared<FlowManager>(domain);
     auto mgr2 = std::make_shared<FlowManager>(domain);
 
@@ -542,7 +529,7 @@ TEST_CASE("FlowManager: multiple instances share domain", "[flow manager]")
 // createFlow on unwritable domain
 TEST_CASE("FlowManager: createFlow throws on unwritable domain", "[flow manager][error]")
 {
-    auto domain = makeTempDomain();
+    auto domain = mxl::tests::makeTempDomain();
     // remove write perms on domain
     permissions(domain, std::filesystem::perms::owner_write, std::filesystem::perm_options::remove);
 

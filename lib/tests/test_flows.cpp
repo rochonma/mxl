@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the Media eXchange Layer project.
 // SPDX-License-Identifier: Apache-2.0
 
-#include "../src/internal/Time.hpp"
 #include "Utils.hpp"
 
 #ifndef __APPLE__
@@ -13,7 +12,6 @@
 #   include <UdpLayer.h>
 #endif
 
-#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -612,4 +610,25 @@ TEST_CASE("mxlGetFlowDef", "[mxl flows]")
 
     REQUIRE(mxlDestroyFlow(instance, flowId.c_str()) == MXL_STATUS_OK);
     REQUIRE(mxlDestroyInstance(instance) == MXL_STATUS_OK);
+}
+
+// Verify that we obtain a proper error code when attempting to create a flow
+// in an unwritable domain.
+TEST_CASE("mxlCreateFlow: unwritable domain", "[mxl flows]")
+{
+    auto domain = mxl::tests::makeTempDomain();
+    // remove write perms on domain
+    permissions(domain, std::filesystem::perms::owner_write, std::filesystem::perm_options::remove);
+
+    auto const opts = "{}";
+    auto instance = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instance != nullptr);
+
+    auto flowDef = mxl::tests::readFile("data/v210_flow.json");
+    mxlFlowInfo flowInfo;
+    REQUIRE(mxlCreateFlow(instance, flowDef.c_str(), opts, &flowInfo) == MXL_ERR_PERMISSION_DENIED);
+
+    // restore perms so we can clean up
+    permissions(domain, std::filesystem::perms::owner_all, std::filesystem::perm_options::add);
+    remove_all(domain);
 }

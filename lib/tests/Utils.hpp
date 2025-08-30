@@ -12,4 +12,7 @@ namespace mxl::tests
     std::string readFile(std::filesystem::path const& filepath);
     auto getDomainPath() -> std::filesystem::path;
 
+    // Helper to make a unique temp domain
+    auto makeTempDomain() -> std::filesystem::path;
+
 } // namespace mxl::tests

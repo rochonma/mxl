@@ -29,6 +29,7 @@ extern "C"
         MXL_ERR_TIMEOUT,
         MXL_ERR_INVALID_ARG,
         MXL_ERR_CONFLICT,
+        MXL_ERR_PERMISSION_DENIED
     } mxlStatus;
 
     /// MXL SDK Semantic versionning structure.
