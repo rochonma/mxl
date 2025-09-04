@@ -15,7 +15,7 @@
 namespace mxl::lib
 {
     ///
-    /// Performs Flow CRUD operations as well as garbage collection of stale flows.
+    /// Performs Flow CRUD operations
     ///
     /// CREATE
     /// Creates the flow resources in the base path (the MXL 'domain'). Flow resource contain
@@ -32,10 +32,6 @@ namespace mxl::lib
     ///
     /// DELETE
     /// Delete a flow by flowId.  If the flow is opened it is first closed than all physical resources (see above) are deleted
-    ///
-    /// GARBAGE Collect
-    /// POSIX IPC resources are not automatically reclaimed if processes using them die or misbehave. A shared memory
-    /// file that has not been used for more than X seconds (by looking at the last read time or write time in the flow shared memory)
     ///
     /// LIST
     /// List all the flows found in the domain.
@@ -62,7 +58,7 @@ namespace mxl::lib
         /// \param[in] grainPayloadSize Size of the grain in host memory.  0 if the grain payload lives in device memory.
         ///
         std::unique_ptr<DiscreteFlowData> createDiscreteFlow(uuids::uuid const& flowId, std::string const& flowDef, mxlDataFormat flowFormat,
-            std::size_t grainCount, Rational const& grainRate, std::size_t grainPayloadSize);
+            std::size_t grainCount, mxlRational const& grainRate, std::size_t grainPayloadSize);
 
         ///
         /// Create a new continuous flow together with its associated channel store and open it in read-write mode.
@@ -76,7 +72,7 @@ namespace mxl::lib
         /// \param[in] bufferLength The length of each channel buffer in samples.
         ///
         std::unique_ptr<ContinuousFlowData> createContinuousFlow(uuids::uuid const& flowId, std::string const& flowDef, mxlDataFormat flowFormat,
-            Rational const& sampleRate, std::size_t channelCount, std::size_t sampleWordSize, std::size_t bufferLength);
+            mxlRational const& sampleRate, std::size_t channelCount, std::size_t sampleWordSize, std::size_t bufferLength);
 
         /// Open an existing flow by id.
         ///
@@ -100,14 +96,17 @@ namespace mxl::lib
         bool deleteFlow(uuids::uuid const& flowId);
 
         ///
-        /// Delete all flows that haven't been accessed for a period of time.
-        ///
-        void garbageCollect();
-
-        ///
         /// \return List all flows on disk.
         ///
         std::vector<uuids::uuid> listFlows() const;
+
+        ///
+        /// \param flowId The ID of the flow to get the information about.
+        /// \return The requested json flow definition.
+        /// \throws std::filesystem::filesystem_error on flow not found
+        /// \throws std::runtime_error on any other error
+        ///
+        std::string getFlowDef(uuids::uuid const& flowId) const;
 
         ///
         /// Accessor for the mxl domain (base path where shared memory will be stored)

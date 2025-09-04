@@ -125,7 +125,7 @@ namespace mxl::lib
         // FIXME: Check result of the from_string operation.
 
         auto const lock = std::lock_guard{_mutex};
-        if (auto const pos = _readers.lower_bound(*id); pos != _readers.end())
+        if (auto const pos = _readers.find(*id); pos != _readers.end())
         {
             auto& v = (*pos).second;
             v.addReference();
@@ -177,7 +177,7 @@ namespace mxl::lib
         // FIXME: Check result of the from_string operation.
 
         auto const lock = std::lock_guard{_mutex};
-        if (auto const pos = _writers.lower_bound(*id); pos != _writers.end())
+        if (auto const pos = _writers.find(*id); pos != _writers.end())
         {
             auto& v = (*pos).second;
             v.addReference();
@@ -206,7 +206,7 @@ namespace mxl::lib
     {
         if (writer)
         {
-            auto const& id = writer->getId();
+            auto const id = writer->getId();
             auto removeFlowWatch = false;
             {
                 auto const lock = std::lock_guard{_mutex};
@@ -263,6 +263,16 @@ namespace mxl::lib
     bool Instance::deleteFlow(uuids::uuid const& flowId)
     {
         return _flowManager.deleteFlow(flowId);
+    }
+
+    std::string Instance::getDomain() const
+    {
+        return _flowManager.getDomain();
+    }
+
+    std::string Instance::getFlowDef(uuids::uuid const& flowId) const
+    {
+        return _flowManager.getFlowDef(flowId);
     }
 
     // This function is performed in a 'collaborative best effort' way.

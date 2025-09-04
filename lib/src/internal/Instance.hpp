@@ -57,6 +57,11 @@ namespace mxl::lib
         bool deleteFlow(uuids::uuid const& flowId);
 
         ///
+        /// See details in FlowManager::getFlowDef.
+        ///
+        std::string getFlowDef(uuids::uuid const& flowId) const;
+
+        ///
         /// Create a FlowReader or obtain an additional reference to a
         /// previously created FlowReader.
         /// \param[in] flowId The id of the flow to obtain a reader for
@@ -103,6 +108,10 @@ namespace mxl::lib
         /// Accessor for the history duration value
         /// \return The history duration in nanoseconds
         std::uint64_t getHistoryDurationNs() const;
+
+        /// Accessor for the domain path
+        /// \return The path to the MXL domain of this instance
+        std::string getDomain() const;
 
     private:
         template<typename T>
