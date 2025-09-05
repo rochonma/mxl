@@ -265,6 +265,11 @@ namespace mxl::lib
         return _flowManager.deleteFlow(flowId);
     }
 
+    std::string Instance::getDomain() const
+    {
+        return _flowManager.getDomain();
+    }
+
     std::string Instance::getFlowDef(uuids::uuid const& flowId) const
     {
         return _flowManager.getFlowDef(flowId);

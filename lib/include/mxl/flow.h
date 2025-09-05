@@ -151,11 +151,21 @@ extern "C"
     /// \param[in] options Additional options (undefined). \todo Specify and used the additional options.
     /// \param[out] info A pointer to an mxlFlowInfo structure.  If not nullptr, this structure will be updated with the flow information after the
     /// flow is created.
-MXL_EXPORT
+    MXL_EXPORT
     mxlStatus mxlCreateFlow(mxlInstance instance, char const* flowDef, char const* options, mxlFlowInfo* info);
 
     MXL_EXPORT
     mxlStatus mxlDestroyFlow(mxlInstance instance, char const* flowId);
+
+    ///
+    /// Verify if a flow has an active writer or not
+    ///
+    /// \param[in] instance The mxl instance created using mxlCreateInstance
+    /// \param[in] flowId The ID of the flow to check.
+    /// \param[out] isActive A pointer to a boolean that will be set to true if the flow has an active writer, false otherwise.
+    /// \return MXL_STATUS_OK if the flow exists and has been tested successfully, or an error code otherwise.
+    MXL_EXPORT
+    mxlStatus mxlIsFlowActive(mxlInstance instance, char const* flowId, bool* isActive);
 
     /**
      * Get the flow definition used to create the given flow.
@@ -196,7 +206,7 @@ MXL_EXPORT
      * value.
      * \return The result code. \see mxlStatus
      */
-MXL_EXPORT
+    MXL_EXPORT
     mxlStatus mxlFlowReaderGetInfo(mxlFlowReader reader, mxlFlowInfo* info);
 
     /**
@@ -213,7 +223,7 @@ MXL_EXPORT
      *      reader that operates on another type of flow will result in an
      *      error.
      */
-MXL_EXPORT
+    MXL_EXPORT
     mxlStatus mxlFlowReaderGetGrain(mxlFlowReader reader, uint64_t index, uint64_t timeoutNs, mxlGrainInfo* grain, uint8_t** payload);
 
     /**
@@ -229,7 +239,7 @@ MXL_EXPORT
      *      reader that operates on another type of flow will result in an
      *      error.
      */
-MXL_EXPORT
+    MXL_EXPORT
     mxlStatus mxlFlowReaderGetGrainNonBlocking(mxlFlowReader reader, uint64_t index, mxlGrainInfo* grain, uint8_t** payload);
 
     /**
@@ -249,14 +259,14 @@ MXL_EXPORT
      *      writer that operates on another type of flow will result in an
      *      error.
      */
-MXL_EXPORT
+    MXL_EXPORT
     mxlStatus mxlFlowWriterOpenGrain(mxlFlowWriter writer, uint64_t index, mxlGrainInfo* mxlGrainInfo, uint8_t** payload);
 
     /**
      *
      * \param[in] writer A valid flow writer
      */
-MXL_EXPORT
+    MXL_EXPORT
     mxlStatus mxlFlowWriterCancelGrain(mxlFlowWriter writer);
 
     /**
@@ -266,7 +276,7 @@ MXL_EXPORT
      *
      * \return The result code. \see mxlStatus
      */
-MXL_EXPORT
+    MXL_EXPORT
     mxlStatus mxlFlowWriterCommitGrain(mxlFlowWriter writer, mxlGrainInfo const* grain);
 
     /**
