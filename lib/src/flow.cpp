@@ -4,6 +4,7 @@
 #include "mxl/flow.h"
 #include <cstdint>
 #include <exception>
+#include <filesystem>
 #include <string>
 #include <uuid.h>
 #include <sys/file.h>
@@ -30,6 +31,21 @@ mxlStatus mxlCreateFlow(mxlInstance instance, char const* flowDef, char const* /
             }
         }
         return MXL_ERR_INVALID_ARG;
+    }
+    catch (std::filesystem::filesystem_error const& e)
+    {
+        MXL_ERROR("Failed to create flow : {}", e.what());
+        auto const code = e.code();
+        if ((code == std::errc::permission_denied) || (code == std::errc::operation_not_permitted) || (code == std::errc::read_only_file_system))
+        {
+            MXL_ERROR("Filesystem permission/access error: {}", code.message());
+            return MXL_ERR_PERMISSION_DENIED;
+        }
+        else
+        {
+            MXL_ERROR("Filesystem error: {}", code.message());
+            return MXL_ERR_UNKNOWN;
+        }
     }
     catch (std::exception const& e)
     {

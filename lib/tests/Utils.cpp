@@ -8,6 +8,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <string>
+#include <unistd.h>
 
 std::string mxl::tests::readFile(std::filesystem::path const& filepath)
 {
@@ -40,4 +41,14 @@ auto mxl::tests::getDomainPath() -> std::filesystem::path
 #else
 #   error "Unsupported platform. This is only implemented for Linux and macOS."
 #endif
+}
+
+auto mxl::tests::makeTempDomain() -> std::filesystem::path
+{
+    char tmpl[] = "/dev/shm/mxl_test_domainXXXXXX";
+    if (::mkdtemp(tmpl) == nullptr)
+    {
+        throw std::runtime_error("Failed to create temporary directory");
+    }
+    return std::filesystem::path{tmpl};
 }
