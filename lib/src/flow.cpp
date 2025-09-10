@@ -35,8 +35,8 @@ mxlStatus mxlCreateFlow(mxlInstance instance, char const* flowDef, char const* /
     catch (std::filesystem::filesystem_error const& e)
     {
         MXL_ERROR("Failed to create flow : {}", e.what());
-        auto code = e.code();
-        if (code == std::errc::permission_denied || code == std::errc::operation_not_permitted || code == std::errc::read_only_file_system)
+        auto const code = e.code();
+        if ((code == std::errc::permission_denied) || (code == std::errc::operation_not_permitted) || (code == std::errc::read_only_file_system))
         {
             MXL_ERROR("Filesystem permission/access error: {}", code.message());
             return MXL_ERR_PERMISSION_DENIED;
