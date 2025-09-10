@@ -36,6 +36,19 @@ namespace
             default:                          return "UNKNOWN";
         }
     }
+
+    bool isTerminal(std::ostream& os)
+    {
+        if (&os == &std::cout)
+        {
+            return isatty(fileno(stdout)) != 0;
+        }
+        if (&os == &std::cerr)
+        {
+            return isatty(fileno(stderr)) != 0;
+        }
+        return false; // treat all other ostreams as non-terminal
+    }
 }
 
 std::ostream& operator<<(std::ostream& os, mxlFlowInfo const& info)
@@ -61,17 +74,24 @@ std::ostream& operator<<(std::ostream& os, mxlFlowInfo const& info)
         auto const currentIndex = mxlTimestampToIndex(&info.discrete.grainRate, now);
         auto const latency = currentIndex - info.discrete.headIndex;
 
-        fmt::color color{fmt::color::green};
-        if (latency > static_cast<std::uint64_t>(info.discrete.grainCount))
+        if (isTerminal(os))
         {
-            color = fmt::color::red;
-        }
-        else if (latency == static_cast<std::uint64_t>(info.discrete.grainCount))
-        {
-            color = fmt::color::yellow;
-        }
+            auto color = fmt::color::green;
+            if (latency > static_cast<std::uint64_t>(info.discrete.grainCount))
+            {
+                color = fmt::color::red;
+            }
+            else if (latency == static_cast<std::uint64_t>(info.discrete.grainCount))
+            {
+                color = fmt::color::yellow;
+            }
 
-        os << '\t' << fmt::format(fmt::fg(color), "{: >18}: {}", "Latency (grains)", latency) << std::endl;
+            os << '\t' << fmt::format(fmt::fg(color), "{: >18}: {}", "Latency (grains)", latency) << std::endl;
+        }
+        else
+        {
+            os << '\t' << fmt::format("{: >18}: {}", "Latency (grains)", latency) << std::endl;
+        }
     }
     else if (mxlIsContinuousDataFormat(info.common.format))
     {
@@ -86,17 +106,23 @@ std::ostream& operator<<(std::ostream& os, mxlFlowInfo const& info)
         auto const currentIndex = mxlTimestampToIndex(&info.continuous.sampleRate, now);
         auto const latency = currentIndex - info.continuous.headIndex;
 
-        fmt::color color{fmt::color::green};
-        if (latency > static_cast<std::uint64_t>(info.continuous.bufferLength))
+        if (isTerminal(os))
         {
-            color = fmt::color::red;
+            auto color = fmt::color::green;
+            if (latency > static_cast<std::uint64_t>(info.continuous.bufferLength))
+            {
+                color = fmt::color::red;
+            }
+            else if (latency == static_cast<std::uint64_t>(info.continuous.bufferLength))
+            {
+                color = fmt::color::yellow;
+            }
+            os << '\t' << fmt::format(fmt::fg(color), "{: >18}: {}", "Latency (samples)", latency) << std::endl;
         }
-        else if (latency == static_cast<std::uint64_t>(info.continuous.bufferLength))
+        else
         {
-            color = fmt::color::yellow;
+            os << '\t' << fmt::format("{: >18}: {}", "Latency (samples)", latency) << std::endl;
         }
-
-        os << '\t' << fmt::format(fmt::fg(color), "{: >18}: {}", "Latency (samples)", latency) << std::endl;
     }
 
     return os;
@@ -104,22 +130,22 @@ std::ostream& operator<<(std::ostream& os, mxlFlowInfo const& info)
 
 std::string getFlowLabel(std::filesystem::path const& descPath)
 {
-    std::string label{"Unnamed flow"};
+    auto label = std::string{"Unnamed flow"};
     if (!exists(descPath))
     {
         return label;
     }
 
-    std::ifstream descFile{descPath};
+    auto descFile = std::ifstream{descPath};
     if (!descFile)
     {
         return label;
     }
 
-    std::string content((std::istreambuf_iterator<char>(descFile)), std::istreambuf_iterator<char>());
+    auto const content = std::string((std::istreambuf_iterator<char>(descFile)), std::istreambuf_iterator<char>());
     descFile.close();
 
-    picojson::value v;
+    auto v = picojson::value{};
     std::string err = picojson::parse(v, content);
     if (!err.empty())
     {
@@ -127,8 +153,8 @@ std::string getFlowLabel(std::filesystem::path const& descPath)
     }
 
     auto const& obj = v.get<picojson::object>();
-    auto flowTypeIt = obj.find("label");
-    if (flowTypeIt == obj.end() || !flowTypeIt->second.is<std::string>())
+    auto const flowTypeIt = obj.find("label");
+    if ((flowTypeIt == obj.end()) || !flowTypeIt->second.is<std::string>())
     {
         return label;
     }
