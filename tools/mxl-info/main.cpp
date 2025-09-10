@@ -5,17 +5,20 @@
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <unistd.h>
 #include <uuid.h>
 #include <CLI/CLI.hpp>
+#include <fmt/color.h>
 #include <fmt/format.h>
 #include <gsl/span>
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
 #include <mxl/time.h>
+#include <picojson/picojson.h>
 #include <sys/file.h>
 #include "../../lib/src/internal/PathUtils.hpp"
 
@@ -33,6 +36,19 @@ namespace
             default:                          return "UNKNOWN";
         }
     }
+
+    bool isTerminal(std::ostream& os)
+    {
+        if (&os == &std::cout)
+        {
+            return isatty(fileno(stdout)) != 0;
+        }
+        if (&os == &std::cerr)
+        {
+            return isatty(fileno(stderr)) != 0;
+        }
+        return false; // treat all other ostreams as non-terminal
+    }
 }
 
 std::ostream& operator<<(std::ostream& os, mxlFlowInfo const& info)
@@ -47,11 +63,35 @@ std::ostream& operator<<(std::ostream& os, mxlFlowInfo const& info)
        << '\t' << fmt::format("{: >18}: {}", "Format", getFormatString(info.common.format)) << '\n'
        << '\t' << fmt::format("{: >18}: {:0>8x}", "Flags", info.common.flags) << '\n';
 
+    auto const now = mxlGetTime();
+
     if (mxlIsDiscreteDataFormat(info.common.format))
     {
         os << '\t' << fmt::format("{: >18}: {}/{}", "Grain rate", info.discrete.grainRate.numerator, info.discrete.grainRate.denominator) << '\n'
            << '\t' << fmt::format("{: >18}: {}", "Grain count", info.discrete.grainCount) << '\n'
            << '\t' << fmt::format("{: >18}: {}", "Head index", info.discrete.headIndex) << '\n';
+
+        auto const currentIndex = mxlTimestampToIndex(&info.discrete.grainRate, now);
+        auto const latency = currentIndex - info.discrete.headIndex;
+
+        if (isTerminal(os))
+        {
+            auto color = fmt::color::green;
+            if (latency > static_cast<std::uint64_t>(info.discrete.grainCount))
+            {
+                color = fmt::color::red;
+            }
+            else if (latency == static_cast<std::uint64_t>(info.discrete.grainCount))
+            {
+                color = fmt::color::yellow;
+            }
+
+            os << '\t' << fmt::format(fmt::fg(color), "{: >18}: {}", "Latency (grains)", latency) << std::endl;
+        }
+        else
+        {
+            os << '\t' << fmt::format("{: >18}: {}", "Latency (grains)", latency) << std::endl;
+        }
     }
     else if (mxlIsContinuousDataFormat(info.common.format))
     {
@@ -62,19 +102,72 @@ std::ostream& operator<<(std::ostream& os, mxlFlowInfo const& info)
            << '\t' << fmt::format("{: >18}: {}", "Commit batch size", info.continuous.commitBatchSize) << '\n'
            << '\t' << fmt::format("{: >18}: {}", "Sync batch size", info.continuous.syncBatchSize) << '\n'
            << '\t' << fmt::format("{: >18}: {}", "Head index", info.continuous.headIndex) << '\n';
-    }
 
-    auto const now = mxlGetTime();
-    auto const currentIndex = mxlTimestampToIndex(&info.discrete.grainRate, now);
-    os << '\t' << fmt::format("{: >18}: {}", "Latency (grains)", currentIndex - info.discrete.headIndex) << '\n'
-       << '\t' << fmt::format("{: >18}: {}", "Latency (ns)", now - info.common.lastWriteTime) << std::endl;
+        auto const currentIndex = mxlTimestampToIndex(&info.continuous.sampleRate, now);
+        auto const latency = currentIndex - info.continuous.headIndex;
+
+        if (isTerminal(os))
+        {
+            auto color = fmt::color::green;
+            if (latency > static_cast<std::uint64_t>(info.continuous.bufferLength))
+            {
+                color = fmt::color::red;
+            }
+            else if (latency == static_cast<std::uint64_t>(info.continuous.bufferLength))
+            {
+                color = fmt::color::yellow;
+            }
+            os << '\t' << fmt::format(fmt::fg(color), "{: >18}: {}", "Latency (samples)", latency) << std::endl;
+        }
+        else
+        {
+            os << '\t' << fmt::format("{: >18}: {}", "Latency (samples)", latency) << std::endl;
+        }
+    }
 
     return os;
 }
 
+std::string getFlowLabel(std::filesystem::path const& descPath)
+{
+    auto label = std::string{"Unnamed flow"};
+    if (!exists(descPath))
+    {
+        return label;
+    }
+
+    auto descFile = std::ifstream{descPath};
+    if (!descFile)
+    {
+        return label;
+    }
+
+    auto const content = std::string((std::istreambuf_iterator<char>(descFile)), std::istreambuf_iterator<char>());
+    descFile.close();
+
+    auto v = picojson::value{};
+    std::string err = picojson::parse(v, content);
+    if (!err.empty())
+    {
+        return label;
+    }
+
+    auto const& obj = v.get<picojson::object>();
+    auto const flowTypeIt = obj.find("label");
+    if ((flowTypeIt == obj.end()) || !flowTypeIt->second.is<std::string>())
+    {
+        return label;
+    }
+    else
+    {
+        label = flowTypeIt->second.get<std::string>();
+    }
+
+    return label;
+}
+
 int listAllFlows(std::string const& in_domain)
 {
-    std::cout << "--- MXL Flows ---" << '\n';
     auto base = std::filesystem::path{in_domain};
 
     if (exists(base) && is_directory(base))
@@ -87,7 +180,8 @@ int listAllFlows(std::string const& in_domain)
                 auto id = uuids::uuid::from_string(entry.path().stem().string());
                 if (id.has_value())
                 {
-                    std::cout << "\t" << *id << '\n';
+                    auto descPath = mxl::lib::makeFlowDescriptorFilePath(base, entry.path().stem().string());
+                    std::cout << "\t" << *id << ", \"" << getFlowLabel(descPath) << "\"" << std::endl;
                 }
             }
         }
