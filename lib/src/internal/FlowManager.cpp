@@ -10,6 +10,7 @@
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
 #include <mxl/time.h>
+#include <sys/stat.h>
 #include <system_error>
 #include "Logging.hpp"
 #include "PathUtils.hpp"
@@ -128,13 +129,29 @@ namespace mxl::lib
                     "Failed to create flow access file.", readAccessFile, std::make_error_code(std::errc::file_exists)};
             }
 
-            auto flowData = std::make_unique<DiscreteFlowData>(makeFlowDataFilePath(tempDirectory).string().c_str(), AccessMode::CREATE_READ_WRITE);
+            auto const flowDataPath = makeFlowDataFilePath(tempDirectory);
+            auto flowData = std::make_unique<DiscreteFlowData>(flowDataPath.string().c_str(), AccessMode::CREATE_READ_WRITE);
 
             auto& info = *flowData->flowInfo();
             info.version = 1;
             info.size = sizeof info;
 
             info.common = initCommonFlowInfo(flowId, flowFormat);
+
+            // Get the inode of the flow data file
+            struct stat st;
+            if (stat(flowDataPath.string().c_str(), &st) != 0)
+            {
+                auto const error = errno;
+                MXL_ERROR("stat failed for path '{}' (errno {}: {}).", flowDataPath.string(), error, std::strerror(error));
+                throw std::filesystem::filesystem_error{
+                    "Could not stat flow data file.", flowDataPath, std::error_code{error, std::generic_category()}
+                };
+            }
+            else
+            {
+                info.common.inode = st.st_ino;
+            }
 
             info.discrete.grainRate = grainRate;
             info.discrete.grainCount = grainCount;
@@ -195,13 +212,29 @@ namespace mxl::lib
             // Write the json file to disk.
             writeFlowDescriptor(tempDirectory, flowDef);
 
-            auto flowData = std::make_unique<ContinuousFlowData>(makeFlowDataFilePath(tempDirectory).string().c_str(), AccessMode::CREATE_READ_WRITE);
+            auto const flowDataPath = makeFlowDataFilePath(tempDirectory);
+            auto flowData = std::make_unique<ContinuousFlowData>(flowDataPath.string().c_str(), AccessMode::CREATE_READ_WRITE);
 
             auto& info = *flowData->flowInfo();
             info.version = 1;
             info.size = sizeof info;
 
             info.common = initCommonFlowInfo(flowId, flowFormat);
+
+            // Get the inode of the flow data file
+            struct stat st;
+            if (stat(flowDataPath.string().c_str(), &st) != 0)
+            {
+                auto const error = errno;
+                MXL_ERROR("stat failed for path '{}' (errno {}: {}).", flowDataPath.string(), error, std::strerror(error));
+                throw std::filesystem::filesystem_error{
+                    "Could not stat flow data file.", flowDataPath, std::error_code{error, std::generic_category()}
+                };
+            }
+            else
+            {
+                info.common.inode = st.st_ino;
+            }
 
             info.continuous = {};
             info.continuous.sampleRate = sampleRate;
