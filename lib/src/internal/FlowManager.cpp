@@ -78,7 +78,7 @@ namespace mxl::lib
             }
         }
 
-        mxlCommonFlowInfo initCommonFlowInfo(uuids::uuid const& flowId, mxlDataFormat format)
+        mxlCommonFlowInfo initCommonFlowInfo(uuids::uuid const& flowId, mxlDataFormat format, std::filesystem::path const& flowDataPath)
         {
             auto result = mxlCommonFlowInfo{};
 
@@ -87,6 +87,20 @@ namespace mxl::lib
             result.lastWriteTime = mxlGetTime();
             result.lastReadTime = result.lastWriteTime;
             result.format = format;
+
+            // Get the inode of the flow data file
+            struct stat st;
+            if (stat(flowDataPath.string().c_str(), &st) != 0)
+            {
+                auto const error = errno;
+                throw std::filesystem::filesystem_error{
+                    "Could not stat flow data file.", flowDataPath, std::error_code{error, std::generic_category()}
+                };
+            }
+            else
+            {
+                result.inode = st.st_ino;
+            }
 
             return result;
         }
@@ -135,24 +149,7 @@ namespace mxl::lib
             auto& info = *flowData->flowInfo();
             info.version = 1;
             info.size = sizeof info;
-
-            info.common = initCommonFlowInfo(flowId, flowFormat);
-
-            // Get the inode of the flow data file
-            struct stat st;
-            if (stat(flowDataPath.string().c_str(), &st) != 0)
-            {
-                auto const error = errno;
-                MXL_ERROR("stat failed for path '{}' (errno {}: {}).", flowDataPath.string(), error, std::strerror(error));
-                throw std::filesystem::filesystem_error{
-                    "Could not stat flow data file.", flowDataPath, std::error_code{error, std::generic_category()}
-                };
-            }
-            else
-            {
-                info.common.inode = st.st_ino;
-            }
-
+            info.common = initCommonFlowInfo(flowId, flowFormat, flowDataPath);
             info.discrete.grainRate = grainRate;
             info.discrete.grainCount = grainCount;
             info.discrete.syncCounter = 0;
@@ -218,24 +215,7 @@ namespace mxl::lib
             auto& info = *flowData->flowInfo();
             info.version = 1;
             info.size = sizeof info;
-
-            info.common = initCommonFlowInfo(flowId, flowFormat);
-
-            // Get the inode of the flow data file
-            struct stat st;
-            if (stat(flowDataPath.string().c_str(), &st) != 0)
-            {
-                auto const error = errno;
-                MXL_ERROR("stat failed for path '{}' (errno {}: {}).", flowDataPath.string(), error, std::strerror(error));
-                throw std::filesystem::filesystem_error{
-                    "Could not stat flow data file.", flowDataPath, std::error_code{error, std::generic_category()}
-                };
-            }
-            else
-            {
-                info.common.inode = st.st_ino;
-            }
-
+            info.common = initCommonFlowInfo(flowId, flowFormat, flowDataPath);
             info.continuous = {};
             info.continuous.sampleRate = sampleRate;
             info.continuous.channelCount = channelCount;
