@@ -89,7 +89,7 @@ namespace mxl::lib
             result.format = format;
 
             // Get the inode of the flow data file
-            struct stat st;
+            struct ::stat st;
             if (::stat(flowDataPath.string().c_str(), &st) != 0)
             {
                 auto const error = errno;
