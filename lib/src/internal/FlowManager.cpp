@@ -90,7 +90,7 @@ namespace mxl::lib
 
             // Get the inode of the flow data file
             struct stat st;
-            if (stat(flowDataPath.string().c_str(), &st) != 0)
+            if (::stat(flowDataPath.string().c_str(), &st) != 0)
             {
                 auto const error = errno;
                 throw std::filesystem::filesystem_error{
