@@ -11,8 +11,8 @@ Charter. Briefly, Contributors submit content to the project, Maintainers review
 
 There are several ways to connect with the MXL project:
 
-- Join the email distribution list. To do so, please click the "Join our group" button at the [EBU MXL group page](https://tech.ebu.ch/dmf/mxl). You will receive the distribution list address, as well as links to register for the TSC meetings, the RC meetings, and to join the MXL Slack workspace, in the confirmation email after joining the group. The regular TSC and RC meetings are free to attend for all interested parties. Please note that you will need to create an account on the EBU page to proceed.
-- Slack workspace. To join the MXL Slack workspace, please follow the procedure above for joining the email distribution list. We use a Slack workspace for punctual questions and direct messages only, as the conversation history will not be retained. In contrast, important questions should be documented in GitHub discussions (see the section below). 
+- Join the email distribution list. To do so, please click the "Join our group" button at the [EBU MXL group page](https://tech.ebu.ch/dmf/mxl). You will receive the distribution list address, as well as links to register for the TSC meetings, the RC meetings, and to join the MXL Slack workspace, in the confirmation email after joining the group. The regular TSC and RC meetings are free to attend for all interested parties. Please note that you will need to create an account on the EBU page to proceed. When joining the TSC or RC meetings, please indicate your full name and affiliation.
+- Slack workspace. To join the MXL Slack workspace, please follow the procedure above for joining the email distribution list. We use a Slack workspace for punctual questions and direct messages only, as the conversation history will not be retained. In contrast, important questions should be documented in GitHub discussions (see the section below). When joining the MXL Slack workspace, ensure your display name includes your full name and affiliation. Failure to comply with this rule will result in the removal of your account from the workspace.
 
 ## How to Ask for Help
 
