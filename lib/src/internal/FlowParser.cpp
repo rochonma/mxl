@@ -109,8 +109,12 @@ namespace mxl::lib
 
             // Normalize the rational. We should realistically only see x/1 or x/1001 here.
             auto g = std::gcd(result.numerator, result.denominator);
-            result.numerator /= g;
-            result.denominator /= g;
+            if (g != 0)
+            {
+                result.numerator /= g;
+                result.denominator /= g;
+            }
+
             return result;
         }
 
