@@ -19,7 +19,6 @@ set_target_properties(mxl-info
     )
 target_sources(mxl-info
         PRIVATE
-            ../../lib/src/internal/PathUtils.cpp
             main.cpp
     )
 
@@ -37,6 +36,7 @@ endif ()
 
 target_link_libraries(mxl-info
         PRIVATE
+            mxl-objects
             mxl
             stduuid
             fmt::fmt

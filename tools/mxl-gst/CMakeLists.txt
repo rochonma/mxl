@@ -40,12 +40,11 @@ if (gstreamer_FOUND)
     target_sources(mxl-gst-videotestsrc
             PRIVATE
                 videotestsrc.cpp
-                ../../lib/src/internal/FlowParser.cpp
-                ../../lib/src/internal/PathUtils.cpp
-            )
+        )
 
     target_link_libraries(mxl-gst-videotestsrc
             PRIVATE
+                mxl-objects
                 mxl
                 stduuid
                 CLI11::CLI11
@@ -63,22 +62,21 @@ if (gstreamer_FOUND)
         )
     set_target_properties(mxl-gst-videosink
             PROPERTIES
-                POSITION_INDEPENDENT_CODE    ON
-                VISIBILITY_INLINES_HIDDEN    ON
-                C_VISIBILITY_PRESET          hidden
-                CXX_VISIBILITY_PRESET        hidden
-                C_EXTENSIONS                 OFF
-                CXX_EXTENSIONS               OFF
+                POSITION_INDEPENDENT_CODE   ON
+                VISIBILITY_INLINES_HIDDEN   ON
+                C_VISIBILITY_PRESET         hidden
+                CXX_VISIBILITY_PRESET       hidden
+                C_EXTENSIONS                OFF
+                CXX_EXTENSIONS              OFF
         )
     target_sources(mxl-gst-videosink
             PRIVATE
                 videosink.cpp
-                ../../lib/src/internal/FlowParser.cpp
-                ../../lib/src/internal/PathUtils.cpp
-            )
+        )
 
     target_link_libraries(mxl-gst-videosink
             PRIVATE
+                mxl-objects
                 mxl
                 stduuid
                 CLI11::CLI11
@@ -91,35 +89,34 @@ if (gstreamer_FOUND)
 
     add_executable(mxl-gst-looping-filesrc)
     target_compile_features(mxl-gst-looping-filesrc
-        PRIVATE
-        cxx_std_20
-    )
+            PRIVATE
+                cxx_std_20
+        )
     set_target_properties(mxl-gst-looping-filesrc
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE ON
-        VISIBILITY_INLINES_HIDDEN ON
-        C_VISIBILITY_PRESET hidden
-        CXX_VISIBILITY_PRESET hidden
-        C_EXTENSIONS OFF
-        CXX_EXTENSIONS OFF
-    )
+            PROPERTIES
+                POSITION_INDEPENDENT_CODE   ON
+                VISIBILITY_INLINES_HIDDEN   ON
+                C_VISIBILITY_PRESET         hidden
+                CXX_VISIBILITY_PRESET       hidden
+                C_EXTENSIONS                OFF
+                CXX_EXTENSIONS              OFF
+        )
     target_sources(mxl-gst-looping-filesrc
-        PRIVATE
-        looping_filesrc.cpp
-        ../../lib/src/internal/FlowParser.cpp
-        ../../lib/src/internal/PathUtils.cpp
-    )
+            PRIVATE
+                looping_filesrc.cpp
+        )
 
     target_link_libraries(mxl-gst-looping-filesrc
-        PRIVATE
-        mxl
-        stduuid
-        CLI11::CLI11
-        spdlog::spdlog
-        PkgConfig::gstreamer
-        PkgConfig::gstreamer-app
-        PkgConfig::gstreamer-video
-    )
+            PRIVATE
+                mxl-objects
+                mxl
+                stduuid
+                CLI11::CLI11
+                spdlog::spdlog
+                PkgConfig::gstreamer
+                PkgConfig::gstreamer-app
+                PkgConfig::gstreamer-video
+        )
 
 
     # Not really a fan of having this relative to the binary,
