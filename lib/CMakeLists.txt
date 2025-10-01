@@ -5,30 +5,26 @@ include(GNUInstallDirs)
 
 # Configure the version.h header file base on the current project version
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/mxl/version.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/include/mxl/version.h
-    @ONLY
-)
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/mxl/version.h.in
+        ${CMAKE_CURRENT_BINARY_DIR}/include/mxl/version.h
+        @ONLY
+    )
 
-# Files to be compiled into the library
-add_library(mxl SHARED)
-target_compile_features(mxl
-        PRIVATE
+add_library(mxl-objects OBJECT)
+target_compile_features(mxl-objects
+        PUBLIC
             cxx_std_20
     )
-set_target_properties(mxl
-        PROPERTIES
-            POSITION_INDEPENDENT_CODE    ON
-            VISIBILITY_INLINES_HIDDEN    ON
-            C_VISIBILITY_PRESET          hidden
-            CXX_VISIBILITY_PRESET        hidden
-            C_EXTENSIONS                 OFF
-            CXX_EXTENSIONS               OFF
-            VERSION                      "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
-            SOVERSION                    "${PROJECT_VERSION_MAJOR}"
+set_target_properties(mxl-objects
+        PROPERTIES 
+            POSITION_INDEPENDENT_CODE ON      # Needed to bulid shared library later
+            VISIBILITY_INLINES_HIDDEN ON
+            C_VISIBILITY_PRESET       hidden
+            CXX_VISIBILITY_PRESET     hidden
+            C_EXTENSIONS              OFF
+            CXX_EXTENSIONS            OFF
     )
-
-target_sources(mxl
+target_sources(mxl-objects
         PRIVATE
             src/flow.cpp
             src/mxl.cpp
@@ -54,8 +50,7 @@ target_sources(mxl
             src/internal/Thread.cpp
             src/internal/Time.cpp
             src/internal/Timing.cpp
-        )
-
+    )
 
 if (NOT TARGET stduuid)
     find_package(stduuid CONFIG REQUIRED)
@@ -73,20 +68,45 @@ if (NOT TARGET picojson::picojson)
     find_package(picojson REQUIRED)
 endif()
 
-target_include_directories(mxl PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
-target_link_libraries(mxl
+target_include_directories(mxl-objects
         PRIVATE
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+    )
+target_link_libraries(mxl-objects
+        PUBLIC
             stduuid
             spdlog::spdlog
             fmt::fmt
             picojson::picojson
     )
 
-# Alias trace to libtrace::libtrace so that this library can be used
+add_library(mxl SHARED)
+target_compile_features(mxl
+        PRIVATE
+            cxx_std_20
+    )
+set_target_properties(mxl
+        PROPERTIES
+            VERSION                      "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+            SOVERSION                    "${PROJECT_VERSION_MAJOR}"
+    )
+target_link_options(mxl
+        PRIVATE
+            "-Wl,--exclude-libs,ALL"
+    )
+
+target_include_directories(mxl 
+        PUBLIC
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    )
+
+target_link_libraries(mxl
+        PRIVATE
+            mxl-objects
+    )
+
+# Alias mxl to mxl::mxl so that this library can be used
 # in lieu of a module from the local source tree
 add_library(${PROJECT_NAME}::mxl ALIAS mxl)
 add_subdirectory(tests)
