@@ -26,9 +26,6 @@ set_target_properties(mxl-objects
     )
 target_sources(mxl-objects
         PRIVATE
-            src/flow.cpp
-            src/mxl.cpp
-            src/time.cpp
             src/internal/DomainWatcher.cpp
             src/internal/Flow.cpp
             src/internal/FlowData.cpp
@@ -88,16 +85,31 @@ target_compile_features(mxl
     )
 set_target_properties(mxl
         PROPERTIES
-            VERSION                      "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
-            SOVERSION                    "${PROJECT_VERSION_MAJOR}"
+            POSITION_INDEPENDENT_CODE ON      # Needed to bulid shared library later
+            VISIBILITY_INLINES_HIDDEN ON
+            C_VISIBILITY_PRESET       hidden
+            CXX_VISIBILITY_PRESET     hidden
+            C_EXTENSIONS              OFF
+            CXX_EXTENSIONS            OFF
+            VERSION                   "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+            SOVERSION                 "${PROJECT_VERSION_MAJOR}"
     )
 target_link_options(mxl
         PRIVATE
             "-Wl,--exclude-libs,ALL"
     )
 
+target_sources(mxl
+        PRIVATE
+            src/flow.cpp
+            src/mxl.cpp
+            src/time.cpp
+    )
+
 target_include_directories(mxl 
         PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     )
 
