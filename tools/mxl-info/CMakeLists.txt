@@ -22,13 +22,6 @@ target_sources(mxl-info
             main.cpp
     )
 
-if (NOT TARGET stduuid)
-    find_package(stduuid CONFIG REQUIRED)
-endif ()
-
-if (NOT TARGET fmt::fmt)
-    find_package(fmt CONFIG REQUIRED)
-endif ()
 
 if (NOT TARGET CLI11::CLI11)
     find_package(CLI11 CONFIG REQUIRED)
@@ -38,8 +31,6 @@ target_link_libraries(mxl-info
         PRIVATE
             mxl-objects
             mxl
-            stduuid
-            fmt::fmt
             CLI11::CLI11
     )
 

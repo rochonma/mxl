@@ -46,9 +46,7 @@ if (gstreamer_FOUND)
             PRIVATE
                 mxl-objects
                 mxl
-                stduuid
                 CLI11::CLI11
-                spdlog::spdlog
                 PkgConfig::gstreamer
                 PkgConfig::gstreamer-app
                 PkgConfig::gstreamer-video
@@ -78,7 +76,6 @@ if (gstreamer_FOUND)
             PRIVATE
                 mxl-objects
                 mxl
-                stduuid
                 CLI11::CLI11
                 spdlog::spdlog
                 PkgConfig::gstreamer
@@ -110,9 +107,7 @@ if (gstreamer_FOUND)
             PRIVATE
                 mxl-objects
                 mxl
-                stduuid
                 CLI11::CLI11
-                spdlog::spdlog
                 PkgConfig::gstreamer
                 PkgConfig::gstreamer-app
                 PkgConfig::gstreamer-video
