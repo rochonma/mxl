@@ -392,7 +392,7 @@ private:
                         break;
                     }
 
-                    gInfo.commitedSize = map.size;
+                    gInfo.validSlices = gInfo.totalSlices;
                     ::memcpy(mxl_buffer, map.data, map.size);
 
                     if (mxlFlowWriterCommitGrain(flowWriterVideo, &gInfo) != MXL_STATUS_OK)

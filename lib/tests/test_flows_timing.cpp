@@ -60,7 +60,7 @@ TEST_CASE("Video Flow : Wait for grain availability", "[mxl flows timing]")
                 REQUIRE(mxlFlowWriterOpenGrain(writer, writerGrainIndex, &gInfo, &buffer) == MXL_STATUS_OK);
                 REQUIRE(buffer != nullptr);
                 memcpy(buffer, &writerGrainIndex, sizeof(std::uint64_t));
-                gInfo.commitedSize = gInfo.grainSize;
+                gInfo.validSlices = gInfo.totalSlices;
                 REQUIRE(mxlFlowWriterCommitGrain(writer, &gInfo) == MXL_STATUS_OK);
                 if (writerGrainIndex < readerGrainIndex)
                 {
@@ -74,7 +74,7 @@ TEST_CASE("Video Flow : Wait for grain availability", "[mxl flows timing]")
     constexpr auto oneS = 1000000000;
     REQUIRE(mxlFlowReaderGetGrain(reader, readerGrainIndex, oneS, &gInfo, &buffer) == MXL_STATUS_OK);
     REQUIRE(buffer != nullptr);
-    REQUIRE(gInfo.commitedSize == gInfo.grainSize);
+    REQUIRE(gInfo.validSlices == gInfo.totalSlices);
     std::uint64_t obtainedGrainIndex = 0;
     memcpy(&obtainedGrainIndex, buffer, sizeof(std::uint64_t));
     REQUIRE(readerGrainIndex == obtainedGrainIndex);

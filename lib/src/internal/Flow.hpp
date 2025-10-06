@@ -10,6 +10,11 @@
 
 namespace mxl::lib
 {
+    /// The version of the flow data structs in shared memory that we expect and support.
+    constexpr auto FLOW_DATA_VERSION = 2;
+
+    /// The version of the grain data structs in shared memory that we expect an support.
+    constexpr auto GRAIN_DATA_VERSION = 2;
 
     ///
     /// Internal Flow structure stored in shared memory

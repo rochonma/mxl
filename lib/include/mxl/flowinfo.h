@@ -63,8 +63,19 @@ extern "C"
         uint32_t grainCount;
 
         /**
+         * Length of a slice in bytes. A slice refers to the elemental data type that can be written and comitted to a grain.
+         * For video, this is a line of a V210 picture. For data, this is just a single byte.
+         */
+        uint32_t sliceLength;
+
+        /**
+         * The minimum number of slices that a producer must write to a grain before they can be committed and become valid for a consumer.
+         */
+        uint32_t minSliceBatch;
+
+        /**
          * 32 bit word used syncronization between a writer and multiple readers.  This value can be used by futexes.
-         * When a FlowWriter commits some data (a grain, a slice, etc) it will increment this value and then wake all FlowReaders waiting on this
+         * When a FlowWriter commits some data (a grain, a stride, etc) it will increment this value and then wake all FlowReaders waiting on this
          * memory address.
          */
         uint32_t syncCounter;
@@ -73,7 +84,7 @@ extern "C"
         uint64_t headIndex;
 
         /** Reserved space for future extensions.  */
-        uint8_t reserved[96];
+        uint8_t reserved[88];
     } mxlDiscreteFlowInfo;
 
     typedef struct mxlContinuousFlowInfo_t

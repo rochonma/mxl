@@ -27,6 +27,9 @@ namespace mxl::lib
         constexpr auto MAX_WIDTH = 7680u;  // 8K UHD
         constexpr auto MAX_HEIGHT = 4320u; // 8K UHD
 
+        // Grain size when the grain data format is "data"
+        constexpr auto DATA_FORMAT_GRAIN_SIZE = 4096;
+
         /**
          * Translate a NMOS IS-04 data format to a an mxlDataFormat enum.
          * \param[in] format a string view referring to the format.
@@ -360,7 +363,7 @@ namespace mxl::lib
             {
                 // This is large enough to hold all the ANC data in a single grain.
                 // This size is an usual VFS page. no point at going smaller.
-                payloadSize = 4096;
+                payloadSize = DATA_FORMAT_GRAIN_SIZE;
             }
             else
             {
@@ -388,6 +391,65 @@ namespace mxl::lib
         }
 
         return payloadSize;
+    }
+
+    std::size_t FlowParser::getStrideLength() const
+    {
+        switch (_format)
+        {
+            case MXL_DATA_FORMAT_DATA:
+                // For "data" flows, the stride length is 1 byte
+                return 1;
+
+            case MXL_DATA_FORMAT_VIDEO: {
+                // For video flows the stride length is the byte-length of a single
+                // line of v210 video.
+                auto const width = static_cast<std::size_t>(fetchAs<double>(_root, "frame_width"));
+                auto const mediaType = fetchAs<std::string>(_root, "media_type");
+
+                if (mediaType != "video/v210")
+                {
+                    auto msg = std::string{"Unsupported video media_type: "} + mediaType;
+                    throw std::invalid_argument{std::move(msg)};
+                }
+
+                // https://developer.apple.com/library/archive/technotes/tn2162/_index.html#//apple_ref/doc/uid/DTS40013070-CH1-TNTAG8-V210__4_2_2_COMPRESSION_TYPE
+                // 6 pixels per 4 blocks, each block is 4 byte
+                auto lineWidth = static_cast<std::size_t>(((width / 6) * 4) * 4);
+                // Each line is aligned to 128 bytes.
+                auto padding = 128 - (lineWidth % 128);
+                return lineWidth + padding;
+            }
+
+            default:
+                // FIXME: handle remaining (discrete) formats
+                throw std::invalid_argument{"Cannot compute stride length for this data format."};
+        }
+    }
+
+    std::size_t FlowParser::getNumOfStrides() const
+    {
+        switch (_format)
+        {
+            case MXL_DATA_FORMAT_DATA:
+                // Since the stride length for data flows is 1 byte, the number of strides must be the
+                // grain size.
+                return DATA_FORMAT_GRAIN_SIZE;
+
+            case MXL_DATA_FORMAT_VIDEO:
+                if (auto const mediaType = fetchAs<std::string>(_root, "media_type"); mediaType != "video/v210")
+                {
+                    auto msg = std::string{"Unsupported video media_type: "} + mediaType;
+                    throw std::invalid_argument{std::move(msg)};
+                }
+
+                // For v210, the number of strides is always the number of video lines
+                return static_cast<std::size_t>(fetchAs<double>(_root, "frame_height"));
+
+            default:
+                // FIXME: handle remaining (discrete) formats
+                throw std::invalid_argument{"Cannot compute stride length for this data format."};
+        }
     }
 
     std::size_t FlowParser::getChannelCount() const

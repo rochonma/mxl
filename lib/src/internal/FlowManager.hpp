@@ -58,7 +58,8 @@ namespace mxl::lib
         /// \param[in] grainPayloadSize Size of the grain in host memory.  0 if the grain payload lives in device memory.
         ///
         std::unique_ptr<DiscreteFlowData> createDiscreteFlow(uuids::uuid const& flowId, std::string const& flowDef, mxlDataFormat flowFormat,
-            std::size_t grainCount, mxlRational const& grainRate, std::size_t grainPayloadSize);
+            std::size_t grainCount, mxlRational const& grainRate, std::size_t grainPayloadSize, std::size_t grainNumOfStrides,
+            std::size_t strideLength);
 
         ///
         /// Create a new continuous flow together with its associated channel store and open it in read-write mode.

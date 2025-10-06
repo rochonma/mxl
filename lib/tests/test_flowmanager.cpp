@@ -47,9 +47,10 @@ TEST_CASE("Flow Manager : Create Video Flow Structure", "[flow manager]")
     auto const flowDef = mxl::tests::readFile("data/v210_flow.json");
     auto const flowId = *uuids::uuid::from_string("5fbec3b1-1b0f-417d-9059-8b94a47197ed");
     auto const grainRate = mxlRational{60000, 1001};
+    auto const payloadSize = 1024;
 
     auto manager = std::make_shared<FlowManager>(domain);
-    auto flowData = manager->createDiscreteFlow(flowId, flowDef, MXL_DATA_FORMAT_VIDEO, 5, grainRate, 1024);
+    auto flowData = manager->createDiscreteFlow(flowId, flowDef, MXL_DATA_FORMAT_VIDEO, 5, grainRate, payloadSize, 1, payloadSize);
 
     REQUIRE(flowData != nullptr);
     REQUIRE(flowData->isValid());
@@ -101,7 +102,7 @@ TEST_CASE("Flow Manager : Create Video Flow Structure", "[flow manager]")
     REQUIRE_THROWS(
         [&]()
         {
-            manager->createDiscreteFlow(flowId, flowDef, MXL_DATA_FORMAT_VIDEO, 5, grainRate, 1024);
+            manager->createDiscreteFlow(flowId, flowDef, MXL_DATA_FORMAT_VIDEO, 5, grainRate, payloadSize, 1, payloadSize);
         }());
 
     // This should throw since the flow metadata will already exist.
@@ -190,7 +191,7 @@ TEST_CASE("Flow Manager : Create Audio Flow Structure", "[flow manager]")
         [&]()
         {
             auto const grainRate = mxlRational{60000, 1001};
-            manager->createDiscreteFlow(flowId, flowDef, MXL_DATA_FORMAT_VIDEO, 5, grainRate, 1024);
+            manager->createDiscreteFlow(flowId, flowDef, MXL_DATA_FORMAT_VIDEO, 5, grainRate, 1024, 1, 1024);
         }());
 
     REQUIRE(manager->listFlows().size() == 1);
@@ -226,7 +227,7 @@ TEST_CASE("Flow Manager : Open, List, and Error Conditions", "[flow manager]")
     auto const flowDef1 = mxl::tests::readFile("data/v210_flow.json");
     auto const grainRate = mxlRational{60000, 1001};
     {
-        auto flowData1 = manager->createDiscreteFlow(flowId1, flowDef1, MXL_DATA_FORMAT_VIDEO, 3, grainRate, 512);
+        auto flowData1 = manager->createDiscreteFlow(flowId1, flowDef1, MXL_DATA_FORMAT_VIDEO, 3, grainRate, 512, 0, 0);
         REQUIRE(flowData1->grainCount() == 3U);
         // close writer
         flowData1.reset();
@@ -316,7 +317,7 @@ TEST_CASE("Flow Manager : Open, List, and Error Conditions", "[flow manager]")
     // 10) unsupported formats should be rejected
     //
     auto const badId = *uuids::uuid::from_string("44444444-4444-4444-4444-444444444444");
-    REQUIRE_THROWS_AS(manager->createDiscreteFlow(badId, flowDef1, MXL_DATA_FORMAT_UNSPECIFIED, 1, grainRate, 128), std::runtime_error);
+    REQUIRE_THROWS_AS(manager->createDiscreteFlow(badId, flowDef1, MXL_DATA_FORMAT_UNSPECIFIED, 1, grainRate, 128, 1, 128), std::runtime_error);
     REQUIRE_THROWS_AS(manager->createContinuousFlow(badId, flowDef2, MXL_DATA_FORMAT_VIDEO, sampleRate, 1, 4, 1024), std::runtime_error);
 }
 
@@ -330,7 +331,7 @@ TEST_CASE("FlowManager: re-create flow after deletion", "[flow manager][reuse]")
     auto const rate = mxlRational{50, 1};
 
     // Create discrete flow #1
-    auto f1 = mgr->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 1, rate, 128);
+    auto f1 = mgr->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 1, rate, 128, 1, 128);
     REQUIRE(f1);
     REQUIRE(mgr->listFlows().size() == 1);
 
@@ -339,7 +340,7 @@ TEST_CASE("FlowManager: re-create flow after deletion", "[flow manager][reuse]")
     REQUIRE(mgr->listFlows().empty());
 
     // Re-create with same ID
-    auto f2 = mgr->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 2, rate, 256);
+    auto f2 = mgr->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 2, rate, 256, 1, 256);
     REQUIRE(f2);
     REQUIRE(mgr->listFlows().size() == 1);
 
@@ -357,7 +358,7 @@ TEST_CASE("FlowManager: corrupted flow with missing descriptor", "[flow manager]
     auto const rate = mxlRational{50, 1};
 
     // Create and publish
-    auto flow = mgr->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 1, rate, 64);
+    auto flow = mgr->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 1, rate, 64, 1, 64);
     flow.reset();
     REQUIRE(mgr->listFlows().size() == 1);
 
@@ -395,7 +396,7 @@ TEST_CASE("FlowManager: concurrent createDiscreteFlow same UUID", "[flow manager
     {
         try
         {
-            auto f = mgr->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 1, rate, payloadSize);
+            auto f = mgr->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 1, rate, payloadSize, 1, payloadSize);
             if (f)
             {
                 ++success;
@@ -429,7 +430,7 @@ TEST_CASE("FlowManager: deleteFlow on read-only domain", "[flow manager][deletio
     auto const def = mxl::tests::readFile("data/v210_flow.json");
     auto const rate = mxlRational{50, 1};
 
-    auto f = mgr->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 1, rate, 64);
+    auto f = mgr->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 1, rate, 64, 0, 64);
     f.reset();
     REQUIRE(mgr->listFlows().size() == 1);
 
@@ -475,7 +476,7 @@ TEST_CASE("FlowManager: concurrent listFlows and deleteFlow", "[flow manager][co
         // Last segment must be exactly 12 hex digits: 11 zeros + one hex digit
         auto id = *uuids::uuid::from_string(fmt::format("eeeeeeee-eeee-eeee-eeee-00000000000{:X}", i));
         ids.push_back(id);
-        mgr->createDiscreteFlow(id, mxl::tests::readFile("data/v210_flow.json"), MXL_DATA_FORMAT_VIDEO, 1, mxlRational{50, 1}, 32);
+        mgr->createDiscreteFlow(id, mxl::tests::readFile("data/v210_flow.json"), MXL_DATA_FORMAT_VIDEO, 1, mxlRational{50, 1}, 32, 1, 32);
     }
 
     auto done = std::atomic<bool>{false};
@@ -513,7 +514,7 @@ TEST_CASE("FlowManager: multiple instances share domain", "[flow manager]")
     auto const def = mxl::tests::readFile("data/v210_flow.json");
     auto const rate = mxlRational{50, 1};
 
-    auto f1 = mgr1->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 1, rate, 16);
+    auto f1 = mgr1->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 1, rate, 16, 1, 16);
     REQUIRE(mgr1->listFlows().size() == 1);
     // mgr2 should see it too
     REQUIRE(mgr2->listFlows().size() == 1);
@@ -541,7 +542,7 @@ TEST_CASE("FlowManager: createFlow throws on unwritable domain", "[flow manager]
     // CreateFlow should respect filesystem permissions
     // When domain is unwritable, creation operations should fail
     // This test verifies proper permission enforcement
-    REQUIRE_THROWS_AS(mgr->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 1, rate, 8), std::filesystem::filesystem_error);
+    REQUIRE_THROWS_AS(mgr->createDiscreteFlow(id, def, MXL_DATA_FORMAT_VIDEO, 1, rate, 8, 1, 8), std::filesystem::filesystem_error);
 
     // restore perms so we can clean up
     permissions(domain, std::filesystem::perms::owner_all, std::filesystem::perm_options::add);

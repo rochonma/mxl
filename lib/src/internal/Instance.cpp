@@ -239,7 +239,14 @@ namespace mxl::lib
             // Compute the grain count based on our configured history duration
             auto const grainCount = _historyDuration * grainRate.numerator / (1'000'000'000ULL * grainRate.denominator);
 
-            return _flowManager.createDiscreteFlow(parser.getId(), flowDef, parser.getFormat(), grainCount, grainRate, parser.getPayloadSize());
+            return _flowManager.createDiscreteFlow(parser.getId(),
+                flowDef,
+                parser.getFormat(),
+                grainCount,
+                grainRate,
+                parser.getPayloadSize(),
+                parser.getNumOfStrides(),
+                parser.getStrideLength());
         }
         else if (mxlIsContinuousDataFormat(format))
         {

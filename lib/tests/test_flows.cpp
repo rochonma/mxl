@@ -452,12 +452,12 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
     REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
     REQUIRE(fInfo1.discrete.headIndex == 0);
 
-    size_t const maxSlice = 8;
-    auto sliceSize = gInfo.grainSize / maxSlice;
+    size_t const maxSlice = gInfo.totalSlices;
+    auto batchSize = fInfo1.discrete.minSliceBatch;
     for (size_t slice = 0; slice < maxSlice; slice++)
     {
         /// Write a slice to the grain.
-        gInfo.commitedSize += sliceSize;
+        gInfo.validSlices += batchSize;
         REQUIRE(mxlFlowWriterCommitGrain(writer, &gInfo) == MXL_STATUS_OK);
 
         mxlFlowInfo sliceFlowInfo;
@@ -471,7 +471,7 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
         REQUIRE(mxlFlowReaderGetGrain(reader, index, 8, &gInfo, &buffer) == MXL_STATUS_OK);
 
         // Validate the commited size
-        REQUIRE(gInfo.commitedSize == sliceSize * (slice + 1));
+        REQUIRE(gInfo.validSlices == batchSize * (slice + 1));
 
         // Give some time to the inotify message to reach the directorywatcher.
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
