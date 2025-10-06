@@ -141,7 +141,7 @@ extern "C"
         /// grain. A grain is complete when validSlices == totalSlices
         uint16_t validSlices;
         /// User data space
-        uint8_t userData[4064];
+        uint8_t userData[4068];
     } mxlGrainInfo;
 
     typedef struct mxlFlowReader_t* mxlFlowReader;

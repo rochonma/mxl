@@ -60,18 +60,18 @@ namespace mxl::lib
         std::size_t getPayloadSize() const;
 
         /**
-         *  Computes the length of a stride.
-         *  \return The length of a stride
+         *  Computes the length of a slice of the payload.
+         *  \return The length of a slice
          */
         [[nodiscard]]
-        std::size_t getStrideLength() const;
+        std::size_t getPayloadSliceLength() const;
 
         /**
-         * Computes the number of strides that make up a full grain.
-         * \return The number of strides
+         * Computes the number of slices that make up a full grain.
+         * \return The number of slices
          */
         [[nodiscard]]
-        std::size_t getNumOfStrides() const;
+        std::size_t getTotalPayloadSlices() const;
 
         /**
          * Get the number of channels in an audio flow.

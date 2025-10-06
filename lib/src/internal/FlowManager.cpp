@@ -119,7 +119,8 @@ namespace mxl::lib
     }
 
     std::unique_ptr<DiscreteFlowData> FlowManager::createDiscreteFlow(uuids::uuid const& flowId, std::string const& flowDef, mxlDataFormat flowFormat,
-        std::size_t grainCount, mxlRational const& grainRate, std::size_t grainPayloadSize, std::size_t grainNumOfStrides, std::size_t strideLength)
+        std::size_t grainCount, mxlRational const& grainRate, std::size_t grainPayloadSize, std::size_t grainNumOfSlices,
+        std::size_t grainSliceLength)
     {
         auto const uuidString = uuids::to_string(flowId);
         MXL_DEBUG("Create discrete flow. id: {}, grainCount: {}, grain payload size: {}", uuidString, grainCount, grainPayloadSize);
@@ -154,8 +155,8 @@ namespace mxl::lib
             info.discrete.grainRate = grainRate;
             info.discrete.grainCount = grainCount;
             info.discrete.syncCounter = 0;
-            info.discrete.minSliceBatch = 1;
-            info.discrete.sliceLength = strideLength;
+            info.discrete.minSliceBatch = 1; // FIXME: make this configurable for the producer
+            info.discrete.sliceLength = grainSliceLength;
 
             auto const grainDir = makeGrainDirectoryName(tempDirectory);
             if (!create_directory(grainDir))
@@ -172,7 +173,7 @@ namespace mxl::lib
                 auto const grain = flowData->emplaceGrain(grainPath.string().c_str(), grainPayloadSize);
                 auto& gInfo = grain->header.info;
                 gInfo.grainSize = grainPayloadSize;
-                gInfo.totalSlices = grainNumOfStrides;
+                gInfo.totalSlices = grainNumOfSlices;
                 gInfo.validSlices = 0;
                 gInfo.version = GRAIN_DATA_VERSION;
                 gInfo.size = sizeof gInfo;

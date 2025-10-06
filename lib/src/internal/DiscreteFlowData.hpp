@@ -66,7 +66,7 @@ namespace mxl::lib
             if (grain.get()->header.info.version != GRAIN_DATA_VERSION)
             {
                 throw std::invalid_argument(
-                    fmt::format("Unsupported grain version: {}, supported version is:", grain.get()->header.info.version, GRAIN_DATA_VERSION));
+                    fmt::format("Unsupported grain version: {}, supported version is: {}", grain.get()->header.info.version, GRAIN_DATA_VERSION));
             }
         }
 

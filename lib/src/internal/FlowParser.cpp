@@ -393,16 +393,16 @@ namespace mxl::lib
         return payloadSize;
     }
 
-    std::size_t FlowParser::getStrideLength() const
+    std::size_t FlowParser::getPayloadSliceLength() const
     {
         switch (_format)
         {
             case MXL_DATA_FORMAT_DATA:
-                // For "data" flows, the stride length is 1 byte
+                // For "data" flows, the slice length is 1 byte
                 return 1;
 
             case MXL_DATA_FORMAT_VIDEO: {
-                // For video flows the stride length is the byte-length of a single
+                // For video flows the slice length is the byte-length of a single
                 // line of v210 video.
                 auto const width = static_cast<std::size_t>(fetchAs<double>(_root, "frame_width"));
                 auto const mediaType = fetchAs<std::string>(_root, "media_type");
@@ -423,16 +423,16 @@ namespace mxl::lib
 
             default:
                 // FIXME: handle remaining (discrete) formats
-                throw std::invalid_argument{"Cannot compute stride length for this data format."};
+                throw std::invalid_argument{"Cannot compute slice length for this data format."};
         }
     }
 
-    std::size_t FlowParser::getNumOfStrides() const
+    std::size_t FlowParser::getTotalPayloadSlices() const
     {
         switch (_format)
         {
             case MXL_DATA_FORMAT_DATA:
-                // Since the stride length for data flows is 1 byte, the number of strides must be the
+                // Since the slice length for data flows is 1 byte, the number of slices must be the
                 // grain size.
                 return DATA_FORMAT_GRAIN_SIZE;
 
@@ -443,12 +443,12 @@ namespace mxl::lib
                     throw std::invalid_argument{std::move(msg)};
                 }
 
-                // For v210, the number of strides is always the number of video lines
+                // For v210, the number of slices is always the number of video lines
                 return static_cast<std::size_t>(fetchAs<double>(_root, "frame_height"));
 
             default:
                 // FIXME: handle remaining (discrete) formats
-                throw std::invalid_argument{"Cannot compute stride length for this data format."};
+                throw std::invalid_argument{"Cannot compute slice length for this data format."};
         }
     }
 

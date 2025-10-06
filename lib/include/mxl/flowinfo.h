@@ -75,7 +75,7 @@ extern "C"
 
         /**
          * 32 bit word used syncronization between a writer and multiple readers.  This value can be used by futexes.
-         * When a FlowWriter commits some data (a grain, a stride, etc) it will increment this value and then wake all FlowReaders waiting on this
+         * When a FlowWriter commits some data (a grain, a slice, etc) it will increment this value and then wake all FlowReaders waiting on this
          * memory address.
          */
         uint32_t syncCounter;
