@@ -460,7 +460,7 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
     {
         auto batchSize = defaultBatchSize;
 
-        // If the default total number of slices is not a multiple of the batch size, the last batch must
+        // If the total number of slices is not a multiple of the default batch size, the last batch must
         // be the number of remaining slices
         if ((batchIndex + 1) * batchSize > gInfo.totalSlices)
         {
