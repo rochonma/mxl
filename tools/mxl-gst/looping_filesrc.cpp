@@ -295,10 +295,8 @@ private:
     static uuids::uuid createVideoFlowJson(std::string const& in_uri, int in_width, int in_height, mxlRational in_rate, bool in_progressive,
         std::string const& in_colorspace, std::string& out_flowDef)
     {
-        picojson::object root;
-
-        std::string label = "Video flow for " + in_uri;
-
+        auto root = picojson::object{};
+        auto label = std::string{"Video flow for "} + in_uri;
         root["description"] = picojson::value(label);
 
         auto id = uuids::uuid_system_generator{}();
@@ -309,7 +307,13 @@ private:
         root["parents"] = picojson::value(picojson::array());
         root["media_type"] = picojson::value("video/v210");
 
-        picojson::object grain_rate;
+        auto tags = picojson::object{};
+        auto groupHint = picojson::array{};
+        groupHint.emplace_back(picojson::value{"Looping Source:Video"});
+        tags["urn:x-nmos:tag:grouphint/v1.0"] = picojson::value(groupHint);
+        root["tags"] = picojson::value(tags);
+
+        auto grain_rate = picojson::object{};
         grain_rate["numerator"] = picojson::value(static_cast<double>(in_rate.numerator));
         grain_rate["denominator"] = picojson::value(static_cast<double>(in_rate.denominator));
         root["grain_rate"] = picojson::value(grain_rate);
@@ -319,10 +323,10 @@ private:
         root["interlace_mode"] = picojson::value(in_progressive ? "progressive" : "interlaced_tff"); // todo. handle bff.
         root["colorspace"] = picojson::value(in_colorspace);
 
-        picojson::array components;
+        auto components = picojson::array{};
         auto add_component = [&](std::string const& name, int w, int h)
         {
-            picojson::object comp;
+            auto comp = picojson::object{};
             comp["name"] = picojson::value(name);
             comp["width"] = picojson::value(static_cast<double>(w));
             comp["height"] = picojson::value(static_cast<double>(h));
