@@ -46,7 +46,8 @@ extern "C"
 
         /**
          * The largest expected batch size in samples (for continuous flows) or slices (for discrete flows), in which new data is written to this this
-         * flow by its producer. For continuous flows, this value must be less than half of the buffer length. For discrete flows, this must be >1.
+         * flow by its producer. For continuous flows, this value must be less than half of the buffer length. For discrete flows, this must be
+         * greater or equal to 1.
          */
         uint32_t commitBatchSize;
 
