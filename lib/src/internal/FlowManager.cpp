@@ -89,6 +89,10 @@ namespace mxl::lib
             result.lastReadTime = result.lastWriteTime;
             result.format = format;
 
+            // FIXME: there should be a way for the consumer to configure this
+            result.commitBatchSize = 1;
+            result.syncBatchSize = 1;
+
             // Get the inode of the flow data file
             struct ::stat st;
             if (::stat(flowDataPath.string().c_str(), &st) != 0)
@@ -155,7 +159,6 @@ namespace mxl::lib
             info.discrete.grainRate = grainRate;
             info.discrete.grainCount = grainCount;
             info.discrete.syncCounter = 0;
-            info.discrete.minSliceBatch = 1; // FIXME: make this configurable for the producer
             info.discrete.sliceLength = grainSliceLength;
 
             auto const grainDir = makeGrainDirectoryName(tempDirectory);

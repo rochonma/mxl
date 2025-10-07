@@ -44,6 +44,19 @@ extern "C"
         /** The flow data inode.  this is used to detect if the flow was recreated */
         ino_t inode;
 
+        /**
+         * The largest expected batch size in samples (for continuous flows) or slices (for discrete flows), in which new data is written to this this
+         * flow by its producer. For continuous flows, this value must be less than half of the buffer length. For discrete flows, this must be >1.
+         */
+        uint32_t commitBatchSize;
+
+        /**
+         * The largest expected batch size in samples (for continuous flows) or slices (for discrete flows), at which availability of new data is
+         * signaled to waiting consumers. This must be a multiple of the commit batch size greater or equal to 1.
+         * \todo Will quite probably be obsoleted by new timing model.
+         */
+        uint32_t syncBatchSize;
+
         /** Reserved space for future extensions.  */
         uint8_t reserved[72];
     } mxlCommonFlowInfo;
@@ -67,11 +80,6 @@ extern "C"
          * For video, this is a line of a V210 picture. For data, this is just a single byte.
          */
         uint32_t sliceLength;
-
-        /**
-         * The minimum number of slices that a producer must write to a grain before they can be committed and become valid for a consumer.
-         */
-        uint32_t minSliceBatch;
 
         /**
          * 32 bit word used syncronization between a writer and multiple readers.  This value can be used by futexes.
@@ -105,19 +113,6 @@ extern "C"
          * The number of samples in each of the ring buffers.
          */
         uint32_t bufferLength;
-
-        /**
-         * The largest expected batch size in samples, in which new data is written to this this flow by its producer.
-         * This value must be less than half of the buffer length.
-         */
-        uint32_t commitBatchSize;
-
-        /**
-         * The largest expected batch size in samples, at which availability of new data is signaled to waiting consumers.
-         * This must be a multiple of the commit batch size greater or equal to 1.
-         * \todo Will quite probably be obsoleted by new timing model.
-         */
-        uint32_t syncBatchSize;
 
         /** The current head index within the per channel ring buffers. */
         uint64_t headIndex;
