@@ -227,7 +227,7 @@ TEST_CASE("Flow Manager : Open, List, and Error Conditions", "[flow manager]")
     auto const flowDef1 = mxl::tests::readFile("data/v210_flow.json");
     auto const grainRate = mxlRational{60000, 1001};
     {
-        auto flowData1 = manager->createDiscreteFlow(flowId1, flowDef1, MXL_DATA_FORMAT_VIDEO, 3, grainRate, 512, 0, 0);
+        auto flowData1 = manager->createDiscreteFlow(flowId1, flowDef1, MXL_DATA_FORMAT_VIDEO, 3, grainRate, 512, 0, 512);
         REQUIRE(flowData1->grainCount() == 3U);
         // close writer
         flowData1.reset();
