@@ -397,9 +397,10 @@ namespace mxl::lib
     {
         switch (_format)
         {
-            case MXL_DATA_FORMAT_DATA:
+            case MXL_DATA_FORMAT_DATA: {
                 // For "data" flows, the slice length is 1 byte
                 return 1;
+            }
 
             case MXL_DATA_FORMAT_VIDEO: {
                 // For video flows the slice length is the byte-length of a single
@@ -413,17 +414,12 @@ namespace mxl::lib
                     throw std::invalid_argument{std::move(msg)};
                 }
 
-                // https://developer.apple.com/library/archive/technotes/tn2162/_index.html#//apple_ref/doc/uid/DTS40013070-CH1-TNTAG8-V210__4_2_2_COMPRESSION_TYPE
-                // 6 pixels per 4 blocks, each block is 4 byte
-                auto lineWidth = static_cast<std::size_t>(((width / 6) * 4) * 4);
-                // Each line is aligned to 128 bytes.
-                auto padding = 128 - (lineWidth % 128);
-                return lineWidth + padding;
+                return static_cast<std::size_t>((width + 47) / 48 * 128);
             }
 
-            default:
-                // FIXME: handle remaining (discrete) formats
+            default: {
                 throw std::invalid_argument{"Cannot compute slice length for this data format."};
+            }
         }
     }
 
@@ -431,12 +427,13 @@ namespace mxl::lib
     {
         switch (_format)
         {
-            case MXL_DATA_FORMAT_DATA:
+            case MXL_DATA_FORMAT_DATA: {
                 // Since the slice length for data flows is 1 byte, the number of slices must be the
                 // grain size.
                 return DATA_FORMAT_GRAIN_SIZE;
+            }
 
-            case MXL_DATA_FORMAT_VIDEO:
+            case MXL_DATA_FORMAT_VIDEO: {
                 if (auto const mediaType = fetchAs<std::string>(_root, "media_type"); mediaType != "video/v210")
                 {
                     auto msg = std::string{"Unsupported video media_type: "} + mediaType;
@@ -444,11 +441,17 @@ namespace mxl::lib
                 }
 
                 // For v210, the number of slices is always the number of video lines
-                return static_cast<std::size_t>(fetchAs<double>(_root, "frame_height"));
+                auto h = static_cast<std::size_t>(fetchAs<double>(_root, "frame_height"));
+                if (_interlaced)
+                {
+                    return h / 2;
+                }
 
-            default:
-                // FIXME: handle remaining (discrete) formats
+                return h;
+            }
+            default: {
                 throw std::invalid_argument{"Cannot compute slice length for this data format."};
+            }
         }
     }
 
