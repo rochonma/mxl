@@ -177,7 +177,7 @@ namespace mxl::lib
                 gInfo.grainSize = grainPayloadSize;
                 gInfo.totalSlices = grainNumOfSlices;
                 gInfo.validSlices = 0;
-                gInfo.version = GRAIN_DATA_VERSION;
+                gInfo.version = GRAIN_HEADER_VERSION;
                 gInfo.size = sizeof gInfo;
                 gInfo.deviceIndex = -1;
             }
