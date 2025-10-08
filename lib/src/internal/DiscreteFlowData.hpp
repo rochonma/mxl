@@ -65,8 +65,8 @@ namespace mxl::lib
             // Check for the version of the grain data structure in the memory that was just mapped.
             if (grain.get()->header.info.version != GRAIN_DATA_VERSION)
             {
-                throw std::invalid_argument(
-                    fmt::format("Unsupported grain version: {}, supported version is: {}", grain.get()->header.info.version, GRAIN_DATA_VERSION));
+                throw std::invalid_argument{
+                    fmt::format("Unsupported grain version: {}, supported version is: {}", grain.get()->header.info.version, GRAIN_DATA_VERSION)};
             }
         }
 
