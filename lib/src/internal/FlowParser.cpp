@@ -397,12 +397,14 @@ namespace mxl::lib
     {
         switch (_format)
         {
-            case MXL_DATA_FORMAT_DATA: {
+            case MXL_DATA_FORMAT_DATA:
+            {
                 // For "data" flows, the slice length is 1 byte
                 return 1;
             }
 
-            case MXL_DATA_FORMAT_VIDEO: {
+            case MXL_DATA_FORMAT_VIDEO:
+            {
                 // For video flows the slice length is the byte-length of a single
                 // line of v210 video.
                 auto const width = static_cast<std::size_t>(fetchAs<double>(_root, "frame_width"));
@@ -417,7 +419,8 @@ namespace mxl::lib
                 return static_cast<std::size_t>((width + 47) / 48 * 128);
             }
 
-            default: {
+            default:
+            {
                 throw std::invalid_argument{"Cannot compute slice length for this data format."};
             }
         }
@@ -427,13 +430,15 @@ namespace mxl::lib
     {
         switch (_format)
         {
-            case MXL_DATA_FORMAT_DATA: {
+            case MXL_DATA_FORMAT_DATA:
+            {
                 // Since the slice length for data flows is 1 byte, the number of slices must be the
                 // grain size.
                 return DATA_FORMAT_GRAIN_SIZE;
             }
 
-            case MXL_DATA_FORMAT_VIDEO: {
+            case MXL_DATA_FORMAT_VIDEO:
+            {
                 if (auto const mediaType = fetchAs<std::string>(_root, "media_type"); mediaType != "video/v210")
                 {
                     auto msg = std::string{"Unsupported video media_type: "} + mediaType;
@@ -449,7 +454,8 @@ namespace mxl::lib
 
                 return h;
             }
-            default: {
+            default:
+            {
                 throw std::invalid_argument{"Cannot compute slice length for this data format."};
             }
         }

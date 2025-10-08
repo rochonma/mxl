@@ -140,7 +140,8 @@ public:
             switch (GST_MESSAGE_TYPE(in_msg))
             {
                 case GST_MESSAGE_ASYNC_DONE: negotiated = true; break;
-                case GST_MESSAGE_ERROR:      {
+                case GST_MESSAGE_ERROR:
+                {
                     GError* err;
                     gchar* debug;
                     gst_message_parse_error(in_msg, &err, &debug);
