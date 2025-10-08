@@ -78,7 +78,7 @@ extern "C"
 
         /**
          * Length of a slice in bytes. A slice refers to the elemental data type that can be written and comitted to a grain.
-         * For video, this is a line of a V210 picture. For data, this is just a single byte.
+         * For video, this is a line of a V210 picture including any padding. For data, this is just a single byte.
          */
         uint32_t sliceLength;
 
