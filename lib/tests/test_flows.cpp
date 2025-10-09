@@ -453,8 +453,8 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
     REQUIRE(fInfo1.discrete.headIndex == 0);
 
     // Total number of batches that will be written
-    auto const numBatches = (gInfo.totalSlices + fInfo1.common.commitBatchSize - 1U) / fInfo1.common.commitBatchSize;
-    std::size_t defaultBatchSize = fInfo1.common.commitBatchSize;
+    auto const numBatches = (gInfo.totalSlices + fInfo1.common.maxCommitBatchSizeHint - 1U) / fInfo1.common.maxCommitBatchSizeHint;
+    std::size_t defaultBatchSize = fInfo1.common.maxCommitBatchSizeHint;
 
     for (auto batchIndex = std::size_t{0}; batchIndex < numBatches; batchIndex++)
     {

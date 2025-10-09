@@ -89,8 +89,8 @@ namespace mxl::lib
             result.format = format;
 
             // FIXME: there should be a way for the consumer to configure this
-            result.commitBatchSize = 1;
-            result.syncBatchSize = 1;
+            result.maxCommitBatchSizeHint = 1;
+            result.maxSyncBatchSizeHint = 1;
 
             // Get the inode of the flow data file
             struct ::stat st;
@@ -158,7 +158,7 @@ namespace mxl::lib
             info.discrete.grainRate = grainRate;
             info.discrete.grainCount = grainCount;
             info.discrete.syncCounter = 0;
-            info.discrete.sliceLength = grainSliceLength;
+            info.discrete.sliceSize = grainSliceLength;
 
             auto const grainDir = makeGrainDirectoryName(tempDirectory);
             if (!create_directory(grainDir))

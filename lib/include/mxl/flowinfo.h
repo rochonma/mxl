@@ -54,7 +54,6 @@ extern "C"
         /**
          * The largest expected batch size in samples (for continuous flows) or slices (for discrete flows), at which availability of new data is
          * signaled to waiting consumers. This must be a multiple of the commit batch size greater or equal to 1.
-         * \todo Will quite probably be obsoleted by new timing model.
          */
         uint32_t maxSyncBatchSizeHint;
 
@@ -80,7 +79,7 @@ extern "C"
          * Length of a slice in bytes. A slice refers to the elemental data type that can be written and comitted to a grain.
          * For video, this is a line of a V210 picture including any padding. For data, this is just a single byte.
          */
-        uint32_t sliceLength;
+        uint32_t sliceSize;
 
         /**
          * 32 bit word used syncronization between a writer and multiple readers.  This value can be used by futexes.
