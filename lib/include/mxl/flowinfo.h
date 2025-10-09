@@ -49,14 +49,14 @@ extern "C"
          * flow by its producer. For continuous flows, this value must be less than half of the buffer length. For discrete flows, this must be
          * greater or equal to 1.
          */
-        uint32_t commitBatchSize;
+        uint32_t maxCommitBatchSizeHint;
 
         /**
          * The largest expected batch size in samples (for continuous flows) or slices (for discrete flows), at which availability of new data is
          * signaled to waiting consumers. This must be a multiple of the commit batch size greater or equal to 1.
          * \todo Will quite probably be obsoleted by new timing model.
          */
-        uint32_t syncBatchSize;
+        uint32_t maxSyncBatchSizeHint;
 
         /** Reserved space for future extensions.  */
         uint8_t reserved[72];
