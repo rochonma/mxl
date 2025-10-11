@@ -69,6 +69,15 @@ extern "C"
          */
         mxlRational grainRate;
 
+        /** The current head index of the ringbuffer. */
+        uint64_t headIndex;
+
+        /**
+         * Length of a slice in bytes. A slice refers to the elemental data type that can be written and comitted to a grain.
+         * For video, this is a line of a V210 picture including any padding. For data, this is just a single byte.
+         */
+        uint64_t sliceSize;
+
         /**
          * How many grains in the ring buffer. This should be identical to the number of entries in the {mxlDomain}/{flowId}/grains/ folder.
          * Accessing the shared memory section for that specific grain should be predictable.
@@ -76,20 +85,11 @@ extern "C"
         uint32_t grainCount;
 
         /**
-         * Length of a slice in bytes. A slice refers to the elemental data type that can be written and comitted to a grain.
-         * For video, this is a line of a V210 picture including any padding. For data, this is just a single byte.
-         */
-        uint32_t sliceSize;
-
-        /**
          * 32 bit word used syncronization between a writer and multiple readers.  This value can be used by futexes.
          * When a FlowWriter commits some data (a grain, a slice, etc) it will increment this value and then wake all FlowReaders waiting on this
          * memory address.
          */
         uint32_t syncCounter;
-
-        /** The current head index of the ringbuffer. */
-        uint64_t headIndex;
 
         /** Reserved space for future extensions.  */
         uint8_t reserved[88];
@@ -118,7 +118,7 @@ extern "C"
         uint64_t headIndex;
 
         /** Reserved space for future extensions.  */
-        uint8_t reserved[88];
+        uint8_t reserved[96];
     } mxlContinuousFlowInfo;
 
     /**
@@ -144,7 +144,7 @@ extern "C"
         };
 
         /** User data space. */
-        uint8_t userData[3840];
+        uint8_t userData[3832];
     } mxlFlowInfo;
 
 #ifdef __cplusplus
