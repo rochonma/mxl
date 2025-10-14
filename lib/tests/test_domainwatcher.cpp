@@ -87,7 +87,7 @@ TEST_CASE("DomainWatcher triggers callback on file modifications", "[domainwatch
     create_directories(flowDir);
     auto flowId = *uuids::uuid::from_string(flowIdStr);
     auto dataFile = mxl::lib::makeFlowDataFilePath(flowDir);     // main data file
-    auto accessFile = mxl::lib::makeFlowAccessFilePath(flowDir); // .access file
+    auto accessFile = mxl::lib::makeFlowAccessFilePath(flowDir); // access file
     std::ofstream{dataFile}.close();
     std::ofstream{accessFile}.close();
 
@@ -387,7 +387,7 @@ TEST_CASE("DomainWatcher allows re-add after full remove", "[domainwatcher]")
 
 TEST_CASE("DomainWatcher triggers WRITER callback on access file modifications", "[domainwatcher]")
 {
-    // Ensure a WRITER‐type watcher actually fires when the .access file changes
+    // Ensure a WRITER‐type watcher actually fires when the access file changes
     auto const homeDir = std::getenv("HOME");
     REQUIRE(homeDir != nullptr);
 

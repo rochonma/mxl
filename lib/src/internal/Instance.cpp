@@ -110,7 +110,7 @@ namespace mxl::lib
             if (type == WatcherType::WRITER)
 
             {
-                // Someone read the grain and touched the ".access" file.  let update the last read count.
+                // Someone read the grain and touched the "access" file.  let update the last read count.
                 if (auto const found = _writers.find(flowId); found != _writers.end())
                 {
                     found->second.get()->flowRead();
