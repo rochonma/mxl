@@ -8,7 +8,7 @@
 namespace mxl::lib
 {
     constexpr auto const FLOW_DIRECTORY_NAME_SUFFIX = ".mxl-flow";
-    constexpr auto const FLOW_DESCRIPTOR_FILE_NAME = ".json";
+    constexpr auto const FLOW_DESCRIPTOR_FILE_NAME = "flow_def.json";
     constexpr auto const FLOW_DATA_FILE_NAME = "data";
     constexpr auto const FLOW_ACCESS_FILE_NAME = ".access";
     constexpr auto const GRAIN_DIRECTORY_NAME = "grains";
