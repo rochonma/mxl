@@ -7,6 +7,7 @@
 #include <string>
 #include <catch2/catch_test_macros.hpp>
 #include "../src/internal/Instance.hpp"
+#include "../src/internal/PathUtils.hpp"
 #include "../src/internal/PosixFlowIoFactory.hpp"
 #include "Utils.hpp"
 
@@ -49,7 +50,7 @@ TEST_CASE("Options : Domain config", "[options]")
     REQUIRE(create_directories(domain));
 
     // write the domain options file
-    auto const domainOptionsFile = domain / ".options";
+    auto const domainOptionsFile = makeDomainOptionsFilePath(domain);
     std::ofstream ofs(domainOptionsFile);
     REQUIRE(ofs.is_open());
     ofs << options_500;
@@ -96,7 +97,7 @@ TEST_CASE("Options : Domain + Instance config", "[options]")
     REQUIRE(create_directories(domain));
 
     // write the domain options file
-    auto const domainOptionsFile = domain / ".options";
+    auto const domainOptionsFile = makeDomainOptionsFilePath(domain);
     std::ofstream ofs(domainOptionsFile);
     REQUIRE(ofs.is_open());
     ofs << options_500;
@@ -123,7 +124,7 @@ TEST_CASE("Options : invalid configs", "[options]")
     REQUIRE(create_directories(domain));
 
     // write the domain options file
-    auto const domainOptionsFile = domain / ".options";
+    auto const domainOptionsFile = makeDomainOptionsFilePath(domain);
     std::ofstream ofs(domainOptionsFile);
     REQUIRE(ofs.is_open());
     ofs << "abc";
