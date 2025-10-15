@@ -140,7 +140,8 @@ public:
             switch (GST_MESSAGE_TYPE(in_msg))
             {
                 case GST_MESSAGE_ASYNC_DONE: negotiated = true; break;
-                case GST_MESSAGE_ERROR:      {
+                case GST_MESSAGE_ERROR:
+                {
                     GError* err;
                     gchar* debug;
                     gst_message_parse_error(in_msg, &err, &debug);
@@ -392,7 +393,7 @@ private:
                         break;
                     }
 
-                    gInfo.commitedSize = map.size;
+                    gInfo.validSlices = gInfo.totalSlices;
                     ::memcpy(mxl_buffer, map.data, map.size);
 
                     if (mxlFlowWriterCommitGrain(flowWriterVideo, &gInfo) != MXL_STATUS_OK)
