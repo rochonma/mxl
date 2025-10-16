@@ -95,23 +95,32 @@ FixNamespaceComments: false
 ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH ]
 IfMacros: []
 IncludeCategories:
- - Regex:           '^<c[a-z]+>$'
+ - Regex:           '^<c[a-z_]+>$'
    Priority:        1
    CaseSensitive:   true
- - Regex:           '^<[a-z]+>$'
+ - Regex:           '^<[a-z_]+>$'
    Priority:        2
    CaseSensitive:   true
- - Regex:           '^<[a-z]+\.[a-z]+>$'
+ - Regex:           '^<[a-z_]+\.[a-z]+>$'
    Priority:        3
    CaseSensitive:   true
- - Regex:           '^<'
+ - Regex:           '^<sys/[a-z_]+\.[a-z]+>$'
    Priority:        4
    CaseSensitive:   true
- - Regex:           '^".+/'
+ - Regex:           '^<mxl/[a-z_]+\.[a-z]+>$'
+   Priority:        6
+   CaseSensitive:   true
+ - Regex:           '^<'
    Priority:        5
    CaseSensitive:   true
+ - Regex:           '^"\.+/'
+   Priority:        8
+   CaseSensitive:   true
+ - Regex:           '^".+/'
+   Priority:        7
+   CaseSensitive:   true
  - Regex:           '^"'
-   Priority:        6
+   Priority:        9
    CaseSensitive:   true
  - Regex:           '.*'
    Priority:        10
