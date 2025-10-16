@@ -11,16 +11,16 @@
 #include <string>
 #include <unistd.h>
 #include <uuid.h>
+#include <sys/file.h>
 #include <CLI/CLI.hpp>
 #include <fmt/color.h>
 #include <fmt/format.h>
 #include <gsl/span>
+#include <picojson/picojson.h>
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
 #include <mxl/time.h>
-#include <picojson/picojson.h>
-#include <sys/file.h>
-#include "../../lib/src/internal/PathUtils.hpp"
+#include "mxl-internal/PathUtils.hpp"
 
 namespace
 {

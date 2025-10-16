@@ -9,9 +9,9 @@
 #   include <stdint.h>
 #endif
 
+#include <sys/types.h>
 #include <mxl/dataformat.h>
 #include <mxl/rational.h>
-#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C"

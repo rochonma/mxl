@@ -7,9 +7,9 @@
 #include <memory>
 #include <string>
 #include <mxl/version.h>
-#include "internal/Instance.hpp"
-#include "internal/Logging.hpp"
-#include "internal/PosixFlowIoFactory.hpp"
+#include "mxl-internal/Instance.hpp"
+#include "mxl-internal/Logging.hpp"
+#include "mxl-internal/PosixFlowIoFactory.hpp"
 
 extern "C"
 MXL_EXPORT

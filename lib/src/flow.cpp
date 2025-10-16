@@ -8,10 +8,10 @@
 #include <string>
 #include <uuid.h>
 #include <sys/file.h>
-#include "internal/Instance.hpp"
-#include "internal/Logging.hpp"
-#include "internal/PathUtils.hpp"
-#include "mxl/mxl.h"
+#include <mxl/mxl.h>
+#include "mxl-internal/Instance.hpp"
+#include "mxl-internal/Logging.hpp"
+#include "mxl-internal/PathUtils.hpp"
 
 using namespace mxl::lib;
 

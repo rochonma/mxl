@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Add the test executable
-add_executable(mxl-tests)
-target_compile_features(mxl-tests
+add_executable(mxl-internal-tests)
+target_compile_features(mxl-internal-tests
         PRIVATE
             cxx_std_20
     )
-set_target_properties(mxl-tests
+set_target_properties(mxl-internal-tests
         PROPERTIES
             POSITION_INDEPENDENT_CODE    ON
             VISIBILITY_INLINES_HIDDEN    ON
@@ -17,17 +17,17 @@ set_target_properties(mxl-tests
             CXX_EXTENSIONS               OFF
     )
 
-target_sources(mxl-tests
+target_sources(mxl-internal-tests
         PRIVATE
-            test_flows.cpp
-            test_flows_timing.cpp
-            test_instance.cpp
-            test_time.cpp
+            test_domainwatcher.cpp
+            test_flowmanager.cpp
+            test_options.cpp
+            test_sharedmem.cpp
     )
 
-target_link_libraries(mxl-tests
+target_link_libraries(mxl-internal-tests
         PRIVATE
-            mxl
+            mxl-internal
     )
 
 if (NOT TARGET Catch2::Catch2WithMain)
@@ -55,9 +55,9 @@ if (NOT TARGET PcapPlusPlus::Pcap++)
 endif()
 
 
-target_link_libraries(mxl-tests
+target_link_libraries(mxl-internal-tests
         PRIVATE
-            mxl
+            mxl-internal
             stduuid
             spdlog::spdlog
             fmt::fmt
@@ -66,7 +66,7 @@ target_link_libraries(mxl-tests
     )
 
 if (TARGET PcapPlusPlus::Pcap++)
-    target_link_libraries(mxl-tests
+    target_link_libraries(mxl-internal-tests
             PRIVATE
                 PcapPlusPlus::Pcap++
         )
@@ -75,29 +75,7 @@ endif()
 # Enable testing using CTest
 include(CTest)
 include(Catch)
-catch_discover_tests(mxl-tests)
+catch_discover_tests(mxl-internal-tests)
 
 # Copy test files to the build directory
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-# ----------------------------------------------------------------------------
-# Compile all public C headers (aggregated includes) with strict C17 warnings.
-# ----------------------------------------------------------------------------
-
-# OBJECT library to just compile (no link step)
-add_library(mxl-all-headers OBJECT all_headers.c)
-
-set_target_properties(mxl-all-headers PROPERTIES
-    C_STANDARD 17
-    C_STANDARD_REQUIRED ON
-    C_EXTENSIONS OFF
-)
-
-target_include_directories(mxl-all-headers PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/../include"
-)
-
-target_compile_options(mxl-all-headers PRIVATE
-    -Wall -Wextra -Werror -pedantic
-    -Wstrict-prototypes
-)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

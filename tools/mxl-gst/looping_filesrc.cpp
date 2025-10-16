@@ -11,13 +11,13 @@
 #include <CLI/CLI.hpp>
 #include <gst/app/gstappsink.h>
 #include <gst/gst.h>
-#include <mxl/flow.h>
-#include <mxl/mxl.h>
-#include <mxl/time.h>
 #include <picojson/picojson.h>
 #include <spdlog/cfg/env.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include "../../lib/src/internal/Logging.hpp"
+#include <mxl/flow.h>
+#include <mxl/mxl.h>
+#include <mxl/time.h>
+#include "mxl-internal/Logging.hpp"
 
 namespace fs = std::filesystem;
 

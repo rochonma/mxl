@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "mxl/time.h"
-#include "internal/Thread.hpp"
-#include "internal/Timing.hpp"
+#include "mxl-internal/Thread.hpp"
+#include "mxl-internal/Timing.hpp"
 
 extern "C"
 MXL_EXPORT
