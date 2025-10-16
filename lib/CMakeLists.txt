@@ -10,73 +10,38 @@ configure_file(
         @ONLY
     )
 
-add_library(mxl-objects OBJECT)
-target_compile_features(mxl-objects
-        PUBLIC
+add_library(mxl-headers INTERFACE)
+target_compile_features(mxl-headers
+        INTERFACE
             cxx_std_20
     )
-set_target_properties(mxl-objects
-        PROPERTIES 
-            POSITION_INDEPENDENT_CODE ON      # Needed to bulid shared library later
-            VISIBILITY_INLINES_HIDDEN ON
-            C_VISIBILITY_PRESET       hidden
-            CXX_VISIBILITY_PRESET     hidden
-            C_EXTENSIONS              OFF
-            CXX_EXTENSIONS            OFF
-    )
-target_sources(mxl-objects
-        PRIVATE
-            src/internal/DomainWatcher.cpp
-            src/internal/Flow.cpp
-            src/internal/FlowData.cpp
-            src/internal/FlowIoFactory.cpp
-            src/internal/FlowManager.cpp
-            src/internal/FlowParser.cpp
-            src/internal/FlowReader.cpp
-            src/internal/FlowWriter.cpp
-            src/internal/Instance.cpp
-            src/internal/Logging.cpp
-            src/internal/PathUtils.cpp
-            src/internal/PosixContinuousFlowReader.cpp
-            src/internal/PosixContinuousFlowWriter.cpp
-            src/internal/PosixDiscreteFlowReader.cpp
-            src/internal/PosixDiscreteFlowWriter.cpp
-            src/internal/PosixFlowIoFactory.cpp
-            src/internal/SharedMemory.cpp
-            src/internal/Sync.cpp
-            src/internal/Thread.cpp
-            src/internal/Time.cpp
-            src/internal/Timing.cpp
-    )
-
-if (NOT TARGET stduuid)
-    find_package(stduuid CONFIG REQUIRED)
-endif ()
-
-if (NOT TARGET spdlog::spdlog)
-    find_package(spdlog CONFIG REQUIRED)
-endif ()
-
-if (NOT TARGET fmt::fmt)
-    find_package(fmt CONFIG REQUIRED)
-endif()
-
-if (NOT TARGET picojson::picojson)
-    find_package(picojson REQUIRED)
-endif()
-
-target_include_directories(mxl-objects
-        PRIVATE
+target_include_directories(mxl-headers
+        INTERFACE
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
             $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     )
-target_link_libraries(mxl-objects
-        PUBLIC
-            stduuid
-            spdlog::spdlog
-            fmt::fmt
-            picojson::picojson
+
+# Install targets
+install(TARGETS mxl-headers EXPORT ${PROJECT_NAME}-targets
+        COMPONENT ${PROJECT_NAME}-dev
     )
+install(DIRECTORY
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        COMPONENT ${PROJECT_NAME}-dev
+        FILES_MATCHING
+            PATTERN "*.h"
+    )
+install(DIRECTORY
+            ${CMAKE_CURRENT_BINARY_DIR}/include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        COMPONENT ${PROJECT_NAME}-dev
+        FILES_MATCHING
+            PATTERN "*.h"
+    )
+
+
 
 add_library(mxl SHARED)
 target_compile_features(mxl
@@ -106,16 +71,11 @@ target_sources(mxl
             src/time.cpp
     )
 
-target_include_directories(mxl 
-        PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-    )
-
 target_link_libraries(mxl
+        PUBLIC
+            mxl-headers
         PRIVATE
-            mxl-objects
+            mxl-internal
     )
 
 # Alias mxl to mxl::mxl so that this library can be used
@@ -129,22 +89,6 @@ install(TARGETS mxl EXPORT ${PROJECT_NAME}-targets
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    )
-
-
-install(DIRECTORY
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        COMPONENT ${PROJECT_NAME}-dev
-        FILES_MATCHING
-            PATTERN "*.h"
-    )
-install(DIRECTORY
-            ${CMAKE_CURRENT_BINARY_DIR}/include/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        COMPONENT ${PROJECT_NAME}-dev
-        FILES_MATCHING
-            PATTERN "*.h"
     )
 
 include(CMakePackageConfigHelpers)
@@ -195,3 +139,5 @@ install(EXPORT ${PROJECT_NAME}-targets
         DESTINATION ${MXL_CMAKE_CONFIG_DESTINATION}
         COMPONENT ${PROJECT_NAME}-dev
     )
+
+add_subdirectory(internal)

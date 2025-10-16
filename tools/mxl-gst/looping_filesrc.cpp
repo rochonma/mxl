@@ -17,7 +17,7 @@
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
 #include <mxl/time.h>
-#include "../../lib/src/internal/Logging.hpp"
+#include "mxl-internal/Logging.hpp"
 
 namespace fs = std::filesystem;
 

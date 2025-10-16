@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <ctime>
 #include <catch2/catch_test_macros.hpp>
-#include "mxl/mxl.h"
-#include "mxl/time.h"
+#include <mxl/mxl.h>
+#include <mxl/time.h>
 
 TEST_CASE("Invalid Times", "[time]")
 {

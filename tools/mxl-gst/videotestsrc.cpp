@@ -9,8 +9,8 @@
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
 #include <mxl/time.h>
-#include "../../lib/src/internal/FlowParser.hpp"
-#include "../../lib/src/internal/Logging.hpp"
+#include "mxl-internal/FlowParser.hpp"
+#include "mxl-internal/Logging.hpp"
 
 std::sig_atomic_t volatile g_exit_requested = 0;
 

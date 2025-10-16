@@ -20,7 +20,7 @@
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
 #include <mxl/time.h>
-#include "../../lib/src/internal/PathUtils.hpp"
+#include "mxl-internal/PathUtils.hpp"
 
 namespace
 {
