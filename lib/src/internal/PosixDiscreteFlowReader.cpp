@@ -13,10 +13,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <uuid.h>
+#include <sys/stat.h>
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
 #include <mxl/time.h>
-#include <sys/stat.h>
 #include "Flow.hpp"
 #include "FlowManager.hpp"
 #include "Logging.hpp"

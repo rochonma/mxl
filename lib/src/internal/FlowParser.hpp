@@ -6,9 +6,9 @@
 #include <cstddef>
 #include <string>
 #include <uuid.h>
+#include <picojson/picojson.h>
 #include <mxl/dataformat.h>
 #include <mxl/rational.h>
-#include <picojson/picojson.h>
 
 namespace mxl::lib
 {

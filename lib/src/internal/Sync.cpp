@@ -7,9 +7,9 @@
 #include <cstdint>
 #include <unistd.h>
 #if defined(__linux__)
+#   include <sys/syscall.h>
 #   include <bits/time.h>
 #   include <linux/futex.h>
-#   include <sys/syscall.h>
 #elif defined(__APPLE__)
 #   include <os/os_sync_wait_on_address.h>
 #endif

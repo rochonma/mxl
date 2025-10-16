@@ -6,12 +6,12 @@
 #include <fstream>
 #include <ios>
 #include <stdexcept>
+#include <system_error>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
 #include <mxl/time.h>
-#include <sys/stat.h>
-#include <system_error>
 #include "Logging.hpp"
 #include "PathUtils.hpp"
 #include "SharedMemory.hpp"

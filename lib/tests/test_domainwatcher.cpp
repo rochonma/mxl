@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the Media eXchange Layer project.
 // SPDX-License-Identifier: Apache-2.0
 
+#include <condition_variable>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
@@ -9,9 +10,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <uuid.h>
-#include <catch2/catch_test_macros.hpp>
-#include <condition_variable>
 #include <sys/stat.h>
+#include <catch2/catch_test_macros.hpp>
 #include "../src/internal/DomainWatcher.hpp"
 #include "../src/internal/PathUtils.hpp"
 

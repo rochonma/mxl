@@ -21,10 +21,10 @@
 #include <thread>
 #include <uuid.h>
 #include <catch2/catch_test_macros.hpp>
+#include <picojson/picojson.h>
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
 #include <mxl/time.h>
-#include <picojson/picojson.h>
 
 namespace fs = std::filesystem;
 
