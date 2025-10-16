@@ -128,6 +128,9 @@ Items discussed in the meetings should include a comment indicating the date of 
 
 Calls can be recorded and kept for a limited period of time as AI summarisation may be used for note taking purpose.
 
+# Workflow
+
+The workflow followed by the RC and TSC to manage Requirements, create Features, Roadmpap, bug fixes and improvements is documented here: [MXL Requirement-Feature Workflow](MXL Requirement-Feature Workflow 2025-10-09.png)
 
 # Licensing
 
