@@ -28,16 +28,12 @@
 
 namespace fs = std::filesystem;
 
-TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
+TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Create/Destroy", "[mxl flows]")
 {
     auto const opts = "{}";
     auto const flowId = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
     auto flowDef = mxl::tests::readFile("data/v210_flow.json");
 
-    auto domain = std::filesystem::path{"./mxl_unittest_domain"}; // Remove that path if it exists.
-    remove_all(domain);
-
-    create_directories(domain);
     auto instanceReader = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instanceReader != nullptr);
 
@@ -137,16 +133,12 @@ TEST_CASE("Video Flow : Create/Destroy", "[mxl flows]")
     mxlDestroyInstance(instanceWriter);
 }
 
-TEST_CASE("Video Flow : Invalid flow (discrete)", "[mxl flows]")
+TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Invalid flow (discrete)", "[mxl flows]")
 {
     auto const opts = "{}";
     auto const flowId = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
     auto flowDef = mxl::tests::readFile("data/v210_flow.json");
 
-    auto domain = std::filesystem::path{"./mxl_unittest_domain"}; // Remove that path if it exists.
-    remove_all(domain);
-
-    create_directories(domain);
     auto instanceReader = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instanceReader != nullptr);
 
@@ -186,19 +178,10 @@ TEST_CASE("Video Flow : Invalid flow (discrete)", "[mxl flows]")
     mxlDestroyInstance(instanceWriter);
 }
 
-TEST_CASE("Invalid flow definitions", "[mxl flows]")
+TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Invalid flow definitions", "[mxl flows]")
 {
-    //
-    // Prepare the domain
-    //
-    char const* homeDir = getenv("HOME");
-    REQUIRE(homeDir != nullptr);
-    fs::path domain{"./mxl_unittest_domain"}; // Remove that path if it exists.
-    fs::remove_all(domain);
-
     // Create the instance
     char const* opts = "{}";
-    std::filesystem::create_directories(domain);
     auto instance = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instance != nullptr);
 
@@ -298,7 +281,7 @@ TEST_CASE("Invalid flow definitions", "[mxl flows]")
 
 #ifndef __APPLE__
 
-TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
+TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Data Flow : Create/Destroy", "[mxl flows]")
 {
     // Read some 2110-40 packets from a pcap file downloaded from https://github.com/NEOAdvancedTechnology/ST2110_pcap_zoo
     std::unique_ptr<pcpp::IFileReaderDevice> pcapReader(pcpp::IFileReaderDevice::getReader("data/ST2110-40-Closed_Captions.cap"));
@@ -324,10 +307,6 @@ TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
     auto flowDef = mxl::tests::readFile("data/data_flow.json");
     char const* flowId = "db3bd465-2772-484f-8fac-830b0471258b";
 
-    fs::path domain{"./mxl_unittest_domain"}; // Remove that path if it exists.
-    fs::remove_all(domain);
-
-    std::filesystem::create_directories(domain);
     auto instanceReader = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instanceReader != nullptr);
 
@@ -411,16 +390,12 @@ TEST_CASE("Data Flow : Create/Destroy", "[mxl flows]")
     mxlDestroyInstance(instanceWriter);
 }
 
-TEST_CASE("Video Flow : Slices", "[mxl flows]")
+TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Slices", "[mxl flows]")
 {
     char const* opts = "{}";
     auto flowDef = mxl::tests::readFile("data/v210_flow.json");
     char const* flowId = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
 
-    fs::path domain{"/dev/shm/mxl_domain"}; // Remove that path if it exists.
-    fs::remove_all(domain);
-
-    std::filesystem::create_directories(domain);
     auto instanceReader = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instanceReader != nullptr);
 
@@ -504,16 +479,12 @@ TEST_CASE("Video Flow : Slices", "[mxl flows]")
 
 #endif
 
-TEST_CASE("Audio Flow : Create/Destroy", "[mxl flows]")
+TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Create/Destroy", "[mxl flows]")
 {
     auto const opts = "{}";
     auto const flowId = "b3bb5be7-9fe9-4324-a5bb-4c70e1084449";
     auto const flowDef = mxl::tests::readFile("data/audio_flow.json");
 
-    auto domain = std::filesystem::path{"./mxl_unittest_domain"}; // Remove that path if it exists.
-    remove_all(domain);
-
-    create_directories(domain);
     auto instanceReader = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instanceReader != nullptr);
 
@@ -622,16 +593,12 @@ TEST_CASE("Audio Flow : Create/Destroy", "[mxl flows]")
     mxlDestroyInstance(instanceWriter);
 }
 
-TEST_CASE("Audio Flow : Invalid Flow (continuous)", "[mxl flows]")
+TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Invalid Flow (continuous)", "[mxl flows]")
 {
     auto const opts = "{}";
     auto const flowId = "b3bb5be7-9fe9-4324-a5bb-4c70e1084449";
     auto const flowDef = mxl::tests::readFile("data/audio_flow.json");
 
-    auto domain = std::filesystem::path{"./mxl_unittest_domain"}; // Remove that path if it exists.
-    remove_all(domain);
-
-    create_directories(domain);
     auto instanceReader = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instanceReader != nullptr);
 
@@ -709,12 +676,8 @@ std::vector<BatchIndexAndSize> planAudioBatches(std::size_t numOfBatches, std::s
     return result;
 }
 
-TEST_CASE("Audio Flow : Different writer / reader batch size", "[mxl flows]")
+TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Different writer / reader batch size", "[mxl flows]")
 {
-    auto domain = std::filesystem::path{"./mxl_unittest_domain"};
-    remove_all(domain);
-    create_directories(domain);
-
     auto const opts = "{}";
     auto instance = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instance != nullptr);
@@ -783,12 +746,8 @@ TEST_CASE("Audio Flow : Different writer / reader batch size", "[mxl flows]")
     REQUIRE(mxlDestroyInstance(instance) == MXL_STATUS_OK);
 }
 
-TEST_CASE("mxlGetFlowDef", "[mxl flows]")
+TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "mxlGetFlowDef", "[mxl flows]")
 {
-    auto domain = std::filesystem::path{"./mxl_unittest_domain"};
-    remove_all(domain);
-    create_directories(domain);
-
     auto const opts = "{}";
     auto instance = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instance != nullptr);
@@ -831,9 +790,8 @@ TEST_CASE("mxlGetFlowDef", "[mxl flows]")
 
 // Verify that we obtain a proper error code when attempting to create a flow
 // in an unwritable domain.
-TEST_CASE("mxlCreateFlow: unwritable domain", "[mxl flows]")
+TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "mxlCreateFlow: unwritable domain", "[mxl flows]")
 {
-    auto domain = mxl::tests::makeTempDomain();
     // remove write perms on domain
     permissions(domain, std::filesystem::perms::owner_write, std::filesystem::perm_options::remove);
 
