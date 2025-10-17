@@ -1,6 +1,3 @@
-<!-- SPDX-FileCopyrightText: 2025 Contributors to the Media eXchange Layer project. -->
-<!-- SPDX-License-Identifier: Apache-2.0 -->
-
 ---
 name: Bug report
 about: Create a report to help us improve
@@ -39,3 +36,6 @@ If applicable, add screenshots to help explain your problem.
 
 **Additional context**
 Add any other context about the problem here.
+
+<!-- SPDX-FileCopyrightText: 2025 Contributors to the Media eXchange Layer project. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
