@@ -75,6 +75,119 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Create/
     constexpr auto h = 1080;
 
     auto fillPayloadSize = static_cast<std::size_t>((w + 47) / 48 * 128) * h;
+
+    REQUIRE(gInfo.grainSize == fillPayloadSize);
+
+    /// Set a mark at the beginning and the end of the grain payload.
+    buffer[0] = 0xCA;
+    buffer[gInfo.grainSize - 1] = 0xFE;
+
+    /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
+    mxlFlowInfo fInfo1;
+    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
+    REQUIRE(fInfo1.discrete.headIndex == 0);
+
+    /// Mark the grain as invalid
+    gInfo.flags |= MXL_GRAIN_FLAG_INVALID;
+    REQUIRE(mxlFlowWriterCommitGrain(writer, &gInfo) == MXL_STATUS_OK);
+
+    /// Read back the grain using a flow reader.
+    REQUIRE(mxlFlowReaderGetGrain(reader, index, 16, &gInfo, &buffer) == MXL_STATUS_OK);
+
+    // Give some time to the inotify message to reach the directorywatcher.
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+    /// Confirm that the flags are preserved.
+    REQUIRE(gInfo.flags == MXL_GRAIN_FLAG_INVALID);
+
+    /// Confirm that the marks are still present.
+    REQUIRE(buffer[0] == 0xCA);
+    REQUIRE(buffer[gInfo.grainSize - 1] == 0xFE);
+
+    /// Get the updated flow info
+    mxlFlowInfo fInfo2;
+    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo2) == MXL_STATUS_OK);
+
+    /// Confirm that that head has moved.
+    REQUIRE(fInfo2.discrete.headIndex == index);
+
+    // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
+    REQUIRE(fInfo2.common.lastReadTime > fInfo1.common.lastReadTime);
+
+    // We commited a new grain. This should have increased the lastWriteTime field.
+    REQUIRE(fInfo2.common.lastWriteTime > fInfo1.common.lastWriteTime);
+
+    /// Release the reader
+    REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
+
+    // Use the writer after closing the reader.
+    buffer = nullptr;
+    REQUIRE(mxlFlowWriterOpenGrain(writer, index++, &gInfo, &buffer) == MXL_STATUS_OK);
+    /// Set a mark at the beginning and the end of the grain payload.
+    buffer[0] = 0xCA;
+    buffer[gInfo.grainSize - 1] = 0xFE;
+
+    REQUIRE(mxlReleaseFlowWriter(instanceWriter, writer) == MXL_STATUS_OK);
+
+    // The writer is now gone. The flow should be inactive.
+    REQUIRE(mxlIsFlowActive(instanceReader, flowId, &active) == MXL_STATUS_OK);
+    REQUIRE(active == false);
+
+    REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_STATUS_OK);
+    // This should be gone from the filesystem.
+    REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_ERR_FLOW_NOT_FOUND);
+
+    mxlDestroyInstance(instanceReader);
+    mxlDestroyInstance(instanceWriter);
+}
+
+TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow (With Alpha) : Create/Destroy", "[mxl flows]")
+{
+    auto const opts = "{}";
+    auto const flowId = "5fbec3b1-1b0f-417d-9059-8b94a47197ed";
+    auto flowDef = mxl::tests::readFile("data/v210+alpha_flow.json");
+
+    auto instanceReader = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instanceReader != nullptr);
+
+    auto instanceWriter = mxlCreateInstance(domain.string().c_str(), opts);
+    REQUIRE(instanceWriter != nullptr);
+
+    mxlFlowInfo fInfo;
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
+
+    // We created the flow but it does not have a writer yet. The flow should not be active.
+    bool active = true;
+    REQUIRE(mxlIsFlowActive(instanceReader, flowId, &active) == MXL_STATUS_OK);
+    REQUIRE(active == false);
+
+    mxlFlowReader reader;
+    REQUIRE(mxlCreateFlowReader(instanceReader, flowId, "", &reader) == MXL_STATUS_OK);
+
+    mxlFlowWriter writer;
+    REQUIRE(mxlCreateFlowWriter(instanceWriter, flowId, "", &writer) == MXL_STATUS_OK);
+
+    // The writer is now created. The flow should be active.
+    REQUIRE(mxlIsFlowActive(instanceReader, flowId, &active) == MXL_STATUS_OK);
+    REQUIRE(active == true);
+
+    /// Compute the grain index for the flow rate and current TAI time.
+    auto const rate = mxlRational{60000, 1001};
+    auto const now = mxlGetTime();
+    uint64_t index = mxlTimestampToIndex(&rate, now);
+    REQUIRE(index != MXL_UNDEFINED_INDEX);
+
+    /// Open the grain.
+    mxlGrainInfo gInfo;
+    uint8_t* buffer = nullptr;
+    /// Open the grain for writing.
+    REQUIRE(mxlFlowWriterOpenGrain(writer, index, &gInfo, &buffer) == MXL_STATUS_OK);
+
+    // Confirm that the grain size is what we expect.
+    constexpr auto w = 1920;
+    constexpr auto h = 1080;
+
+    auto fillPayloadSize = static_cast<std::size_t>((w + 47) / 48 * 128) * h;
     auto keyPayloadSize = static_cast<std::size_t>(4 * ((w + 2) / 3) * h);
 
     REQUIRE(gInfo.grainSize == (fillPayloadSize + keyPayloadSize));
