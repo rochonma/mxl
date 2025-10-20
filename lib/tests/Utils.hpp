@@ -15,6 +15,7 @@
 
 namespace mxl::tests
 {
+
     std::string readFile(std::filesystem::path const& filepath);
 
     /**
@@ -27,6 +28,41 @@ namespace mxl::tests
 
     // Helper to make a unique temp domain
     std::filesystem::path makeTempDomain();
+
+    //
+    // RAII helper to prepare and cleanup a domain for the duration of a test
+    //
+    class mxlDomainFixture
+    {
+    public:
+        /// Create the fixture. Will delete the domain if it exists and create a new one.
+        mxlDomainFixture()
+            : domain{getDomainPath()}
+        {
+            removeDomain();
+            std::filesystem::create_directories(domain);
+        }
+
+        /// Delete the domain folder
+        ~mxlDomainFixture()
+        {
+            removeDomain();
+        }
+
+    protected:
+        /// The path to the domain
+        std::filesystem::path domain;
+
+    private:
+        /// Remove the domain folder if it exists
+        void removeDomain()
+        {
+            if (std::filesystem::exists(domain))
+            {
+                std::filesystem::remove_all(domain);
+            }
+        }
+    };
 
     /**************************************************************************/
     /* Inline implementation.                                                 */
@@ -70,4 +106,5 @@ namespace mxl::tests
         }
         return std::filesystem::path{tmpl};
     }
+
 } // namespace mxl::tests
