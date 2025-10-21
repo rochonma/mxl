@@ -14,7 +14,9 @@
 #include <mxl/rational.h>
 
 // Maximum number of planes per grain supported for a continuous flow.
+// 4 planes should be enough for any foreseeable use cases.
 //
+// The current video formats supported by MXL use 1 or 2 planes:
 // - video/v210 flow will have only 1 plane out of MXL_MAX_PLANES_PER_GRAIN
 // - video/v210+alpha flow will have 2 planes out of MXL_MAX_PLANES_PER_GRAIN
 //
