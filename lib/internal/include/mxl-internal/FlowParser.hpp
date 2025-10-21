@@ -4,10 +4,12 @@
 #pragma once
 
 #include <cstddef>
+#include <array>
 #include <string>
 #include <uuid.h>
 #include <picojson/picojson.h>
 #include <mxl/dataformat.h>
+#include <mxl/flowinfo.h>
 #include <mxl/rational.h>
 
 namespace mxl::lib
@@ -60,11 +62,11 @@ namespace mxl::lib
         std::size_t getPayloadSize() const;
 
         /**
-         *  Computes the length of a slice of the payload.
-         *  \return The length of a slice
+         *  Computes the length of the slices of each plane of the grain.
+         *  \return The length of slices for each plane.
          */
         [[nodiscard]]
-        std::size_t getPayloadSliceLength() const;
+        std::array<std::uint32_t, MXL_MAX_PLANES_PER_GRAIN> getPayloadSliceLengths() const;
 
         /**
          * Computes the number of slices that make up a full grain.

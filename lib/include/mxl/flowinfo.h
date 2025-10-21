@@ -13,6 +13,13 @@
 #include <mxl/dataformat.h>
 #include <mxl/rational.h>
 
+// Maximum number of planes per grain supported for a continuous flow.
+//
+// - video/v210 flow will have only 1 plane out of MXL_MAX_PLANES_PER_GRAIN
+// - video/v210+alpha flow will have 2 planes out of MXL_MAX_PLANES_PER_GRAIN
+//
+#define MXL_MAX_PLANES_PER_GRAIN 4
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -76,7 +83,7 @@ extern "C"
          * Length of a slice in bytes. A slice refers to the elemental data type that can be written and comitted to a grain.
          * For video, this is a line of a V210 picture including any padding. For data, this is just a single byte.
          */
-        uint64_t sliceSize;
+        uint32_t sliceSizes[MXL_MAX_PLANES_PER_GRAIN];
 
         /**
          * How many grains in the ring buffer. This should be identical to the number of entries in the {mxlDomain}/{flowId}/grains/ folder.
@@ -92,7 +99,7 @@ extern "C"
         uint32_t syncCounter;
 
         /** Reserved space for future extensions.  */
-        uint8_t reserved[88];
+        uint8_t reserved[80];
     } mxlDiscreteFlowInfo;
 
     typedef struct mxlContinuousFlowInfo_t

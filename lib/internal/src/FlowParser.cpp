@@ -14,6 +14,7 @@
 #include <picojson/picojson.h>
 #include <mxl/mxl.h>
 #include "mxl-internal/Logging.hpp"
+#include "mxl-internal/MediaUtils.hpp"
 #include "mxl-internal/Rational.hpp"
 
 namespace mxl::lib
@@ -342,7 +343,7 @@ namespace mxl::lib
                 {
                     // Interlaced media is handled as separate fields.
                     auto const h = _interlaced ? height / 2 : height;
-                    payloadSize = static_cast<std::size_t>((width + 47) / 48 * 128) * h;
+                    payloadSize = getV210LineLength(width) * h;
                 }
                 else
                 {
@@ -358,18 +359,18 @@ namespace mxl::lib
                     auto const h = _interlaced ? height / 2 : height;
 
                     // Fill size
-                    auto fillPayloadSize = static_cast<std::size_t>((width + 47) / 48 * 128) * h;
+                    auto fillPayloadSize = getV210LineLength(width) * h;
 
                     // Key is stored as 10 bits per pixel, 3x10 bit words in a 32 bit word, little-endian.
                     // the last 2 bits of the 32 bit group of 3 pixels are unused.
-                    auto keyPayloadSize = static_cast<std::size_t>(4 * ((width + 2) / 3) * h);
+                    auto keyPayloadSize = get10BitAlphaLineLength(width) * h;
 
                     // Total payload size is the sum of the fill and key sizes
                     payloadSize = fillPayloadSize + keyPayloadSize;
                 }
                 else
                 {
-                    auto msg = std::string{"Invalid video height for interlaced v210. Must be even."};
+                    auto msg = std::string{"Invalid video height for interlaced v210+alpha. Must be even."};
                     throw std::invalid_argument{std::move(msg)};
                 }
             }
@@ -416,14 +417,17 @@ namespace mxl::lib
         return payloadSize;
     }
 
-    std::size_t FlowParser::getPayloadSliceLength() const
+    std::array<std::uint32_t, MXL_MAX_PLANES_PER_GRAIN> FlowParser::getPayloadSliceLengths() const
     {
+        auto sliceLengths = std::array<std::uint32_t, MXL_MAX_PLANES_PER_GRAIN>{0, 0, 0, 0};
+
         switch (_format)
         {
             case MXL_DATA_FORMAT_DATA:
             {
                 // For "data" flows, the slice length is 1 byte
-                return 1;
+                sliceLengths[0] = 1;
+                return sliceLengths;
             }
 
             case MXL_DATA_FORMAT_VIDEO:
@@ -432,14 +436,24 @@ namespace mxl::lib
                 // line of v210 video.
                 auto const width = static_cast<std::size_t>(fetchAs<double>(_root, "frame_width"));
                 auto const mediaType = fetchAs<std::string>(_root, "media_type");
+                auto const v210fillSize = getV210LineLength(width);
 
-                if (mediaType != "video/v210" && mediaType != "video/v210+alpha")
+                if (mediaType == "video/v210")
+                {
+                    sliceLengths[0] = v210fillSize;
+                }
+                else if (mediaType == "video/v210+alpha")
+                {
+                    sliceLengths[0] = v210fillSize;
+                    sliceLengths[1] = get10BitAlphaLineLength(width);
+                }
+                else
                 {
                     auto msg = std::string{"Unsupported video media_type: "} + mediaType;
                     throw std::invalid_argument{std::move(msg)};
                 }
 
-                return static_cast<std::size_t>((width + 47) / 48 * 128);
+                return sliceLengths;
             }
 
             default:

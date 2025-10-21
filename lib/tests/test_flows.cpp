@@ -25,6 +25,7 @@
 #include <mxl/flow.h>
 #include <mxl/mxl.h>
 #include <mxl/time.h>
+#include "../internal/include/mxl-internal/MediaUtils.hpp"
 
 namespace fs = std::filesystem;
 
@@ -70,12 +71,17 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Create/
     /// Open the grain for writing.
     REQUIRE(mxlFlowWriterOpenGrain(writer, index, &gInfo, &buffer) == MXL_STATUS_OK);
 
-    // Confirm that the grain size is what we expect.
+    // Confirm that the grain size and stride lengths are what we expect.
     constexpr auto w = 1920;
     constexpr auto h = 1080;
 
-    auto fillPayloadSize = static_cast<std::size_t>((w + 47) / 48 * 128) * h;
+    auto fillPayloadStrideSize = mxl::lib::getV210LineLength(w);
+    REQUIRE(fInfo.discrete.sliceSizes[0] == fillPayloadStrideSize);
+    REQUIRE(fInfo.discrete.sliceSizes[1] == 0);
+    REQUIRE(fInfo.discrete.sliceSizes[2] == 0);
+    REQUIRE(fInfo.discrete.sliceSizes[3] == 0);
 
+    auto fillPayloadSize = fillPayloadStrideSize * h;
     REQUIRE(gInfo.grainSize == fillPayloadSize);
 
     /// Set a mark at the beginning and the end of the grain payload.
@@ -183,12 +189,19 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow (With Alp
     /// Open the grain for writing.
     REQUIRE(mxlFlowWriterOpenGrain(writer, index, &gInfo, &buffer) == MXL_STATUS_OK);
 
-    // Confirm that the grain size is what we expect.
+    // Confirm that the grain size and stride lengths are what we expect.
     constexpr auto w = 1920;
     constexpr auto h = 1080;
 
-    auto fillPayloadSize = static_cast<std::size_t>((w + 47) / 48 * 128) * h;
-    auto keyPayloadSize = static_cast<std::size_t>(4 * ((w + 2) / 3) * h);
+    auto fillPayloadStrideSize = mxl::lib::getV210LineLength(w);
+    auto fillPayloadSize = fillPayloadStrideSize * h;
+    REQUIRE(fInfo.discrete.sliceSizes[0] == fillPayloadStrideSize);
+
+    auto keyPayloadStrideSize = static_cast<std::size_t>((w + 2) / 3 * 4);
+    auto keyPayloadSize = keyPayloadStrideSize * h;
+    REQUIRE(fInfo.discrete.sliceSizes[1] == keyPayloadStrideSize);
+    REQUIRE(fInfo.discrete.sliceSizes[2] == 0);
+    REQUIRE(fInfo.discrete.sliceSizes[3] == 0);
 
     REQUIRE(gInfo.grainSize == (fillPayloadSize + keyPayloadSize));
 
