@@ -15,7 +15,7 @@ namespace mxl::lib
     std::uint32_t getV210LineLength(std::size_t width);
 
     /**
-     * Length in bytes of a line in the 10-bit ùlpha video format (3x10-bit samples per 32 bit word).
+     * Length in bytes of a line in the 10-bit alpha video format (3x10-bit samples per 32 bit word).
      * @param width The width of the video frame in pixels.
      * @return The line length in bytes for the 10-bit Alpha format, including padding.
      */
