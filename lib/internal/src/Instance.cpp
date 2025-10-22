@@ -244,7 +244,7 @@ namespace mxl::lib
                 grainRate,
                 parser.getPayloadSize(),
                 parser.getTotalPayloadSlices(),
-                parser.getPayloadSliceLength());
+                parser.getPayloadSliceLengths());
         }
         else if (mxlIsContinuousDataFormat(format))
         {

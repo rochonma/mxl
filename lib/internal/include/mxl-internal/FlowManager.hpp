@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <array>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -56,10 +57,12 @@ namespace mxl::lib
         /// \param[in] grainCount How many individual grains to create.
         /// \param[in] grainRate The grain rate.
         /// \param[in] grainPayloadSize Size of the grain in host memory.  0 if the grain payload lives in device memory.
+        /// \param[in] grainNumOfSlices Number of slices per grain.
+        /// \param[in] grainSliceLengths Length of each slice in bytes.
         ///
         std::unique_ptr<DiscreteFlowData> createDiscreteFlow(uuids::uuid const& flowId, std::string const& flowDef, mxlDataFormat flowFormat,
             std::size_t grainCount, mxlRational const& grainRate, std::size_t grainPayloadSize, std::size_t grainNumOfSlices,
-            std::size_t grainSliceLength);
+            std::array<std::uint32_t, MXL_MAX_PLANES_PER_GRAIN> grainSliceLengths);
 
         ///
         /// Create a new continuous flow together with its associated channel store and open it in read-write mode.

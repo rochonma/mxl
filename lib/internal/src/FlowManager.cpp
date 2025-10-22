@@ -123,7 +123,7 @@ namespace mxl::lib
 
     std::unique_ptr<DiscreteFlowData> FlowManager::createDiscreteFlow(uuids::uuid const& flowId, std::string const& flowDef, mxlDataFormat flowFormat,
         std::size_t grainCount, mxlRational const& grainRate, std::size_t grainPayloadSize, std::size_t grainNumOfSlices,
-        std::size_t grainSliceLength)
+        std::array<uint32_t, MXL_MAX_PLANES_PER_GRAIN> grainSliceLengths)
     {
         auto const uuidString = uuids::to_string(flowId);
         MXL_DEBUG("Create discrete flow. id: {}, grainCount: {}, grain payload size: {}", uuidString, grainCount, grainPayloadSize);
@@ -158,7 +158,7 @@ namespace mxl::lib
             info.discrete.grainRate = grainRate;
             info.discrete.grainCount = grainCount;
             info.discrete.syncCounter = 0;
-            info.discrete.sliceSize = grainSliceLength;
+            std::copy(grainSliceLengths.begin(), grainSliceLengths.end(), info.discrete.sliceSizes);
 
             auto const grainDir = makeGrainDirectoryName(tempDirectory);
             if (!create_directory(grainDir))

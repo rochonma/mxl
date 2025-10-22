@@ -29,6 +29,7 @@ target_sources(mxl-internal
             src/FlowWriter.cpp
             src/Instance.cpp
             src/Logging.cpp
+            src/MediaUtils.cpp
             src/PathUtils.cpp
             src/PosixContinuousFlowReader.cpp
             src/PosixContinuousFlowWriter.cpp
