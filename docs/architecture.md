@@ -143,8 +143,8 @@ Key points:
 
 ### audio/float32
 
-The `audio/float32` format has audio stored as 32 bit IEEE754 float values in the range of -1.0 to +1.0.
+The `audio/float32` format has audio stored as 32 bit [IEEE 754](https://standards.ieee.org/ieee/754/6210/) float values with a full-scale range of \[−1.0 ; +1.0]\. This is the same audio representation as in RIFF/WAV files with `<wFormatTag>` 0x0003 WAVE_FORMAT_IEEE_FLOAT.
 
-### Ancillary Data
+## Ancillary Data
 
-Ancillary data payload is based on [RFC 8331](https://datatracker.ietf.org/doc/html/rfc8331#section-2).   Only the bytes starting at the *Length* field (See section 2 of RFC 8331) are stored in the grain. (the bytes 0 to 13 are redundant in the context of MXL and are not stored).
+The `video/smpte291` format is an ancillary data payload based on [RFC 8331](https://datatracker.ietf.org/doc/html/rfc8331#section-2).   Only the bytes starting at the *Length* field (See section 2 of RFC 8331) are stored in the grain (bytes 0 to 13 are redundant in the context of MXL and are not stored).
