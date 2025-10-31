@@ -43,10 +43,6 @@ impl<'a> GrainWriteAccess<'a> {
         }
     }
 
-    pub fn user_data_mut(&mut self) -> &mut [u8] {
-        &mut self.grain_info.userData
-    }
-
     pub fn max_size(&self) -> u32 {
         self.grain_info.grainSize
     }

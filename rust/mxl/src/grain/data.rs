@@ -8,9 +8,6 @@ pub struct GrainData<'a> {
 
     /// The total size of the grain payload, which may be larger than `payload.len()` if the grain is partial.
     pub total_size: usize,
-
-    /// The grain user data. The length of this slice is given by `userDataSize` in `mxlGrainInfo`.
-    pub user_data: &'a [u8],
 }
 
 impl<'a> GrainData<'a> {
@@ -26,14 +23,12 @@ impl<'a> AsRef<GrainData<'a>> for GrainData<'a> {
 }
 
 pub struct OwnedGrainData {
-    pub user_data: Vec<u8>,
     pub payload: Vec<u8>,
 }
 
 impl<'a> From<&GrainData<'a>> for OwnedGrainData {
     fn from(value: &GrainData<'a>) -> Self {
         Self {
-            user_data: value.user_data.to_vec(),
             payload: value.payload.to_vec(),
         }
     }

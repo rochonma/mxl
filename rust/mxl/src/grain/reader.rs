@@ -64,14 +64,10 @@ impl GrainReader {
         // SAFETY
         // We know that the lifetime is as long as the flow, so it is at least self's lifetime.
         // It may happen that the buffer is overwritten by a subsequent write, but it is safe.
-        let user_data: &'a [u8] =
-            unsafe { std::mem::transmute::<&[u8], &'a [u8]>(&grain_info.userData) };
-
         let payload =
             unsafe { std::slice::from_raw_parts(payload_ptr, grain_info.grainSize as usize) };
 
         Ok(GrainData {
-            user_data,
             payload,
             total_size: grain_info.grainSize as usize,
         })
@@ -100,14 +96,10 @@ impl GrainReader {
         // SAFETY
         // We know that the lifetime is as long as the flow, so it is at least self's lifetime.
         // It may happen that the buffer is overwritten by a subsequent write, but it is safe.
-        let user_data: &'a [u8] =
-            unsafe { std::mem::transmute::<&[u8], &'a [u8]>(&grain_info.userData) };
-
         let payload =
             unsafe { std::slice::from_raw_parts(payload_ptr, grain_info.grainSize as usize) };
 
         Ok(GrainData {
-            user_data,
             payload,
             total_size: grain_info.grainSize as usize,
         })
