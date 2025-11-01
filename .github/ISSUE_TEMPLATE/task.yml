@@ -1,6 +1,6 @@
 name: Task
-description: Task
-labels: []
+description: Create a new task
+labels: [ Task ]
 assignees: []
 title: "[Task] <short description>"
 
