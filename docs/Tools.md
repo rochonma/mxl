@@ -110,7 +110,7 @@ OPTIONS:
                               The json file which contains the Video NMOS Flow configuration
   -a,     --audio-config-file TEXT
                               The json file which contains the Audio NMOS Flow configuration
-  -s,     --samples-per-batch UINT [48]
+  -s,     --samples-per-batch UINT [512]
                               Number of audio samples per batch
           --audio-offset INT [0]
                               Audio sample offset in number of samples. Positive value means
@@ -158,10 +158,7 @@ Example to run with both video and audio:
 A binary that reads from a MXL Flow and display the flow using the gstreamer element 'autovideosink'.
 
 ```bash
-mxl-gst-videosink
-
-
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videosink [OPTIONS]
+./build/Linux-GCC-Release/tools/mxl-gst/mxl-gst-videosink [OPTIONS]
 
 
 OPTIONS:
@@ -176,12 +173,21 @@ OPTIONS:
                               specified
   -l,     --listen-channels UINT [[0,1]]  ...
                               Audio channels to listen
-          --audio-offset INT [48]
-                              Audio offset in samples. Positive value means you are adding a
-                              delay
-          --video-offset INT [0]
-                              Video offset in frames. Positive value means you are adding a
-                              delay
+          --audio-offset INT [150000000]
+                              Audio playback offset in nanoseconds. Positive value means you
+                              are delaying the playback
+          --video-offset INT [150000000]
+                              Video plaback offset in nanoseconds. Positive value means you are
+                              delaying the playback
+          --audio-read-delay INT [768]
+                              How far in the past/future to read (in audio samples). Positive
+                              value means you are delaying the read
+          --video-read-delay INT [1]
+                              How far in the past/future to read (in video frames). Positive
+                              value means you are delaying the read
+  -s,     --samples-per-batch UINT [512]
+                              Number of audio samples per batch when reading. Should be the
+                              same or lower than the videotestsrc setting.
 ```
 
 Example to run with video only:
@@ -207,7 +213,16 @@ Example to run with both video and audio:
   -d /dev/shm \
   -v 5fbec3b1-1b0f-417d-9059-8b94a47197ed \
   -a b3bb5be7-9fe9-4324-a5bb-4c70e1084449
+```
 
+If you experience audio artifacts, try increasing the --audio-offset value. On some systems running a type-2 hypervisor with a host VM, audio glitches have been observed with default settings. Increasing the buffer size can resolve this issue.
 
+```bash
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videosink \
+  -d /dev/shm \
+  -v 5fbec3b1-1b0f-417d-9059-8b94a47197ed \
+  --video-offset 1000000000 \
+  -a b3bb5be7-9fe9-4324-a5bb-4c70e1084449 \
+  --audio-offset 1000000000
 
 ```
