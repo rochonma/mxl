@@ -117,7 +117,7 @@ namespace
             _appsrc = gst_bin_get_by_name(GST_BIN(_pipeline), "videoappsrc");
             if (_appsrc == nullptr)
             {
-                throw std::runtime_error("Gstreamer: 'appsrc' could not be found in the pipeline.");
+                throw std::runtime_error("Gstreamer: 'videoappsrc' could not be found in the pipeline.");
             }
 
             g_object_set(G_OBJECT(_appsrc), "format", GST_FORMAT_TIME, nullptr);
@@ -219,7 +219,7 @@ namespace
             _appsrc = gst_bin_get_by_name(GST_BIN(_pipeline), "audioappsrc");
             if (_appsrc == nullptr)
             {
-                throw std::runtime_error("Gstreamer: 'appsink' could not be found in the pipeline.");
+                throw std::runtime_error("Gstreamer: 'audioappsrc' could not be found in the pipeline.");
             }
 
             auto caps = gstCapsFromAudioConfig(_config);
@@ -390,7 +390,7 @@ namespace
                 else if (ret == MXL_ERR_OUT_OF_RANGE_TOO_LATE)
                 {
                     mxlFlowReaderGetInfo(_reader, &_flowInfo);
-                    MXL_WARN("Failed to get samples at index {}: TOO LATE. Last published {}", requestedIndex, _flowInfo.discrete.headIndex);
+                    MXL_WARN("Failed to get grain at index {}: TOO LATE. Last published {}", requestedIndex, _flowInfo.discrete.headIndex);
 
                     // We are too late. Re-align.. The player will handle missing samples
                     index = mxlGetCurrentIndex(&rate);
@@ -425,6 +425,7 @@ namespace
 
                 gst_buffer_unref(buffer);
                 index++;
+                mxlSleepForNs(mxlGetNsUntilIndex(index, &rate));
             }
 
             return 0;
@@ -438,11 +439,9 @@ namespace
             mxlWrappedMultiBufferSlice payload;
 
             auto index = mxlGetCurrentIndex(&rate);
-
             while (!g_exit_requested)
             {
                 auto requestedIndex = index - readDelay;
-
                 auto ret = mxlFlowReaderGetSamples(_reader, requestedIndex, windowSize, &payload);
                 if (ret == MXL_ERR_OUT_OF_RANGE_TOO_EARLY)
                 {
@@ -552,11 +551,6 @@ namespace
         auto domainOpt = app.add_option("-d,--domain", domain, "The MXL domain directory");
         domainOpt->required(true);
         domainOpt->check(CLI::ExistingDirectory);
-
-        std::optional<std::uint64_t> readTimeoutNs;
-        auto readTimeoutOpt = app.add_option("-t,--timeout", readTimeoutNs, "The read timeout in ns, frame interval + 1 ms used if not specified");
-        readTimeoutOpt->required(false);
-        readTimeoutOpt->default_val(std::nullopt);
 
         std::vector<std::size_t> listenChannels;
         auto listenChanOpt = app.add_option("-l, --listen-channels", listenChannels, "Audio channels to listen");
