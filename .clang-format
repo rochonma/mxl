@@ -138,7 +138,7 @@ IndentRequiresClause: true
 IndentWidth: 4
 IndentWrappedFunctionNames: false
 InsertBraces: true
-InsertNewlineAtEOF: false
+InsertNewlineAtEOF: true
 KeepEmptyLines:
   AtEndOfFile:    false
   AtStartOfBlock: false
