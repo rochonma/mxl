@@ -89,7 +89,7 @@ The following example demonstrates how a FlowWriter may write a grain as slices 
 
 ## Video
 
-Video grains can be of two different formats: video/v210 for video without transparency and video/v210+alpha for fill and key signals (video with alpha transparency).
+Video grains can be of two different formats: video/v210 for video without transparency and video/v210a for fill and key signals (video with alpha transparency).
 
 ### video/v210
 
