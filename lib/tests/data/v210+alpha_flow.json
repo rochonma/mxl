@@ -11,7 +11,7 @@
   "format": "urn:x-nmos:format:video",
   "label": "MXL Test Flow, 1080p29 with alpha",
   "parents": [],
-  "media_type": "video/v210+alpha",
+  "media_type": "video/v210a",
   "grain_rate": {
     "numerator": 30000,
     "denominator": 1001
