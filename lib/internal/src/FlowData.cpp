@@ -29,7 +29,7 @@ namespace mxl::lib
         static_assert(sizeof(::mxlCommonFlowInfo) == 128, "mxlCommonFlowInfo does not have a size of 128 bytes");
         static_assert(sizeof(::mxlContinuousFlowInfo) == 128, "mxlContinuousFlowInfo does not have a size of 128 bytes");
         static_assert(sizeof(::mxlDiscreteFlowInfo) == 128, "mxlDiscreteFlowInfo does not have a size of 128 bytes");
-        static_assert(sizeof(::mxlFlowInfo) == 4096, "mxlFlowInfo does not have a size of 4096 bytes");
+        static_assert(sizeof(::mxlFlowInfo) == 2048, "mxlFlowInfo does not have a size of 2048 bytes");
         static_assert(sizeof(::mxlGrainInfo) == 4096, "mxlGrainInfo does not have a size of 4096 bytes");
     }
 

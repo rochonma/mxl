@@ -25,7 +25,7 @@ namespace mxl::lib
             }
         }
 
-        constexpr char const* getPayloadLocationString(mxlPayloadLocation payloadLocation) noexcept
+        constexpr char const* getPayloadLocationString(std::uint32_t payloadLocation) noexcept
         {
             switch (payloadLocation)
             {

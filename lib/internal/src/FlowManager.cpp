@@ -78,7 +78,7 @@ namespace mxl::lib
             }
         }
 
-        mxlCommonFlowInfo initCommonFlowInfo(uuids::uuid const& flowId, mxlDataFormat format, std::filesystem::path const& flowDataPath,
+        mxlCommonFlowInfo initCommonFlowInfo(uuids::uuid const& flowId, mxlDataFormat format,
             std::optional<std::uint32_t> const& maxSyncBatchSizeHintOpt = std::nullopt,
             std::optional<std::uint32_t> const& maxCommitBatchSizeHintOpt = std::nullopt)
         {
@@ -97,6 +97,13 @@ namespace mxl::lib
             result.payloadLocation = MXL_PAYLOAD_LOCATION_HOST_MEMORY;
             result.deviceIndex = -1;
 
+            return result;
+        }
+
+        FlowState initFlowState(std::filesystem::path const& flowDataPath)
+        {
+            auto result = FlowState{};
+
             // Get the inode of the flow data file
             struct ::stat st;
             if (::stat(flowDataPath.string().c_str(), &st) != 0)
@@ -113,7 +120,6 @@ namespace mxl::lib
 
             return result;
         }
-
     }
 
     FlowManager::FlowManager(std::filesystem::path const& in_mxlDomain)
@@ -160,11 +166,13 @@ namespace mxl::lib
             auto& info = *flowData->flowInfo();
             info.version = FLOW_DATA_VERSION;
             info.size = sizeof info;
-            info.common = initCommonFlowInfo(flowId, flowFormat, flowDataPath, maxSyncBatchSizeHintOpt, maxCommitBatchSizeHintOpt);
+            info.common = initCommonFlowInfo(flowId, flowFormat, maxSyncBatchSizeHintOpt, maxCommitBatchSizeHintOpt);
             info.discrete.grainRate = grainRate;
             info.discrete.grainCount = grainCount;
-            info.discrete.syncCounter = 0;
             std::copy(grainSliceLengths.begin(), grainSliceLengths.end(), info.discrete.sliceSizes);
+
+            auto& state = *flowData->flowState();
+            state = initFlowState(flowDataPath);
 
             auto const grainDir = makeGrainDirectoryName(tempDirectory);
             if (!create_directory(grainDir))
@@ -229,11 +237,14 @@ namespace mxl::lib
             auto& info = *flowData->flowInfo();
             info.version = FLOW_DATA_VERSION;
             info.size = sizeof info;
-            info.common = initCommonFlowInfo(flowId, flowFormat, flowDataPath, maxSyncBatchSizeHintOpt, maxCommitBatchSizeHintOpt);
+            info.common = initCommonFlowInfo(flowId, flowFormat, maxSyncBatchSizeHintOpt, maxCommitBatchSizeHintOpt);
             info.continuous = {};
             info.continuous.sampleRate = sampleRate;
             info.continuous.channelCount = channelCount;
             info.continuous.bufferLength = bufferLength;
+
+            auto& state = *flowData->flowState();
+            state = initFlowState(flowDataPath);
 
             flowData->openChannelBuffers(makeChannelDataFilePath(tempDirectory).string().c_str(), sampleWordSize);
 

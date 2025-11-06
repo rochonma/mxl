@@ -79,12 +79,12 @@ namespace mxl::lib
                 return MXL_ERR_INVALID_ARG;
             }
 
-            auto const flowInfo = _flowData->flowInfo();
-            flowInfo->discrete.headIndex = _currentIndex;
+            auto const flow = _flowData->flow();
+            flow->info.discrete.headIndex = _currentIndex;
 
-            auto const offset = _currentIndex % flowInfo->discrete.grainCount;
+            auto const offset = _currentIndex % flow->info.discrete.grainCount;
             *_flowData->grainInfoAt(offset) = mxlGrainInfo;
-            flowInfo->common.lastWriteTime = currentTime(mxl::lib::Clock::TAI).value;
+            flow->info.common.lastWriteTime = currentTime(mxl::lib::Clock::TAI).value;
 
             // If the grain is complete, reset the current index of the flow writer.
             if (mxlGrainInfo.validSlices == mxlGrainInfo.totalSlices)
@@ -93,8 +93,8 @@ namespace mxl::lib
             }
 
             // Let readers know that the head has moved or that new data is available in a partial grain
-            flowInfo->discrete.syncCounter++;
-            wakeAll(&flowInfo->discrete.syncCounter);
+            flow->state.syncCounter++;
+            wakeAll(&flow->state.syncCounter);
 
             return MXL_STATUS_OK;
         }

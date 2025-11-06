@@ -5,9 +5,10 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <iostream>
+#include <iosfwd>
 #include <mxl/flow.h>
 #include <mxl/platform.h>
+#include "FlowState.hpp"
 
 namespace mxl::lib
 {
@@ -24,6 +25,7 @@ namespace mxl::lib
     struct Flow
     {
         mxlFlowInfo info;
+        mxl::lib::FlowState state;
     };
 
     std::ostream& operator<<(std::ostream& os, Flow const& obj);

@@ -13,13 +13,14 @@
 #include <mxl/dataformat.h>
 #include <mxl/rational.h>
 
-// Maximum number of planes per grain supported for a continuous flow.
-// 4 planes should be enough for any foreseeable use cases.
-//
-// The current video formats supported by MXL use 1 or 2 planes:
-// - video/v210 flow will have only 1 plane out of MXL_MAX_PLANES_PER_GRAIN
-// - video/v210a flow will have 2 planes out of MXL_MAX_PLANES_PER_GRAIN
-//
+/**
+ * Maximum number of planes per grain supported for a continuous flow.
+ * 4 planes should be enough for any foreseeable use cases.
+ *
+ * The current video formats supported by MXL use 1 or 2 planes:
+ * - video/v210 flow will have only 1 plane out of MXL_MAX_PLANES_PER_GRAIN
+ * - video/v210a flow will have 2 planes out of MXL_MAX_PLANES_PER_GRAIN
+ */
 #define MXL_MAX_PLANES_PER_GRAIN 4
 
 #ifdef __cplusplus
@@ -59,9 +60,6 @@ extern "C"
         /** No flags defined yet. */
         uint32_t flags;
 
-        /** The flow data inode.  this is used to detect if the flow was recreated */
-        ino_t inode;
-
         /**
          * The largest expected batch size in samples (for continuous flows) or slices (for discrete flows), in which new data is written to this this
          * flow by its producer. For continuous flows, this value must be less than half of the buffer length. For discrete flows, this must be
@@ -75,18 +73,22 @@ extern "C"
          */
         uint32_t maxSyncBatchSizeHint;
 
-        /*
+        /**
+         * And indication, where the payload memory is located.
+         * \see mxlPayloadLocation
+         */
+        uint32_t payloadLocation;
+
+        /**
          * Device index (if payload is in device memory). -1 if on host memory.
          */
         int32_t deviceIndex;
 
         /**
-         * Where is payload memory located
+         * Reserved space for future extensions, padding the total size of this
+         * structure to 128 bytes.
          */
-        mxlPayloadLocation payloadLocation;
-
-        /** Reserved space for future extensions.  */
-        uint8_t reserved[64];
+        uint8_t reserved[72];
     } mxlCommonFlowInfo;
 
     typedef struct mxlDiscreteFlowInfo_t
@@ -113,14 +115,10 @@ extern "C"
         uint32_t grainCount;
 
         /**
-         * 32 bit word used syncronization between a writer and multiple readers.  This value can be used by futexes.
-         * When a FlowWriter commits some data (a grain, a slice, etc) it will increment this value and then wake all FlowReaders waiting on this
-         * memory address.
+         * Reserved space for future extensions, padding the total size of this
+         * structure to 128 bytes.
          */
-        uint32_t syncCounter;
-
-        /** Reserved space for future extensions.  */
-        uint8_t reserved[80];
+        uint8_t reserved[84];
     } mxlDiscreteFlowInfo;
 
     typedef struct mxlContinuousFlowInfo_t
@@ -130,6 +128,9 @@ extern "C"
          * For AUDIO flows this value must match the 'sample_rate' found in the flow descriptor.
          */
         mxlRational sampleRate;
+
+        /** The current head index within the per channel ring buffers. */
+        uint64_t headIndex;
 
         /**
          * The number of channels in this flow.
@@ -142,10 +143,10 @@ extern "C"
          */
         uint32_t bufferLength;
 
-        /** The current head index within the per channel ring buffers. */
-        uint64_t headIndex;
-
-        /** Reserved space for future extensions.  */
+        /**
+         * Reserved space for future extensions, padding the total size of this
+         * structure to 128 bytes.
+         */
         uint8_t reserved[96];
     } mxlContinuousFlowInfo;
 
@@ -171,8 +172,11 @@ extern "C"
             mxlContinuousFlowInfo continuous;
         };
 
-        /** Padding. Do not use. */
-        uint8_t reserved[3832];
+        /**
+         * Padding to get the the total size of this structure to 2048 bytes.
+         * Do not use!
+         */
+        uint8_t reserved[1784];
     } mxlFlowInfo;
 
 #ifdef __cplusplus
