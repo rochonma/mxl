@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <new>
 #include <utility>
 #include <mxl/platform.h>
 
