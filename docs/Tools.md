@@ -185,6 +185,10 @@ OPTIONS:
           --video-read-delay INT [1]
                               How far in the past/future to read (in video frames). Positive
                               value means you are delaying the read
+          --timeout-mode [0]  In timeout mode, the sink uses blocking methods with timeout
+                              instead of reading with a defined delay. Currently only video
+                              supports this mode and --video-offset is used for both the
+                              timeout value and playback offset.
   -s,     --samples-per-batch UINT [512]
                               Number of audio samples per batch when reading. Should be the
                               same or lower than the videotestsrc setting.

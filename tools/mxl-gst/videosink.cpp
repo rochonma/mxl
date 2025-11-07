@@ -151,9 +151,9 @@ namespace
             }
         }
 
-    private:
         GstreamerVideoPipelineConfig _config;
 
+    private:
         GstElement* _pipeline{nullptr};
         GstElement* _appsrc{nullptr};
 
@@ -352,32 +352,33 @@ namespace
             }
         }
 
-        int run(GstreamerPipeline& gstPipeline, std::int64_t readDelay)
+        int run(GstreamerPipeline& gstPipeline, std::int64_t readDelay, bool timeoutMode)
         {
             gstPipeline.start();
 
             if (mxlIsDiscreteDataFormat(_flowInfo.common.format))
             {
-                return runDiscreteFlow(dynamic_cast<GstreamerVideoPipeline&>(gstPipeline), _flowInfo.discrete.grainRate, readDelay);
+                return runDiscreteFlow(dynamic_cast<GstreamerVideoPipeline&>(gstPipeline), readDelay, timeoutMode);
             }
             else
             {
-                return runContinuousFlow(dynamic_cast<GstreamerAudioPipeline&>(gstPipeline), _flowInfo.continuous.sampleRate, readDelay);
+                return runContinuousFlow(dynamic_cast<GstreamerAudioPipeline&>(gstPipeline), readDelay);
             }
         }
 
-        int runDiscreteFlow(GstreamerVideoPipeline& gstPipeline, mxlRational const& rate, std::int64_t readDelay)
+        int runDiscreteFlow(GstreamerVideoPipeline& gstPipeline, std::int64_t readDelay, bool timeoutMode)
         {
+            auto rate = _flowInfo.discrete.grainRate;
             MXL_INFO("Starting discrete flow reading at rate {}/{}", rate.numerator, rate.denominator);
+            auto timeoutNs = discreteFlowTimeout(timeoutMode, gstPipeline._config.offset); // TOOD: pass timeout value
 
-            auto timeoutNs = static_cast<std::uint64_t>(1.0 * rate.denominator * (1'000'000'000.0 / rate.numerator) + 1'000'000ULL);
             auto index = mxlGetCurrentIndex(&rate);
             while (!g_exit_requested)
             {
                 mxlGrainInfo grainInfo;
                 uint8_t* payload;
 
-                auto requestedIndex = index - readDelay;
+                auto requestedIndex = requestIndex(index, readDelay, timeoutMode);
                 auto ret = mxlFlowReaderGetGrain(_reader, requestedIndex, timeoutNs, &grainInfo, &payload);
                 if (ret == MXL_ERR_OUT_OF_RANGE_TOO_EARLY)
                 {
@@ -413,6 +414,11 @@ namespace
                     // Full frame not ready yet
                     continue;
                 }
+                auto grainTimestamp = mxlIndexToTimestamp(&rate, requestedIndex);
+                if (timeoutMode)
+                {
+                    updateHighestLatency(grainTimestamp, mxlGetTime());
+                }
 
                 // If we got here, we can push the grain to the gstreamer pipeline
                 GstBuffer* buffer = gst_buffer_new_allocate(nullptr, grainInfo.grainSize, nullptr);
@@ -421,7 +427,7 @@ namespace
                 ::memcpy(map.data, payload, grainInfo.grainSize);
                 gst_buffer_unmap(buffer, &map);
 
-                gstPipeline.pushSample(buffer, mxlIndexToTimestamp(&rate, index));
+                gstPipeline.pushSample(buffer, grainTimestamp);
 
                 gst_buffer_unref(buffer);
                 index++;
@@ -431,8 +437,9 @@ namespace
             return 0;
         }
 
-        int runContinuousFlow(GstreamerAudioPipeline& gstPipeline, mxlRational const& rate, std::int64_t readDelay)
+        int runContinuousFlow(GstreamerAudioPipeline& gstPipeline, std::int64_t readDelay)
         {
+            auto rate = _flowInfo.continuous.sampleRate;
             MXL_INFO("Starting continuous flow reading at rate {}/{}", rate.numerator, rate.denominator);
 
             auto const windowSize = gstPipeline._config.nbSamplesPerBatch; // samples per read
@@ -503,7 +510,7 @@ namespace
 
                 gst_audio_buffer_unmap(&audioBuffer);
 
-                gstPipeline.pushSample(buffer, mxlIndexToTimestamp(&rate, index));
+                gstPipeline.pushSample(buffer, mxlIndexToTimestamp(&rate, requestedIndex));
 
                 gst_buffer_unref(buffer);
 
@@ -514,12 +521,42 @@ namespace
             return 0;
         }
 
-    public:
+    private:
+        std::uint64_t discreteFlowTimeout(bool timeoutMode, std::int64_t offset)
+        {
+            auto rate = _flowInfo.discrete.grainRate;
+
+            if (timeoutMode)
+            {
+                // With a negative offset, grains should be ready right away
+                return offset > 0 ? static_cast<std::uint64_t>(offset) : 0;
+            }
+            else
+            {
+                return static_cast<std::uint64_t>(1.0 * rate.denominator * (1'000'000'000.0 / rate.numerator) + 1'000'000ULL);
+            }
+        }
+
+        std::uint64_t requestIndex(std::uint64_t index, std::uint64_t readDelay, bool timeoutMode)
+        {
+            return timeoutMode ? index : index - readDelay;
+        }
+
+        void updateHighestLatency(std::uint64_t mxlTimestamp, std::uint64_t currentMxlTime)
+        {
+            auto const latencyNs = currentMxlTime > mxlTimestamp ? currentMxlTime - mxlTimestamp : 0;
+            if (latencyNs > _highestLatencyNs)
+            {
+                _highestLatencyNs = latencyNs;
+                MXL_INFO("Latency increase detected: {} ns", latencyNs);
+            }
+        }
 
     private:
         mxlFlowInfo _flowInfo;
         mxlInstance _instance;
         mxlFlowReader _reader;
+        std::uint64_t _highestLatencyNs = 0;
     };
 
     std::string read_flow_descriptor(std::string const& domain, std::string const& flowID)
@@ -556,27 +593,34 @@ namespace
         auto listenChanOpt = app.add_option("-l, --listen-channels", listenChannels, "Audio channels to listen");
         listenChanOpt->default_val(std::vector<std::size_t>{0, 1});
 
-        int64_t audioOffset;
+        std::int64_t audioOffset;
         auto audioOffsetOpt = app.add_option(
             "--audio-offset", audioOffset, "Audio playback offset in nanoseconds. Positive value means you are delaying the playback");
         audioOffsetOpt->default_val(150'000'000);
 
-        int64_t videoOffset;
+        std::int64_t videoOffset;
         auto videoOffsetOpt = app.add_option(
             "--video-offset", videoOffset, "Video plaback offset in nanoseconds. Positive value means you are delaying the playback");
         videoOffsetOpt->default_val(150'000'000);
 
-        int64_t audioReadDelay;
+        std::int64_t audioReadDelay;
         auto audioReadDelayOpt = app.add_option("--audio-read-delay",
             audioReadDelay,
             "How far in the past/future to read (in audio samples). Positive value means you are delaying the read");
         audioReadDelayOpt->default_val(768);
 
-        int64_t videoReadDelay;
+        std::int64_t videoReadDelay;
         auto videoReadDelayOpt = app.add_option("--video-read-delay",
             videoReadDelay,
             "How far in the past/future to read (in video frames). Positive value means you are delaying the read");
         videoReadDelayOpt->default_val(1);
+
+        bool timeoutMode;
+        auto timeoutModeOpt = app.add_flag("--timeout-mode",
+            timeoutMode,
+            "In timeout mode, the sink uses blocking methods with timeout instead of reading with a defined delay. Currently only video supports "
+            "this mode and --video-offset is used for both the timeout value and playback offset.");
+        timeoutModeOpt->default_val(false);
 
         uint64_t samplesPerBatch;
         auto samplesPerBatchOpt = app.add_option("-s, --samples-per-batch",
@@ -613,7 +657,7 @@ namespace
                     };
 
                     auto pipeline = GstreamerVideoPipeline(videoConfig);
-                    reader.run(pipeline, videoReadDelay);
+                    reader.run(pipeline, videoReadDelay, timeoutMode);
 
                     MXL_INFO("Video pipeline finished");
                     return 0;
@@ -639,7 +683,7 @@ namespace
                     };
 
                     auto pipeline = GstreamerAudioPipeline(audioConfig);
-                    reader.run(pipeline, audioReadDelay);
+                    reader.run(pipeline, audioReadDelay, false);
 
                     MXL_INFO("Audio pipeline finished");
                     return 0;
