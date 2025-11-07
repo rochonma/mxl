@@ -370,7 +370,7 @@ namespace
         {
             auto rate = _flowInfo.discrete.grainRate;
             MXL_INFO("Starting discrete flow reading at rate {}/{}", rate.numerator, rate.denominator);
-            auto timeoutNs = discreteFlowTimeout(timeoutMode, gstPipeline._config.offset); // TOOD: pass timeout value
+            auto timeoutNs = discreteFlowTimeout(timeoutMode, gstPipeline._config.offset);
 
             auto index = mxlGetCurrentIndex(&rate);
             while (!g_exit_requested)
@@ -414,22 +414,26 @@ namespace
                     // Full frame not ready yet
                     continue;
                 }
-                auto grainTimestamp = mxlIndexToTimestamp(&rate, requestedIndex);
-                if (timeoutMode)
+
+                if (!(grainInfo.flags & MXL_GRAIN_FLAG_INVALID))
                 {
-                    updateHighestLatency(grainTimestamp, mxlGetTime());
+                    if (timeoutMode)
+                    {
+                        updateHighestLatency(mxlIndexToTimestamp(&rate, requestedIndex), mxlGetTime());
+                    }
+
+                    // If we got here, we can push the grain to the gstreamer pipeline
+                    GstBuffer* buffer = gst_buffer_new_allocate(nullptr, grainInfo.grainSize, nullptr);
+                    GstMapInfo map;
+                    gst_buffer_map(buffer, &map, GST_MAP_WRITE);
+                    ::memcpy(map.data, payload, grainInfo.grainSize);
+                    gst_buffer_unmap(buffer, &map);
+
+                    gstPipeline.pushSample(buffer, mxlIndexToTimestamp(&rate, index));
+
+                    gst_buffer_unref(buffer);
                 }
 
-                // If we got here, we can push the grain to the gstreamer pipeline
-                GstBuffer* buffer = gst_buffer_new_allocate(nullptr, grainInfo.grainSize, nullptr);
-                GstMapInfo map;
-                gst_buffer_map(buffer, &map, GST_MAP_WRITE);
-                ::memcpy(map.data, payload, grainInfo.grainSize);
-                gst_buffer_unmap(buffer, &map);
-
-                gstPipeline.pushSample(buffer, grainTimestamp);
-
-                gst_buffer_unref(buffer);
                 index++;
                 mxlSleepForNs(mxlGetNsUntilIndex(index, &rate));
             }
@@ -449,6 +453,7 @@ namespace
             while (!g_exit_requested)
             {
                 auto requestedIndex = index - readDelay;
+
                 auto ret = mxlFlowReaderGetSamples(_reader, requestedIndex, windowSize, &payload);
                 if (ret == MXL_ERR_OUT_OF_RANGE_TOO_EARLY)
                 {
@@ -510,7 +515,7 @@ namespace
 
                 gst_audio_buffer_unmap(&audioBuffer);
 
-                gstPipeline.pushSample(buffer, mxlIndexToTimestamp(&rate, requestedIndex));
+                gstPipeline.pushSample(buffer, mxlIndexToTimestamp(&rate, index));
 
                 gst_buffer_unref(buffer);
 
