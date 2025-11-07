@@ -3,7 +3,7 @@
   "dependencies": [
     {
       "name": "catch2",
-      "version>=": "3.10.0#0"
+      "version>=": "3.11.0#0"
     },
     {
       "name": "stduuid",
@@ -15,11 +15,11 @@
     },
     {
       "name": "spdlog",
-      "version>=": "1.15.3#0"
+      "version>=": "1.16.0#0"
     },
     {
       "name": "fmt",
-      "version>=": "11.2.0#0"
+      "version>=": "12.0.0#0"
     },
     {
       "name": "picojson",
