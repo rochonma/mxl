@@ -104,4 +104,5 @@ ENV VCPKG_ROOT=/home/$USERNAME/vcpkg
 # Make the selected clang version the default alternative
 RUN sudo /tmp/scripts/debian/register-clang-version.sh ${CLANG_VERSION} 100 
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain=1.88.0
+COPY ./scripts/ /tmp/scripts/
+RUN /tmp/scripts/common/rust/install-rust.sh

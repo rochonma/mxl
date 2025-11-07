@@ -87,7 +87,9 @@ if (MXL_ENABLE_FABRICS_OFI)
     add_subdirectory(fabrics)
 endif ()
 
-add_subdirectory(tests)
+if (BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
 
 # Install targets
 install(TARGETS mxl EXPORT ${PROJECT_NAME}-targets

@@ -87,6 +87,9 @@ jobs:
           mkdir -p ${{ github.workspace }}/install
           chmod 777 ${{ github.workspace }}/install
           chmod g+s ${{ github.workspace }}/install
+          mkdir -p ${{ github.workspace }}/rust/target
+          chmod 777 ${{ github.workspace }}/rust/target
+          chmod g+s ${{ github.workspace }}/rust/target
 
       - name: Build Docker image
         if: steps.check-image.outputs.exists == 'false'
@@ -171,6 +174,52 @@ jobs:
             bash -c "
               cd /workspace/mxl/build/${{ matrix.compiler }} && \
               ctest --output-junit test-results.xml
+            "
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-lint-
+
+      - name: Check the Rust bindings
+        env:
+          RUSTFLAGS: "-Dwarnings"
+        run: |
+          docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
+            -i mxl_build_container_with_source \
+            bash -c "
+              cd /workspace/mxl/rust && \
+              cargo fmt -- --check && \
+              cargo clippy --all-targets --all-features --locked -- -D warnings && \
+              cargo audit && \
+              cargo outdated && \
+              cargo machete && \
+              cargo deny check all
+            "
+
+      - name: Build Rust bindings
+        run: |
+          docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
+            -i mxl_build_container_with_source \
+            bash -c "
+              cd /workspace/mxl/rust && \
+              cargo build --release --all-targets --locked
+            "
+
+      - name: Test the Rust bindings
+        run: |
+          docker run --mount src=${{ github.workspace }},target=/workspace/mxl,type=bind \
+            -i mxl_build_container_with_source \
+            bash -c "
+              cd /workspace/mxl/rust && \
+              cargo nextest run --release --locked
             "
 
       - name: Publish Test Results
