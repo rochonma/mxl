@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <uuid.h>
+#include <mxl/platform.h>
 #include "mxl-internal/Logging.hpp"
 #include "mxl-internal/PathUtils.hpp"
 
@@ -26,7 +27,6 @@
 
 namespace mxl::lib
 {
-
     DomainWatcher::DomainWatcher(std::filesystem::path const& in_domain, Callback in_callback)
         : _domain{in_domain}
         , _callback{std::move(in_callback)}

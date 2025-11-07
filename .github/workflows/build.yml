@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-          os: [ubuntu]    
+          os: [ubuntu]
           version: [24.04]
           architecture: [x86_64, arm64]
           compiler: [Linux-GCC-Release, Linux-Clang-Release]
@@ -53,7 +53,7 @@ jobs:
         id: docker-hash
         run: |
           # Create a hash based on Dockerfile content and matrix parameters
-          HASH_INPUT=$(cat .devcontainer/Dockerfile .devcontainer/register-clang-version.sh vcpkg.json)
+          HASH_INPUT=$(cat -- .devcontainer/Dockerfile $(find .devcontainer/scripts/ -type f) vcpkg.json)
           HASH_INPUT="${HASH_INPUT}${{ matrix.version }}${{ matrix.architecture }}${{ matrix.compiler }}"
           DOCKER_HASH=$(echo -n "$HASH_INPUT" | sha256sum | cut -d' ' -f1)
           echo "hash=$DOCKER_HASH" >> $GITHUB_OUTPUT
@@ -100,8 +100,19 @@ jobs:
             -f .devcontainer/Dockerfile \
             .devcontainer
 
+      - name: Check if PR comes from a fork
+        id: is-fork-check
+        run: |
+          if [[ "${{ github.event.pull_request.head.repo.fork }}" == "true" ]]; then
+            echo "This pull request originates from a forked repository."
+            echo "is-fork=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "This pull request originates from the base repository."
+            echo "is-fork=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Push Docker image to registry
-        if: steps.check-image.outputs.exists == 'false'
+        if: steps.check-image.outputs.exists == 'false' && steps.is-fork-check.outputs.is-fork == 'false'
         run: |
           docker push ${{ steps.docker-hash.outputs.image-tag }}
 
@@ -138,7 +149,7 @@ jobs:
                 -DMXL_BUILD_NUMBER=${{ github.run_number }} \
                 -DCMAKE_INSTALL_PREFIX=/workspace/mxl/install
             "
- 
+
       - name: Save vcpkg cache
         uses: actions/cache/save@v4
         with:

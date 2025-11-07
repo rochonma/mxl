@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "mxl-internal/Timing.hpp"
+#include <mxl/platform.h>
 #include "mxl-internal/detail/ClockHelpers.hpp"
 
 namespace mxl::lib
 {
+    MXL_EXPORT
     Timepoint currentTime(Clock clock) noexcept
     {
         auto result = Timepoint{};
