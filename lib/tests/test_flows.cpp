@@ -682,7 +682,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Create/
 
         REQUIRE(flowInfo.continuous.sampleRate.numerator == 48000U);
         REQUIRE(flowInfo.continuous.sampleRate.denominator == 1U);
-        REQUIRE(flowInfo.continuous.channelCount == 1U);
+        REQUIRE(flowInfo.continuous.channelCount == 2U);
         REQUIRE(flowInfo.continuous.bufferLength > 128U);
     }
 
@@ -704,7 +704,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Create/
         REQUIRE(mxlFlowWriterOpenSamples(writer, index, 64U, &payloadBuffersSlices) == MXL_STATUS_OK);
 
         // Verify that the returned info looks alright
-        REQUIRE(payloadBuffersSlices.count == 1U);
+        REQUIRE(payloadBuffersSlices.count == 2U);
         REQUIRE((payloadBuffersSlices.base.fragments[0].size + payloadBuffersSlices.base.fragments[1].size) == 256U);
 
         // Fill some test data
@@ -734,7 +734,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Create/
         REQUIRE(mxlFlowReaderGetSamples(reader, index, 64U, &payloadBuffersSlices) == MXL_STATUS_OK);
 
         // Verify that the returned info looks alright
-        REQUIRE(payloadBuffersSlices.count == 1U);
+        REQUIRE(payloadBuffersSlices.count == 2U);
         REQUIRE((payloadBuffersSlices.base.fragments[0].size + payloadBuffersSlices.base.fragments[1].size) == 256U);
 
         for (auto i = 0U; i < payloadBuffersSlices.base.fragments[0].size; ++i)
@@ -764,7 +764,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Create/
         REQUIRE(mxlFlowWriterOpenSamples(writer, index + 64U, 64U, &payloadBuffersSlices) == MXL_STATUS_OK);
 
         // Verify that the returned info looks alright
-        REQUIRE(payloadBuffersSlices.count == 1U);
+        REQUIRE(payloadBuffersSlices.count == 2U);
         REQUIRE((payloadBuffersSlices.base.fragments[0].size + payloadBuffersSlices.base.fragments[1].size) == 256U);
     }
 
@@ -796,7 +796,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Invalid
 
         REQUIRE(flowInfo.continuous.sampleRate.numerator == 48000U);
         REQUIRE(flowInfo.continuous.sampleRate.denominator == 1U);
-        REQUIRE(flowInfo.continuous.channelCount == 1U);
+        REQUIRE(flowInfo.continuous.channelCount == 2U);
         REQUIRE(flowInfo.continuous.bufferLength > 128U);
     }
 

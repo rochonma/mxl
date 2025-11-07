@@ -11,9 +11,10 @@ RUN apt update && apt-get -y install\
         patchelf && rm -rf /var/lib/apt/lists/*
 
 COPY build/Linux-Clang-Release/lib/*.so* /app/
+COPY build/Linux-Clang-Release/lib/internal/*.so* /app/
 COPY build/Linux-Clang-Release/lib/tests/data/*.json /app/
 COPY build/Linux-Clang-Release/tools/mxl-gst/mxl-gst-videotestsrc /app/
 
 RUN patchelf --set-rpath /app mxl-gst-videotestsrc
 
-CMD ["/app/mxl-gst-videotestsrc", "-d", "/domain", "-f", "/app/v210_flow.json"]
+CMD ["/app/mxl-gst-videotestsrc", "-d", "/domain", "-v", "/app/v210_flow.json", "-a", "/app/audio_flow.json"]
