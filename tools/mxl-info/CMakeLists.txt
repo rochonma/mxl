@@ -29,8 +29,9 @@ endif ()
 
 target_link_libraries(mxl-info
         PRIVATE
-            mxl-internal
             mxl
+            mxl-internal-headers
+            mxl-common
             CLI11::CLI11
     )
 
