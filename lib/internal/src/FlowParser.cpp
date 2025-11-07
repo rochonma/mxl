@@ -351,7 +351,7 @@ namespace mxl::lib
                     throw std::invalid_argument{std::move(msg)};
                 }
             }
-            else if (mediaType == "video/v210+alpha")
+            else if (mediaType == "video/v210a")
             {
                 if (!_interlaced || ((height % 2) == 0))
                 {
@@ -442,7 +442,7 @@ namespace mxl::lib
                 {
                     sliceLengths[0] = v210fillSize;
                 }
-                else if (mediaType == "video/v210+alpha")
+                else if (mediaType == "video/v210a")
                 {
                     sliceLengths[0] = v210fillSize;
                     sliceLengths[1] = get10BitAlphaLineLength(width);
@@ -476,7 +476,7 @@ namespace mxl::lib
 
             case MXL_DATA_FORMAT_VIDEO:
             {
-                if (auto const mediaType = fetchAs<std::string>(_root, "media_type"); mediaType != "video/v210" && mediaType != "video/v210+alpha")
+                if (auto const mediaType = fetchAs<std::string>(_root, "media_type"); mediaType != "video/v210" && mediaType != "video/v210a")
                 {
                     auto msg = std::string{"Unsupported video media_type: "} + mediaType;
                     throw std::invalid_argument{std::move(msg)};
