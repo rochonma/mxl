@@ -72,7 +72,7 @@ namespace mxl::lib
         if (_flowData)
         {
             auto const flowInfo = _flowData->flowInfo();
-            flowInfo->continuous.headIndex = _currentIndex;
+            flowInfo->runtime.headIndex = _currentIndex;
 
             _currentIndex = MXL_UNDEFINED_INDEX;
 

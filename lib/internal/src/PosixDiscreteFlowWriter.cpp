@@ -45,7 +45,7 @@ namespace mxl::lib
     {
         if (_flowData)
         {
-            auto offset = in_index % _flowData->flowInfo()->discrete.grainCount;
+            auto offset = in_index % _flowData->flowInfo()->config.discrete.grainCount;
             auto const grain = _flowData->grainAt(offset);
             grain->header.info.index = in_index; // Set the absolute grain index associated to that ring buffer entry
             *out_grainInfo = grain->header.info;
@@ -66,7 +66,7 @@ namespace mxl::lib
     {
         if (_flowData)
         {
-            _flowData->flowInfo()->common.lastReadTime = currentTime(mxl::lib::Clock::TAI).value;
+            _flowData->flowInfo()->runtime.lastReadTime = currentTime(mxl::lib::Clock::TAI).value;
         }
     }
 
@@ -80,11 +80,11 @@ namespace mxl::lib
             }
 
             auto const flow = _flowData->flow();
-            flow->info.discrete.headIndex = _currentIndex;
+            flow->info.runtime.headIndex = _currentIndex;
 
-            auto const offset = _currentIndex % flow->info.discrete.grainCount;
+            auto const offset = _currentIndex % flow->info.config.discrete.grainCount;
             *_flowData->grainInfoAt(offset) = mxlGrainInfo;
-            flow->info.common.lastWriteTime = currentTime(mxl::lib::Clock::TAI).value;
+            flow->info.runtime.lastWriteTime = currentTime(mxl::lib::Clock::TAI).value;
 
             // If the grain is complete, reset the current index of the flow writer.
             if (mxlGrainInfo.validSlices == mxlGrainInfo.totalSlices)

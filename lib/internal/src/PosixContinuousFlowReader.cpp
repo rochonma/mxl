@@ -37,7 +37,7 @@ namespace mxl::lib
     {
         if (_flowData)
         {
-            if (auto const headIndex = _flowData->flowInfo()->continuous.headIndex; index <= headIndex)
+            if (auto const headIndex = _flowData->flowInfo()->runtime.headIndex; index <= headIndex)
             {
                 auto const minIndex = (headIndex >= (_bufferLength / 2U)) ? (headIndex - (_bufferLength / 2U)) : std::uint64_t{0};
 

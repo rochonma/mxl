@@ -130,7 +130,7 @@ namespace mxl::lib::fabrics::ofi
             "GrainHeader type size changed! The Fabrics API makes assumptions on the memory layout of a flow, please review the code below if the "
             "change is intended!");
 
-        if (mxlIsDiscreteDataFormat(flow.flowInfo()->common.format))
+        if (mxlIsDiscreteDataFormat(flow.flowInfo()->config.common.format))
         {
             auto& discreteFlow = static_cast<DiscreteFlowData&>(flow);
             std::vector<Region> regions;
@@ -143,7 +143,7 @@ namespace mxl::lib::fabrics::ofi
                 auto grainInfoSize = sizeof(GrainHeader);
                 auto grainPayloadSize = grain->header.info.grainSize;
 
-                if (flow.flowInfo()->common.payloadLocation != MXL_PAYLOAD_LOCATION_HOST_MEMORY)
+                if (flow.flowInfo()->config.common.payloadLocation != MXL_PAYLOAD_LOCATION_HOST_MEMORY)
                 {
                     throw Exception::make(MXL_ERR_UNKNOWN,
                         "GPU memory is not currently supported in the Flow API of MXL. Edit the code below when it is supported");
@@ -155,7 +155,7 @@ namespace mxl::lib::fabrics::ofi
             return {std::move(regions),
                 /*DataLayout::fromVideo(false)*/};
         }
-        else if (mxlIsContinuousDataFormat(flow.flowInfo()->common.format))
+        else if (mxlIsContinuousDataFormat(flow.flowInfo()->config.common.format))
         {
             auto& continuousFlow = static_cast<ContinuousFlowData&>(flow);
             std::vector<Region> regions;
@@ -174,7 +174,7 @@ namespace mxl::lib::fabrics::ofi
 
         else
         {
-            throw Exception::make(MXL_ERR_UNKNOWN, "Unsupported flow fromat {}", flow.flowInfo()->common.format);
+            throw Exception::make(MXL_ERR_UNKNOWN, "Unsupported flow fromat {}", flow.flowInfo()->config.common.format);
         }
     }
 

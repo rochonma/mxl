@@ -356,7 +356,7 @@ namespace
         {
             gstPipeline.start();
 
-            if (mxlIsDiscreteDataFormat(_flowInfo.common.format))
+            if (mxlIsDiscreteDataFormat(_flowInfo.config.common.format))
             {
                 return runDiscreteFlow(dynamic_cast<GstreamerVideoPipeline&>(gstPipeline), readDelay, timeoutMode);
             }
@@ -368,7 +368,7 @@ namespace
 
         int runDiscreteFlow(GstreamerVideoPipeline& gstPipeline, std::int64_t readDelay, bool timeoutMode)
         {
-            auto rate = _flowInfo.discrete.grainRate;
+            auto rate = _flowInfo.config.common.grainRate;
             MXL_INFO("Starting discrete flow reading at rate {}/{}", rate.numerator, rate.denominator);
             auto timeoutNs = discreteFlowTimeout(timeoutMode, gstPipeline._config.offset);
 
@@ -384,14 +384,14 @@ namespace
                 {
                     // We are too early somehow, keep trying the same grain index
                     mxlFlowReaderGetInfo(_reader, &_flowInfo);
-                    MXL_WARN("Failed to get samples at index {}: TOO EARLY. Last published {}", requestedIndex, _flowInfo.discrete.headIndex);
+                    MXL_WARN("Failed to get samples at index {}: TOO EARLY. Last published {}", requestedIndex, _flowInfo.runtime.headIndex);
 
                     continue;
                 }
                 else if (ret == MXL_ERR_OUT_OF_RANGE_TOO_LATE)
                 {
                     mxlFlowReaderGetInfo(_reader, &_flowInfo);
-                    MXL_WARN("Failed to get grain at index {}: TOO LATE. Last published {}", requestedIndex, _flowInfo.discrete.headIndex);
+                    MXL_WARN("Failed to get grain at index {}: TOO LATE. Last published {}", requestedIndex, _flowInfo.runtime.headIndex);
 
                     // Grain expired. Realign to current index. GStreamer repeats the last valid frame for missing data; consuming applications
                     // should do the same.
@@ -446,7 +446,7 @@ namespace
 
         int runContinuousFlow(GstreamerAudioPipeline& gstPipeline, std::int64_t readDelay)
         {
-            auto rate = _flowInfo.continuous.sampleRate;
+            auto rate = _flowInfo.config.common.grainRate;
             MXL_INFO("Starting continuous flow reading at rate {}/{}", rate.numerator, rate.denominator);
 
             auto const windowSize = gstPipeline._config.nbSamplesPerBatch; // samples per read
@@ -462,7 +462,7 @@ namespace
                 {
                     // We are too early somehow, keep trying the same index
                     mxlFlowReaderGetInfo(_reader, &_flowInfo);
-                    MXL_WARN("Failed to get samples at index {}: TOO EARLY. Last published {}", requestedIndex, _flowInfo.continuous.headIndex);
+                    MXL_WARN("Failed to get samples at index {}: TOO EARLY. Last published {}", requestedIndex, _flowInfo.runtime.headIndex);
                     continue;
                 }
                 else if (ret == MXL_ERR_OUT_OF_RANGE_TOO_LATE)
@@ -470,7 +470,7 @@ namespace
                     // Samples expired. Realign to current index. GStreamer will generate silence for missing samples. Consuming applications
                     // should handle this better by inserting silence with a micro fades to prevent clicks and pops.
                     mxlFlowReaderGetInfo(_reader, &_flowInfo);
-                    MXL_WARN("Failed to get samples at index {}: TOO LATE. Last published {}", requestedIndex, _flowInfo.continuous.headIndex);
+                    MXL_WARN("Failed to get samples at index {}: TOO LATE. Last published {}", requestedIndex, _flowInfo.runtime.headIndex);
 
                     index = mxlGetCurrentIndex(&rate);
                     continue;
@@ -534,7 +534,7 @@ namespace
     private:
         std::uint64_t discreteFlowTimeout(bool timeoutMode, std::int64_t offset)
         {
-            auto rate = _flowInfo.discrete.grainRate;
+            auto rate = _flowInfo.config.common.grainRate;
 
             if (timeoutMode)
             {

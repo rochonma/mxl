@@ -78,17 +78,16 @@ namespace mxl::lib
             }
         }
 
-        mxlCommonFlowInfo initCommonFlowInfo(uuids::uuid const& flowId, mxlDataFormat format,
+        mxlCommonFlowConfigInfo initCommonFlowConfigInfo(uuids::uuid const& flowId, mxlDataFormat format, mxlRational grainRate,
             std::optional<std::uint32_t> const& maxSyncBatchSizeHintOpt = std::nullopt,
             std::optional<std::uint32_t> const& maxCommitBatchSizeHintOpt = std::nullopt)
         {
-            auto result = mxlCommonFlowInfo{};
+            auto result = mxlCommonFlowConfigInfo{};
 
             auto const idSpan = flowId.as_bytes();
             std::memcpy(result.id, idSpan.data(), idSpan.size());
-            result.lastWriteTime = currentTime(mxl::lib::Clock::TAI).value;
-            result.lastReadTime = result.lastWriteTime;
             result.format = format;
+            result.grainRate = grainRate;
 
             result.maxCommitBatchSizeHint = maxCommitBatchSizeHintOpt.value_or(1);
             result.maxSyncBatchSizeHint = maxSyncBatchSizeHintOpt.value_or(1);
@@ -96,6 +95,16 @@ namespace mxl::lib
             // FIXME: This should come from the configuration when device memory is supported
             result.payloadLocation = MXL_PAYLOAD_LOCATION_HOST_MEMORY;
             result.deviceIndex = -1;
+
+            return result;
+        }
+
+        mxlFlowRuntimeInfo initFlowRuntimeInfo()
+        {
+            auto result = mxlFlowRuntimeInfo{};
+
+            result.lastWriteTime = currentTime(mxl::lib::Clock::TAI).value;
+            result.lastReadTime = result.lastWriteTime;
 
             return result;
         }
@@ -166,10 +175,12 @@ namespace mxl::lib
             auto& info = *flowData->flowInfo();
             info.version = FLOW_DATA_VERSION;
             info.size = sizeof info;
-            info.common = initCommonFlowInfo(flowId, flowFormat, maxSyncBatchSizeHintOpt, maxCommitBatchSizeHintOpt);
-            info.discrete.grainRate = grainRate;
-            info.discrete.grainCount = grainCount;
-            std::copy(grainSliceLengths.begin(), grainSliceLengths.end(), info.discrete.sliceSizes);
+            info.config.common = initCommonFlowConfigInfo(flowId, flowFormat, grainRate, maxSyncBatchSizeHintOpt, maxCommitBatchSizeHintOpt);
+            info.config.discrete = {};
+            info.config.discrete.grainCount = grainCount;
+            std::copy(grainSliceLengths.begin(), grainSliceLengths.end(), info.config.discrete.sliceSizes);
+
+            info.runtime = initFlowRuntimeInfo();
 
             auto& state = *flowData->flowState();
             state = initFlowState(flowDataPath);
@@ -237,11 +248,12 @@ namespace mxl::lib
             auto& info = *flowData->flowInfo();
             info.version = FLOW_DATA_VERSION;
             info.size = sizeof info;
-            info.common = initCommonFlowInfo(flowId, flowFormat, maxSyncBatchSizeHintOpt, maxCommitBatchSizeHintOpt);
-            info.continuous = {};
-            info.continuous.sampleRate = sampleRate;
-            info.continuous.channelCount = channelCount;
-            info.continuous.bufferLength = bufferLength;
+            info.config.common = initCommonFlowConfigInfo(flowId, flowFormat, sampleRate, maxSyncBatchSizeHintOpt, maxCommitBatchSizeHintOpt);
+            info.config.continuous = {};
+            info.config.continuous.channelCount = channelCount;
+            info.config.continuous.bufferLength = bufferLength;
+
+            info.runtime = initFlowRuntimeInfo();
 
             auto& state = *flowData->flowState();
             state = initFlowState(flowDataPath);
@@ -281,7 +293,7 @@ namespace mxl::lib
                     fmt::format("Unsupported flow data version: {}, supported is: {}", flowSegment.get()->info.version, FLOW_DATA_VERSION)};
             }
 
-            if (auto const flowFormat = flowSegment.get()->info.common.format; mxlIsDiscreteDataFormat(flowFormat))
+            if (auto const flowFormat = flowSegment.get()->info.config.common.format; mxlIsDiscreteDataFormat(flowFormat))
             {
                 return openDiscreteFlow(base, std::move(flowSegment));
             }
@@ -306,7 +318,7 @@ namespace mxl::lib
     {
         auto flowData = std::make_unique<DiscreteFlowData>(std::move(sharedFlowInstance));
 
-        auto const grainCount = flowData->flowInfo()->discrete.grainCount;
+        auto const grainCount = flowData->flowInfo()->config.discrete.grainCount;
         if (grainCount > 0U)
         {
             auto const grainDir = makeGrainDirectoryName(flowDir);
@@ -346,8 +358,8 @@ namespace mxl::lib
         if (flowData)
         {
             // Extract the ID
-            auto const span = uuids::span<std::uint8_t, sizeof flowData->flowInfo()->common.id>{
-                const_cast<std::uint8_t*>(flowData->flowInfo()->common.id), sizeof flowData->flowInfo()->common.id};
+            auto const span = uuids::span<std::uint8_t, sizeof flowData->flowInfo()->config.common.id>{
+                const_cast<std::uint8_t*>(flowData->flowInfo()->config.common.id), sizeof flowData->flowInfo()->config.common.id};
             auto const id = uuids::uuid(span);
 
             // Close the flow

@@ -40,38 +40,37 @@ namespace mxl::lib
     MXL_EXPORT
     std::ostream& operator<<(std::ostream& os, Flow const& flow)
     {
-        auto const span = uuids::span<std::uint8_t, sizeof flow.info.common.id>{
-            const_cast<std::uint8_t*>(flow.info.common.id), sizeof flow.info.common.id};
+        auto const span = uuids::span<std::uint8_t, sizeof flow.info.config.common.id>{
+            const_cast<std::uint8_t*>(flow.info.config.common.id), sizeof flow.info.config.common.id};
         auto const id = uuids::uuid(span);
         os << "- Flow [" << uuids::to_string(id) << ']' << '\n'
            << '\t' << fmt::format("{: >18}: {}", "Version", flow.info.version) << '\n'
            << '\t' << fmt::format("{: >18}: {}", "Struct size", flow.info.size) << '\n'
-           << '\t' << fmt::format("{: >18}: {}", "Last write time", flow.info.common.lastWriteTime) << '\n'
-           << '\t' << fmt::format("{: >18}: {}", "Last read time", flow.info.common.lastReadTime) << '\n'
-           << '\t' << fmt::format("{: >18}: {}", "Format", getFormatString(flow.info.common.format)) << '\n'
-           << '\t' << fmt::format("{: >18}: {}", "Commit batch size", flow.info.common.maxCommitBatchSizeHint) << '\n'
-           << '\t' << fmt::format("{: >18}: {}", "Sync batch size", flow.info.common.maxSyncBatchSizeHint) << '\n'
-           << '\t' << fmt::format("{: >18}: {}", "Payload Location", getPayloadLocationString(flow.info.common.payloadLocation)) << '\n'
-           << '\t' << fmt::format("{: >18}: {}", "Device Index", flow.info.common.deviceIndex) << '\n'
-           << '\t' << fmt::format("{: >18}: {:0>8x}", "Flags", flow.info.common.flags) << '\n';
+           << '\t' << fmt::format("{: >18}: {}", "Format", getFormatString(flow.info.config.common.format)) << '\n'
+           << '\t'
+           << fmt::format(
+                  "{: >18}: {}/{}", "Grain/sample rate", flow.info.config.common.grainRate.numerator, flow.info.config.common.grainRate.denominator)
+           << '\n'
+           << '\t' << fmt::format("{: >18}: {}", "Commit batch size", flow.info.config.common.maxCommitBatchSizeHint) << '\n'
+           << '\t' << fmt::format("{: >18}: {}", "Sync batch size", flow.info.config.common.maxSyncBatchSizeHint) << '\n'
+           << '\t' << fmt::format("{: >18}: {}", "Payload Location", getPayloadLocationString(flow.info.config.common.payloadLocation)) << '\n'
+           << '\t' << fmt::format("{: >18}: {}", "Device Index", flow.info.config.common.deviceIndex) << '\n'
+           << '\t' << fmt::format("{: >18}: {:0>8x}", "Flags", flow.info.config.common.flags) << '\n';
 
-        if (mxlIsDiscreteDataFormat(flow.info.common.format))
+        if (mxlIsDiscreteDataFormat(flow.info.config.common.format))
         {
-            os << '\t'
-               << fmt::format("{: >18}: {}/{}", "Grain rate", flow.info.discrete.grainRate.numerator, flow.info.discrete.grainRate.denominator)
-               << '\n'
-               << '\t' << fmt::format("{: >18}: {}", "Grain count", flow.info.discrete.grainCount) << '\n'
-               << '\t' << fmt::format("{: >18}: {}", "Head index", flow.info.discrete.headIndex) << '\n';
+            os << '\t' << fmt::format("{: >18}: {}", "Grain count", flow.info.config.discrete.grainCount) << '\n';
         }
-        else if (mxlIsContinuousDataFormat(flow.info.common.format))
+        else if (mxlIsContinuousDataFormat(flow.info.config.common.format))
         {
-            os << '\t'
-               << fmt::format("{: >18}: {}/{}", "Sample rate", flow.info.continuous.sampleRate.numerator, flow.info.continuous.sampleRate.denominator)
-               << '\n'
-               << '\t' << fmt::format("{: >18}: {}", "Channel count", flow.info.continuous.channelCount) << '\n'
-               << '\t' << fmt::format("{: >18}: {}", "Buffer length", flow.info.continuous.bufferLength) << '\n'
-               << '\t' << fmt::format("{: >18}: {}", "Head index", flow.info.continuous.headIndex) << '\n';
+            os << '\t' << fmt::format("{: >18}: {}", "Channel count", flow.info.config.continuous.channelCount) << '\n'
+               << '\t' << fmt::format("{: >18}: {}", "Buffer length", flow.info.config.continuous.bufferLength) << '\n';
         }
+
+        os << '\n'
+           << '\t' << fmt::format("{: >18}: {}", "Head index", flow.info.runtime.headIndex) << '\n'
+           << '\t' << fmt::format("{: >18}: {}", "Last write time", flow.info.runtime.lastWriteTime) << '\n'
+           << '\t' << fmt::format("{: >18}: {}", "Last read time", flow.info.runtime.lastReadTime) << '\n';
 
         return os;
     }

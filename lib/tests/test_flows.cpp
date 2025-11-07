@@ -79,10 +79,10 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Create/
     constexpr auto h = 1080;
 
     auto fillPayloadStrideSize = mxl::lib::getV210LineLength(w);
-    REQUIRE(fInfo.discrete.sliceSizes[0] == fillPayloadStrideSize);
-    REQUIRE(fInfo.discrete.sliceSizes[1] == 0);
-    REQUIRE(fInfo.discrete.sliceSizes[2] == 0);
-    REQUIRE(fInfo.discrete.sliceSizes[3] == 0);
+    REQUIRE(fInfo.config.discrete.sliceSizes[0] == fillPayloadStrideSize);
+    REQUIRE(fInfo.config.discrete.sliceSizes[1] == 0);
+    REQUIRE(fInfo.config.discrete.sliceSizes[2] == 0);
+    REQUIRE(fInfo.config.discrete.sliceSizes[3] == 0);
 
     auto fillPayloadSize = fillPayloadStrideSize * h;
     REQUIRE(gInfo.grainSize == fillPayloadSize);
@@ -94,7 +94,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Create/
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
     mxlFlowInfo fInfo1;
     REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
-    REQUIRE(fInfo1.discrete.headIndex == 0);
+    REQUIRE(fInfo1.runtime.headIndex == 0);
 
     /// Mark the grain as invalid
     gInfo.flags |= MXL_GRAIN_FLAG_INVALID;
@@ -118,13 +118,13 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Create/
     REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo2) == MXL_STATUS_OK);
 
     /// Confirm that that head has moved.
-    REQUIRE(fInfo2.discrete.headIndex == index);
+    REQUIRE(fInfo2.runtime.headIndex == index);
 
     // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
-    REQUIRE(fInfo2.common.lastReadTime > fInfo1.common.lastReadTime);
+    REQUIRE(fInfo2.runtime.lastReadTime > fInfo1.runtime.lastReadTime);
 
     // We commited a new grain. This should have increased the lastWriteTime field.
-    REQUIRE(fInfo2.common.lastWriteTime > fInfo1.common.lastWriteTime);
+    REQUIRE(fInfo2.runtime.lastWriteTime > fInfo1.runtime.lastWriteTime);
 
     /// Release the reader
     REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
@@ -198,13 +198,13 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow (With Alp
 
     auto fillPayloadStrideSize = mxl::lib::getV210LineLength(w);
     auto fillPayloadSize = fillPayloadStrideSize * h;
-    REQUIRE(fInfo.discrete.sliceSizes[0] == fillPayloadStrideSize);
+    REQUIRE(fInfo.config.discrete.sliceSizes[0] == fillPayloadStrideSize);
 
     auto keyPayloadStrideSize = static_cast<std::size_t>((w + 2) / 3 * 4);
     auto keyPayloadSize = keyPayloadStrideSize * h;
-    REQUIRE(fInfo.discrete.sliceSizes[1] == keyPayloadStrideSize);
-    REQUIRE(fInfo.discrete.sliceSizes[2] == 0);
-    REQUIRE(fInfo.discrete.sliceSizes[3] == 0);
+    REQUIRE(fInfo.config.discrete.sliceSizes[1] == keyPayloadStrideSize);
+    REQUIRE(fInfo.config.discrete.sliceSizes[2] == 0);
+    REQUIRE(fInfo.config.discrete.sliceSizes[3] == 0);
 
     REQUIRE(gInfo.grainSize == (fillPayloadSize + keyPayloadSize));
 
@@ -215,7 +215,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow (With Alp
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
     mxlFlowInfo fInfo1;
     REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
-    REQUIRE(fInfo1.discrete.headIndex == 0);
+    REQUIRE(fInfo1.runtime.headIndex == 0);
 
     /// Mark the grain as invalid
     gInfo.flags |= MXL_GRAIN_FLAG_INVALID;
@@ -239,13 +239,13 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow (With Alp
     REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo2) == MXL_STATUS_OK);
 
     /// Confirm that that head has moved.
-    REQUIRE(fInfo2.discrete.headIndex == index);
+    REQUIRE(fInfo2.runtime.headIndex == index);
 
     // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
-    REQUIRE(fInfo2.common.lastReadTime > fInfo1.common.lastReadTime);
+    REQUIRE(fInfo2.runtime.lastReadTime > fInfo1.runtime.lastReadTime);
 
     // We commited a new grain. This should have increased the lastWriteTime field.
-    REQUIRE(fInfo2.common.lastWriteTime > fInfo1.common.lastWriteTime);
+    REQUIRE(fInfo2.runtime.lastWriteTime > fInfo1.runtime.lastWriteTime);
 
     /// Release the reader
     REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
@@ -409,8 +409,8 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Invalid flow definit
         REQUIRE(mxlCreateFlow(instance, nonNormalizedRate.c_str(), opts, &fInfo) == MXL_STATUS_OK);
 
         // the rational value found in the json should be normalized to 50/1.
-        REQUIRE(fInfo.discrete.grainRate.numerator == 50);
-        REQUIRE(fInfo.discrete.grainRate.denominator == 1);
+        REQUIRE(fInfo.config.common.grainRate.numerator == 50);
+        REQUIRE(fInfo.config.common.grainRate.denominator == 1);
         REQUIRE(mxlDestroyFlow(instance, "5fbec3b1-1b0f-417d-9059-8b94a47197ed") == MXL_STATUS_OK);
     }
 
@@ -485,7 +485,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Data Flow : Create/D
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
     mxlFlowInfo fInfo1;
     REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
-    REQUIRE(fInfo1.discrete.headIndex == 0);
+    REQUIRE(fInfo1.runtime.headIndex == 0);
 
     /// Mark the grain as invalid
     gInfo.flags |= MXL_GRAIN_FLAG_INVALID;
@@ -508,13 +508,13 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Data Flow : Create/D
     REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo2) == MXL_STATUS_OK);
 
     /// Confirm that that head has moved.
-    REQUIRE(fInfo2.discrete.headIndex == index);
+    REQUIRE(fInfo2.runtime.headIndex == index);
 
     // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
-    REQUIRE(fInfo2.common.lastReadTime > fInfo1.common.lastReadTime);
+    REQUIRE(fInfo2.runtime.lastReadTime > fInfo1.runtime.lastReadTime);
 
     // We commited a new grain. This should have increased the lastWriteTime field.
-    REQUIRE(fInfo2.common.lastWriteTime > fInfo1.common.lastWriteTime);
+    REQUIRE(fInfo2.runtime.lastWriteTime > fInfo1.runtime.lastWriteTime);
 
     /// Delete the reader
     REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
@@ -564,14 +564,14 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Options
     optsObj["maxSyncBatchSizeHint"] = picojson::value{10.0};
     optsStr = picojson::value(optsObj).serialize();
     REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &fInfo) == MXL_STATUS_OK);
-    REQUIRE(fInfo.common.maxCommitBatchSizeHint == 5U);
-    REQUIRE(fInfo.common.maxSyncBatchSizeHint == 10U);
-    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(fInfo.common.id).c_str()) == MXL_STATUS_OK);
+    REQUIRE(fInfo.config.common.maxCommitBatchSizeHint == 5U);
+    REQUIRE(fInfo.config.common.maxSyncBatchSizeHint == 10U);
+    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(fInfo.config.common.id).c_str()) == MXL_STATUS_OK);
 
     REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), NULL, &fInfo) == MXL_STATUS_OK);
-    REQUIRE(fInfo.common.maxCommitBatchSizeHint == 1U);
-    REQUIRE(fInfo.common.maxSyncBatchSizeHint == 1U);
-    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(fInfo.common.id).c_str()) == MXL_STATUS_OK);
+    REQUIRE(fInfo.config.common.maxCommitBatchSizeHint == 1U);
+    REQUIRE(fInfo.config.common.maxSyncBatchSizeHint == 1U);
+    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(fInfo.config.common.id).c_str()) == MXL_STATUS_OK);
     REQUIRE(mxlDestroyInstance(instanceWriter) == MXL_STATUS_OK);
 }
 
@@ -610,11 +610,11 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Slices"
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
     mxlFlowInfo fInfo1;
     REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
-    REQUIRE(fInfo1.discrete.headIndex == 0);
+    REQUIRE(fInfo1.runtime.headIndex == 0);
 
     // Total number of batches that will be written
-    auto const numBatches = (gInfo.totalSlices + fInfo1.common.maxCommitBatchSizeHint - 1U) / fInfo1.common.maxCommitBatchSizeHint;
-    std::size_t defaultBatchSize = fInfo1.common.maxCommitBatchSizeHint;
+    auto const numBatches = (gInfo.totalSlices + fInfo1.config.common.maxCommitBatchSizeHint - 1U) / fInfo1.config.common.maxCommitBatchSizeHint;
+    auto defaultBatchSize = std::size_t{fInfo1.config.common.maxCommitBatchSizeHint};
 
     for (auto batchIndex = std::size_t{0}; batchIndex < numBatches; batchIndex++)
     {
@@ -633,10 +633,10 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Slices"
 
         mxlFlowInfo sliceFlowInfo;
         REQUIRE(mxlFlowReaderGetInfo(reader, &sliceFlowInfo) == MXL_STATUS_OK);
-        REQUIRE(sliceFlowInfo.discrete.headIndex == index);
+        REQUIRE(sliceFlowInfo.runtime.headIndex == index);
 
         // We commited data to a grain. This should have increased the lastWriteTime field.
-        REQUIRE(sliceFlowInfo.common.lastWriteTime > fInfo1.common.lastWriteTime);
+        REQUIRE(sliceFlowInfo.runtime.lastWriteTime > fInfo1.runtime.lastWriteTime);
 
         /// Read back the partial grain using the flow reader.
         std::uint8_t* readBuffer = nullptr;
@@ -651,7 +651,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Slices"
 
         // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
         REQUIRE(mxlFlowReaderGetInfo(reader, &sliceFlowInfo) == MXL_STATUS_OK);
-        REQUIRE(sliceFlowInfo.common.lastReadTime > fInfo1.common.lastReadTime);
+        REQUIRE(sliceFlowInfo.runtime.lastReadTime > fInfo1.runtime.lastReadTime);
     }
 
     REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
@@ -680,10 +680,10 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Create/
         mxlFlowInfo flowInfo;
         REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &flowInfo) == MXL_STATUS_OK);
 
-        REQUIRE(flowInfo.continuous.sampleRate.numerator == 48000U);
-        REQUIRE(flowInfo.continuous.sampleRate.denominator == 1U);
-        REQUIRE(flowInfo.continuous.channelCount == 2U);
-        REQUIRE(flowInfo.continuous.bufferLength > 128U);
+        REQUIRE(flowInfo.config.common.grainRate.numerator == 48000U);
+        REQUIRE(flowInfo.config.common.grainRate.denominator == 1U);
+        REQUIRE(flowInfo.config.continuous.channelCount == 2U);
+        REQUIRE(flowInfo.config.continuous.bufferLength > 128U);
     }
 
     mxlFlowReader reader;
@@ -722,7 +722,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Create/
         REQUIRE(mxlFlowReaderGetInfo(reader, &flowInfo) == MXL_STATUS_OK);
 
         // Verify that the headindex is yet to be modified
-        REQUIRE(flowInfo.continuous.headIndex == 0);
+        REQUIRE(flowInfo.runtime.headIndex == 0);
 
         /// Commit the sample range
         REQUIRE(mxlFlowWriterCommitSamples(writer) == MXL_STATUS_OK);
@@ -752,7 +752,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Create/
         REQUIRE(mxlFlowReaderGetInfo(reader, &flowInfo) == MXL_STATUS_OK);
 
         // Confirm that that head has moved.
-        REQUIRE(flowInfo.continuous.headIndex == index);
+        REQUIRE(flowInfo.runtime.headIndex == index);
     }
 
     /// Release the reader
@@ -794,10 +794,10 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Invalid
         mxlFlowInfo flowInfo;
         REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &flowInfo) == MXL_STATUS_OK);
 
-        REQUIRE(flowInfo.continuous.sampleRate.numerator == 48000U);
-        REQUIRE(flowInfo.continuous.sampleRate.denominator == 1U);
-        REQUIRE(flowInfo.continuous.channelCount == 2U);
-        REQUIRE(flowInfo.continuous.bufferLength > 128U);
+        REQUIRE(flowInfo.config.common.grainRate.numerator == 48000U);
+        REQUIRE(flowInfo.config.common.grainRate.denominator == 1U);
+        REQUIRE(flowInfo.config.continuous.channelCount == 2U);
+        REQUIRE(flowInfo.config.continuous.bufferLength > 128U);
     }
 
     mxlFlowReader reader;
@@ -870,13 +870,14 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Differe
     auto flowDef = mxl::tests::readFile("data/audio_flow.json");
     mxlFlowInfo flowInfo;
     REQUIRE(mxlCreateFlow(instance, flowDef.c_str(), opts, &flowInfo) == MXL_STATUS_OK);
-    auto const flowId = uuids::to_string(flowInfo.common.id);
-    REQUIRE(flowInfo.continuous.bufferLength > 11U); // To have at least 2 samples per batch in our second part of the test with reading in 3 batches.
+    auto const flowId = uuids::to_string(flowInfo.config.common.id);
+    REQUIRE(flowInfo.config.continuous.bufferLength >
+            11U); // To have at least 2 samples per batch in our second part of the test with reading in 3 batches.
 
     // We write the whole buffer worth of data in 4 batches, and then we try to read the second half back in both equally-sized batches and in
     // different-sized batches.
-    auto const lastIndex = mxlGetCurrentIndex(&flowInfo.continuous.sampleRate);
-    auto writeBatches = planAudioBatches(4, flowInfo.continuous.bufferLength, lastIndex);
+    auto const lastIndex = mxlGetCurrentIndex(&flowInfo.config.common.grainRate);
+    auto writeBatches = planAudioBatches(4, flowInfo.config.continuous.bufferLength, lastIndex);
 
     mxlFlowWriter writer;
     REQUIRE(mxlCreateFlowWriter(instance, flowId.c_str(), "", &writer) == MXL_STATUS_OK);
@@ -923,7 +924,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Differe
     // When checking the batches, we can only check the second half of the buffer (this is what mxlFlowReaderGetSamples allows us).
     writeBatches.erase(writeBatches.begin(), writeBatches.begin() + writeBatches.size() / 2);
     readCheckFn(reader, writeBatches);
-    auto const readBatches = planAudioBatches(writeBatches.size() + 1, flowInfo.continuous.bufferLength / 2, lastIndex);
+    auto const readBatches = planAudioBatches(writeBatches.size() + 1, flowInfo.config.continuous.bufferLength / 2, lastIndex);
     readCheckFn(reader, readBatches);
     REQUIRE(mxlReleaseFlowReader(instance, reader) == MXL_STATUS_OK);
 
@@ -963,14 +964,14 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Options
     optsObj["maxSyncBatchSizeHint"] = picojson::value{10.0};
     optsStr = picojson::value(optsObj).serialize();
     REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &fInfo) == MXL_STATUS_OK);
-    REQUIRE(fInfo.common.maxCommitBatchSizeHint == 5U);
-    REQUIRE(fInfo.common.maxSyncBatchSizeHint == 10U);
-    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(fInfo.common.id).c_str()) == MXL_STATUS_OK);
+    REQUIRE(fInfo.config.common.maxCommitBatchSizeHint == 5U);
+    REQUIRE(fInfo.config.common.maxSyncBatchSizeHint == 10U);
+    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(fInfo.config.common.id).c_str()) == MXL_STATUS_OK);
 
     REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), NULL, &fInfo) == MXL_STATUS_OK);
-    REQUIRE(fInfo.common.maxCommitBatchSizeHint == 1U);
-    REQUIRE(fInfo.common.maxSyncBatchSizeHint == 1U);
-    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(fInfo.common.id).c_str()) == MXL_STATUS_OK);
+    REQUIRE(fInfo.config.common.maxCommitBatchSizeHint == 1U);
+    REQUIRE(fInfo.config.common.maxSyncBatchSizeHint == 1U);
+    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(fInfo.config.common.id).c_str()) == MXL_STATUS_OK);
     REQUIRE(mxlDestroyInstance(instanceWriter) == MXL_STATUS_OK);
 }
 
@@ -983,7 +984,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "mxlGetFlowDef", "[mx
     auto flowDef = mxl::tests::readFile("data/v210_flow.json");
     mxlFlowInfo flowInfo;
     REQUIRE(mxlCreateFlow(instance, flowDef.c_str(), opts, &flowInfo) == MXL_STATUS_OK);
-    auto const flowId = uuids::to_string(flowInfo.common.id);
+    auto const flowId = uuids::to_string(flowInfo.config.common.id);
 
     char fourKBuffer[4096];
     auto fourKBufferSize = sizeof(fourKBuffer);

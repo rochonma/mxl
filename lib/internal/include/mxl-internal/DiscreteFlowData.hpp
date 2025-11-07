@@ -41,14 +41,14 @@ namespace mxl::lib
         : FlowData{std::move(flowSegement)}
         , _grains{}
     {
-        _grains.reserve(flowInfo()->discrete.grainCount);
+        _grains.reserve(flowInfo()->config.discrete.grainCount);
     }
 
     inline DiscreteFlowData::DiscreteFlowData(char const* flowFilePath, AccessMode mode)
         : FlowData{flowFilePath, mode}
         , _grains{}
     {
-        _grains.reserve(flowInfo()->discrete.grainCount);
+        _grains.reserve(flowInfo()->config.discrete.grainCount);
     }
 
     inline std::size_t DiscreteFlowData::grainCount() const noexcept

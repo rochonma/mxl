@@ -37,19 +37,13 @@ extern "C"
     } mxlPayloadLocation;
 
     /**
-     * Metadata about media a flow that is independent of the data format of the
-     * flow and thus common to all flows handled by MXL.
+     * Immutable metadata about a media flow that is independent of the data
+     * format of the flow and thus common to all flows handled by MXL.
      */
-    typedef struct mxlCommonFlowInfo_t
+    typedef struct mxlCommonFlowConfigInfo_t
     {
         /** The flow UUID.  This should be identical to the {flowId} path component. */
         uint8_t id[16];
-
-        /** The last time a producer wrote to the flow in nanoseconds since the epoch. */
-        uint64_t lastWriteTime;
-
-        /** The last time a consumer read from the flow in nanoseconds since the epoch. */
-        uint64_t lastReadTime;
 
         /**
          * The data format of this flow.
@@ -59,6 +53,13 @@ extern "C"
 
         /** No flags defined yet. */
         uint32_t flags;
+
+        /**
+         * The number of grains per second expressed as a rational.
+         * For VIDEO and DATA this value must match the 'grain_rate' found in the flow descriptor.
+         * For AUDIO flows this value must match the 'sample_rate' found in the flow descriptor.
+         */
+        mxlRational grainRate;
 
         /**
          * The largest expected batch size in samples (for continuous flows) or slices (for discrete flows), in which new data is written to this this
@@ -89,19 +90,13 @@ extern "C"
          * structure to 128 bytes.
          */
         uint8_t reserved[72];
-    } mxlCommonFlowInfo;
+    } mxlCommonFlowConfigInfo;
 
-    typedef struct mxlDiscreteFlowInfo_t
+    /**
+     * Immutable metadata about a VIDEO or DATA flo.
+     */
+    typedef struct mxlDiscreteFlowConfigInfo_t
     {
-        /**
-         * The number of grains per second expressed as a rational.
-         * For VIDEO and DATA this value must match the 'grain_rate' found in the flow descriptor.
-         */
-        mxlRational grainRate;
-
-        /** The current head index of the ringbuffer. */
-        uint64_t headIndex;
-
         /**
          * Length of a slice in bytes. A slice refers to the elemental data type that can be written and comitted to a grain.
          * For video, this is a line of a V210 picture including any padding. For data, this is just a single byte.
@@ -116,22 +111,16 @@ extern "C"
 
         /**
          * Reserved space for future extensions, padding the total size of this
-         * structure to 128 bytes.
+         * structure to 64 bytes.
          */
-        uint8_t reserved[84];
-    } mxlDiscreteFlowInfo;
+        uint8_t reserved[44];
+    } mxlDiscreteFlowConfigInfo;
 
-    typedef struct mxlContinuousFlowInfo_t
+    /**
+     * Immutable metadata about an AUDIO flow.
+     */
+    typedef struct mxlContinuousFlowConfigInfo_t
     {
-        /**
-         * The number of samples per second in this continuous flow.
-         * For AUDIO flows this value must match the 'sample_rate' found in the flow descriptor.
-         */
-        mxlRational sampleRate;
-
-        /** The current head index within the per channel ring buffers. */
-        uint64_t headIndex;
-
         /**
          * The number of channels in this flow.
          * A dedicated ring buffer is provided for each channel.
@@ -145,10 +134,48 @@ extern "C"
 
         /**
          * Reserved space for future extensions, padding the total size of this
-         * structure to 128 bytes.
+         * structure to 64 bytes.
          */
-        uint8_t reserved[96];
-    } mxlContinuousFlowInfo;
+        uint8_t reserved[56];
+    } mxlContinuousFlowConfigInfo;
+
+    /**
+     * Immutable metadata about a media flow.
+     */
+    typedef struct mxlFlowConfigInfo_t
+    {
+        mxlCommonFlowConfigInfo common;
+
+        /** Format specific metadata. */
+        union
+        {
+            mxlDiscreteFlowConfigInfo discrete;
+            mxlContinuousFlowConfigInfo continuous;
+        };
+
+    } mxlFlowConfigInfo;
+
+    /**
+     * Mutable metadata about a media flow that is independent of the data
+     * format of the flow and thus common to all flows handled by MXL.
+     */
+    typedef struct mxlFlowRuntimeInfo_t
+    {
+        /** The current head index of the ringbuffer(s) of this flow. */
+        uint64_t headIndex;
+
+        /** The last time a producer wrote to the flow in nanoseconds since the epoch. */
+        uint64_t lastWriteTime;
+
+        /** The last time a consumer read from the flow in nanoseconds since the epoch. */
+        uint64_t lastReadTime;
+
+        /**
+         * Reserved space for future extensions, padding the total size of this
+         * structure to 64 bytes.
+         */
+        uint8_t reserved[40];
+    } mxlFlowRuntimeInfo;
 
     /**
      * Binary structure stored in the Flow shared memory segment.
@@ -163,14 +190,9 @@ extern "C"
         /** The total size of this structure */
         uint32_t size;
 
-        mxlCommonFlowInfo common;
+        mxlFlowConfigInfo config;
 
-        /** Format specific header data. */
-        union
-        {
-            mxlDiscreteFlowInfo discrete;
-            mxlContinuousFlowInfo continuous;
-        };
+        mxlFlowRuntimeInfo runtime;
 
         /**
          * Padding to get the the total size of this structure to 2048 bytes.

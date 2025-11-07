@@ -16,14 +16,14 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Flow readers / write
     auto flowDef = mxl::tests::readFile("data/audio_flow.json");
     mxlFlowInfo fInfo;
     REQUIRE(mxlCreateFlow(instance, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
-    auto const audioFlowId = uuids::to_string(fInfo.common.id);
+    auto const audioFlowId = uuids::to_string(fInfo.config.common.id);
     flowDef = mxl::tests::readFile("data/v210_flow.json");
     REQUIRE(mxlCreateFlow(instance, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
-    auto const videoFlowId = uuids::to_string(fInfo.common.id);
+    auto const videoFlowId = uuids::to_string(fInfo.config.common.id);
 
     flowDef = mxl::tests::readFile("data/data_flow.json");
     REQUIRE(mxlCreateFlow(instance, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
-    auto const metaFlowId = uuids::to_string(fInfo.common.id);
+    auto const metaFlowId = uuids::to_string(fInfo.config.common.id);
 
     REQUIRE(audioFlowId != videoFlowId);
     REQUIRE(audioFlowId != metaFlowId);

@@ -200,7 +200,7 @@ public:
         uint8_t* payload;
 
         // uint64_t grainIndex = flow_info.discrete.headIndex + 1;
-        uint64_t grainIndex = mxlGetCurrentIndex(&flow_info.discrete.grainRate);
+        uint64_t grainIndex = mxlGetCurrentIndex(&flow_info.config.common.grainRate);
 
         while (!g_exit_requested)
         {
@@ -208,7 +208,7 @@ public:
             if (ret == MXL_ERR_OUT_OF_RANGE_TOO_LATE)
             {
                 // We are too late.. time travel!
-                grainIndex = mxlGetCurrentIndex(&flow_info.discrete.grainRate);
+                grainIndex = mxlGetCurrentIndex(&flow_info.config.common.grainRate);
                 continue;
             }
             if (ret == MXL_ERR_OUT_OF_RANGE_TOO_EARLY)

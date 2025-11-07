@@ -84,14 +84,14 @@ namespace mxl::lib
                 // 2. Writer writes the data and updates the counter.
                 // 3. If we used the current value of the counter for the futex, we would delay everything by 1 grain.
                 auto previousSyncCounter = flow->state.syncCounter;
-                if (auto const headIndex = flow->info.discrete.headIndex; in_index <= headIndex)
+                if (auto const headIndex = flow->info.runtime.headIndex; in_index <= headIndex)
                 {
-                    auto const grainCount = flow->info.discrete.grainCount;
+                    auto const grainCount = flow->info.config.discrete.grainCount;
                     auto const minIndex = (headIndex >= grainCount) ? (headIndex - grainCount + 1U) : std::uint64_t{0};
 
                     if (in_index >= minIndex)
                     {
-                        auto const offset = in_index % flow->info.discrete.grainCount;
+                        auto const offset = in_index % flow->info.config.discrete.grainCount;
                         auto const grain = _flowData->grainAt(offset);
                         if (grain->header.info.validSlices >= std::min(in_minValidSlices, grain->header.info.totalSlices) ||
                             grain->header.info.flags & MXL_GRAIN_FLAG_INVALID)
@@ -146,9 +146,9 @@ namespace mxl::lib
         if (_flowData)
         {
             auto const flow = _flowData->flow();
-            if (auto const headIndex = flow->info.discrete.headIndex; in_index <= headIndex)
+            if (auto const headIndex = flow->info.runtime.headIndex; in_index <= headIndex)
             {
-                auto const grainCount = flow->info.discrete.grainCount;
+                auto const grainCount = flow->info.config.discrete.grainCount;
                 auto const minIndex = (headIndex >= grainCount) ? (headIndex - grainCount + 1U) : std::uint64_t{0};
                 if (in_index >= minIndex)
                 {

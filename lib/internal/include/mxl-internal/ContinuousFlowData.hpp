@@ -55,13 +55,13 @@ namespace mxl::lib
     constexpr std::size_t ContinuousFlowData::channelCount() const noexcept
     {
         auto const info = flowInfo();
-        return (info != nullptr) ? info->continuous.channelCount : 0U;
+        return (info != nullptr) ? info->config.continuous.channelCount : 0U;
     }
 
     constexpr std::size_t ContinuousFlowData::channelBufferLength() const noexcept
     {
         auto const info = flowInfo();
-        return (info != nullptr) ? info->continuous.bufferLength : 0U;
+        return (info != nullptr) ? info->config.continuous.bufferLength : 0U;
     }
 
     constexpr std::size_t ContinuousFlowData::sampleWordSize() const noexcept
@@ -74,8 +74,8 @@ namespace mxl::lib
         if ((sampleWordSize != 0U) || !created())
         {
             auto const info = flowInfo();
-            auto const channelCount = info->continuous.channelCount;
-            auto const bufferLength = info->continuous.bufferLength;
+            auto const channelCount = info->config.continuous.channelCount;
+            auto const bufferLength = info->config.continuous.bufferLength;
             if (auto const buffersLength = channelCount * bufferLength; buffersLength > 0U)
             {
                 auto const mode = this->created() ? AccessMode::CREATE_READ_WRITE : this->accessMode();
