@@ -393,7 +393,8 @@ namespace
                     mxlFlowReaderGetInfo(_reader, &_flowInfo);
                     MXL_WARN("Failed to get grain at index {}: TOO LATE. Last published {}", requestedIndex, _flowInfo.discrete.headIndex);
 
-                    // We are too late. Re-align.. The player will handle missing samples
+                    // Grain expired. Realign to current index. GStreamer repeats the last valid frame for missing data; consuming applications
+                    // should do the same.
                     index = mxlGetCurrentIndex(&rate);
                     continue;
                 }
@@ -417,7 +418,9 @@ namespace
 
                 if (!(grainInfo.flags & MXL_GRAIN_FLAG_INVALID))
                 {
-                    if (timeoutMode)
+                    // We've validated the grain. Invalid grains are skipped rather than pushed to GStreamer. Since we provide PTS values based on MXL
+                    // timestamps, GStreamer automatically handles missing grains by repeating the last valid frame. Consuming applications should
+                    // implement similar logic for invalid grain handling.                    if (timeoutMode)
                     {
                         updateHighestLatency(mxlIndexToTimestamp(&rate, requestedIndex), mxlGetTime());
                     }
@@ -464,9 +467,11 @@ namespace
                 }
                 else if (ret == MXL_ERR_OUT_OF_RANGE_TOO_LATE)
                 {
+                    // Samples expired. Realign to current index. GStreamer will generate silence for missing samples. Consuming applications
+                    // should handle this better by inserting silence with a micro fades to prevent clicks and pops.
                     mxlFlowReaderGetInfo(_reader, &_flowInfo);
                     MXL_WARN("Failed to get samples at index {}: TOO LATE. Last published {}", requestedIndex, _flowInfo.continuous.headIndex);
-                    // We are too late. The player will handle missing samples
+
                     index = mxlGetCurrentIndex(&rate);
                     continue;
                 }
