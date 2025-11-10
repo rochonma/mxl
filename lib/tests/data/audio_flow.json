@@ -15,7 +15,7 @@
   "sample_rate": {
     "numerator": 48000
   },
-  "channel_count": 1,
+  "channel_count": 2,
   "bit_depth": 32,
   "parents": [],
   "source_id": "2aa143ac-0ab7-4d75-bc32-5c00c13d186f",
