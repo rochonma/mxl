@@ -245,8 +245,8 @@ public:
             videoGrainRate = mxlRational{fps_n, fps_d};
             videoFlowId = createVideoFlowJson(uri, width, height, videoGrainRate, true, colorimetry, flowDef);
 
-            mxlFlowInfo flowInfo;
-            auto res = mxlCreateFlow(mxlInstance, flowDef.c_str(), nullptr, &flowInfo);
+            mxlFlowConfigInfo configInfo;
+            auto res = mxlCreateFlow(mxlInstance, flowDef.c_str(), nullptr, &configInfo);
             if (res != MXL_STATUS_OK)
             {
                 MXL_ERROR("Failed to create flow: {}", (int)res);
