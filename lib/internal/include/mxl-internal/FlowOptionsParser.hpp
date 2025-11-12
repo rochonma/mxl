@@ -3,18 +3,18 @@
 
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <picojson/picojson.h>
+#include <mxl/platform.h>
 
 namespace mxl::lib
 {
     /**
      * Parses flow options and extracts valid attributes.
      */
-    class FlowOptionsParser
+    class MXL_EXPORT FlowOptionsParser
     {
     public:
         /**

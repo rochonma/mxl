@@ -43,7 +43,6 @@ namespace
     {
         mxlRational rate;
         std::size_t channelCount;
-        std::size_t nbSamplesPerBatch;
         std::int64_t offset;
         std::vector<size_t> spkrEnabled;
     };
@@ -421,9 +420,8 @@ namespace
                     // We've validated the grain. Invalid grains are skipped rather than pushed to GStreamer. Since we provide PTS values based on MXL
                     // timestamps, GStreamer automatically handles missing grains by repeating the last valid frame. Consuming applications should
                     // implement similar logic for invalid grain handling.                    if (timeoutMode)
-                    {
-                        updateHighestLatency(mxlIndexToTimestamp(&rate, requestedIndex), mxlGetTime());
-                    }
+
+                    updateHighestLatency(mxlIndexToTimestamp(&rate, requestedIndex), mxlGetTime());
 
                     // If we got here, we can push the grain to the gstreamer pipeline
                     GstBuffer* buffer = gst_buffer_new_allocate(nullptr, grainInfo.grainSize, nullptr);
@@ -447,9 +445,9 @@ namespace
         int runContinuousFlow(GstreamerAudioPipeline& gstPipeline, std::int64_t readDelay)
         {
             auto rate = _flowInfo.config.common.grainRate;
-            MXL_INFO("Starting continuous flow reading at rate {}/{}", rate.numerator, rate.denominator);
+            auto const windowSize = _flowInfo.config.common.maxSyncBatchSizeHint; // samples per read
+            MXL_INFO("Starting continuous flow reading at rate {}/{} with batch size {}", rate.numerator, rate.denominator, windowSize);
 
-            auto const windowSize = gstPipeline._config.nbSamplesPerBatch; // samples per read
             mxlWrappedMultiBufferSlice payload;
 
             auto index = mxlGetCurrentIndex(&rate);
@@ -632,12 +630,6 @@ namespace
             "this mode and --video-offset is used for both the timeout value and playback offset.");
         timeoutModeOpt->default_val(false);
 
-        uint64_t samplesPerBatch;
-        auto samplesPerBatchOpt = app.add_option("-s, --samples-per-batch",
-            samplesPerBatch,
-            "Number of audio samples per batch when reading. Should be the same or bigger than the videotestsrc setting.");
-        samplesPerBatchOpt->default_val(512);
-
         CLI11_PARSE(app, argc, argv);
 
         gst_init(nullptr, nullptr);
@@ -687,7 +679,6 @@ namespace
                     GstreamerAudioPipelineConfig audioConfig{
                         .rate = parser.getGrainRate(),
                         .channelCount = parser.getChannelCount(),
-                        .nbSamplesPerBatch = samplesPerBatch,
                         .offset = audioOffset,
                         .spkrEnabled = listenChannels,
                     };
