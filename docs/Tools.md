@@ -108,10 +108,12 @@ OPTIONS:
   -h,     --help              Print this help message and exit
   -v,     --video-config-file TEXT
                               The json file which contains the Video NMOS Flow configuration
+          --video-options-file TEXT
+                              The json file which contains the Video Flow options.
   -a,     --audio-config-file TEXT
                               The json file which contains the Audio NMOS Flow configuration
-  -s,     --samples-per-batch UINT [512]
-                              Number of audio samples per batch
+          --audio-options-file TEXT
+                              The json file which contains the Audio Flow options.
           --audio-offset INT [0]
                               Audio sample offset in number of samples. Positive value means
                               you are adding a delay (commit in the past).
@@ -153,6 +155,35 @@ Example to run with both video and audio:
 
 ```
 
+By default, `videotestsrc` produces one slice and one sample at a time because it relies on the`maxSyncBatchSizeHint` field in the flow options to determine batch size, which defaults to 1 when not configured. To modify this behavior, create separate flow option files for video and audio.
+
+video_options.json
+
+```video_options.json
+{
+  "maxSyncBatchSizeHint": 60
+}
+```
+
+audio_options.json
+
+```audio_options.json
+{
+  "maxSyncBatchSizeHint": 512
+}
+```
+
+You can run the full example with:
+
+```bash
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videotestsrc \
+  -d /dev/shm \
+  -v lib/tests/data/v210_flow.json \
+  --video-options-file video_options.json \
+  -a lib/tests/data/audio_flow.json \
+  --audio-options-file audio_options.json
+```
+
 ## mxl-gst-videosink
 
 A binary that reads from a MXL Flow and display the flow using the gstreamer element 'autovideosink'.
@@ -189,9 +220,7 @@ OPTIONS:
                               instead of reading with a defined delay. Currently only video
                               supports this mode and --video-offset is used for both the
                               timeout value and playback offset.
-  -s,     --samples-per-batch UINT [512]
-                              Number of audio samples per batch when reading. Should be the
-                              same or lower than the videotestsrc setting.
+
 ```
 
 Example to run with video only:

@@ -368,17 +368,40 @@ namespace
         int runDiscreteFlow(GstreamerVideoPipeline& gstPipeline, std::int64_t readDelay, bool timeoutMode)
         {
             auto rate = _flowInfo.config.common.grainRate;
-            MXL_INFO("Starting discrete flow reading at rate {}/{}", rate.numerator, rate.denominator);
+            auto slicesPerBatch = _flowInfo.config.common.maxSyncBatchSizeHint;
+            if (slicesPerBatch > gstPipeline._config.frame_height)
+            {
+                throw std::invalid_argument{"slicesPerBatch cannot be greater than frame height."};
+            }
+
+            auto sliceReadMode = slicesPerBatch < gstPipeline._config.frame_height;
+
+            MXL_INFO("Starting discrete flow reading at rate {}/{} and slices per batch {}", rate.numerator, rate.denominator, slicesPerBatch);
             auto timeoutNs = discreteFlowTimeout(timeoutMode, gstPipeline._config.offset);
 
             auto index = mxlGetCurrentIndex(&rate);
+            mxlStatus ret;
+            std::uint16_t validSlices = slicesPerBatch;
             while (!g_exit_requested)
             {
                 mxlGrainInfo grainInfo;
                 uint8_t* payload;
 
                 auto requestedIndex = requestIndex(index, readDelay, timeoutMode);
-                auto ret = mxlFlowReaderGetGrain(_reader, requestedIndex, timeoutNs, &grainInfo, &payload);
+                if (sliceReadMode)
+                {
+                    // Slice mode is not really useful here since gstreamer needs the full grain to push to the pipeline. But for educational
+                    // purposes, here's how you can wait for slices to be available.
+                    ret = mxlFlowReaderGetGrainSlice(_reader, requestedIndex, validSlices, timeoutNs, &grainInfo, &payload);
+                    validSlices = std::min<std::uint16_t>(gstPipeline._config.frame_height,
+                        grainInfo.validSlices + slicesPerBatch); // calculate up to how many valid slices to wait for the next iteration
+                }
+                else
+                {
+                    // Use this function to wait for a full grain
+                    ret = mxlFlowReaderGetGrain(_reader, requestedIndex, timeoutNs, &grainInfo, &payload);
+                }
+
                 if (ret == MXL_ERR_OUT_OF_RANGE_TOO_EARLY)
                 {
                     // We are too early somehow, keep trying the same grain index
@@ -436,6 +459,7 @@ namespace
                 }
 
                 index++;
+                validSlices = slicesPerBatch;
                 mxlSleepForNs(mxlGetNsUntilIndex(index, &rate));
             }
 
@@ -446,7 +470,7 @@ namespace
         {
             auto rate = _flowInfo.config.common.grainRate;
             auto const windowSize = _flowInfo.config.common.maxSyncBatchSizeHint; // samples per read
-            MXL_INFO("Starting continuous flow reading at rate {}/{} with batch size {}", rate.numerator, rate.denominator, windowSize);
+            MXL_INFO("Starting continuous flow reading at rate {}/{} and batch size {}", rate.numerator, rate.denominator, windowSize);
 
             mxlWrappedMultiBufferSlice payload;
 

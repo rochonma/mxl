@@ -31,7 +31,6 @@ struct VideoPipelineConfig
     mxlRational frame_rate{30, 1};
     uint64_t pattern{0};
     std::string textoverlay{"EBU DMF MXL"};
-    std::optional<std::uint32_t> slicesPerBatch;
     std::uint32_t sliceSize;
 
     [[nodiscard]]
@@ -51,21 +50,15 @@ struct AudioPipelineConfig
 {
     mxlRational rate{48000, 1};
     std::size_t channelCount{2};
-    std::optional<std::uint32_t> samplesPerBatch;
+    std::uint32_t samplesPerBatch;
     uint64_t wave{0};
     int64_t offset{0};
 
     [[nodiscard]]
     std::string display() const noexcept
     {
-        return fmt::format("rate={} channelCount={}  samplesPerBatch={} wave={}",
-            rate.numerator,
-            channelCount,
-            samplesPerBatch.value_or(kSamplesPerBatchDefault),
-            wave);
+        return fmt::format("rate={} channelCount={}  samplesPerBatch={} wave={}", rate.numerator, channelCount, samplesPerBatch, wave);
     }
-
-    constexpr static auto kSamplesPerBatchDefault = 512ULL;
 };
 
 static std::unordered_map<std::string, uint64_t> const pattern_map = {
@@ -206,8 +199,6 @@ public:
 
     void start() final
     {
-        // gst_element_set_start_time(_pipeline, mxlGetTime());
-
         // Here we want to align the gstreamer pipeline as close as possible to an epoch frame. To achieve this, we set the base time to the next
         // frame timestamp.
         auto baseTime = mxlIndexToTimestamp(&_config.frame_rate, mxlGetCurrentIndex(&_config.frame_rate) + 1);
@@ -265,7 +256,7 @@ public:
     {
         MXL_INFO("Creating Audiopipeline with config: {}", config.display());
 
-        auto samplesPerBatch = config.samplesPerBatch.value_or(AudioPipelineConfig::kSamplesPerBatchDefault);
+        auto samplesPerBatch = config.samplesPerBatch;
 
         std::string pipelineDesc;
         for (size_t chan = 0; chan < config.channelCount; ++chan)
@@ -327,6 +318,11 @@ public:
 
     void start() final
     {
+        // Here we want to align the gstreamer pipeline as close as possible to an epoch sample. To achieve this, we set the base time to the next
+        // sample timestamp.
+        auto baseTime = mxlIndexToTimestamp(&_config.rate, mxlGetCurrentIndex(&_config.rate) + 1);
+        gst_element_set_base_time(_pipeline, baseTime);
+        MXL_INFO("AudioPipeline: Set gst base time to {} ns", baseTime);
         gst_element_set_state(_pipeline, GST_STATE_PLAYING);
         _gstBaseTime = gst_element_get_base_time(_pipeline);
         MXL_INFO("AudioPipeline: Gst base time: {} ns", _gstBaseTime);
@@ -345,7 +341,7 @@ public:
                 if (!_internalOffset)
                 {
                     _internalOffset = static_cast<std::int64_t>(__int128_t{mxlGetTime()} - __int128_t{bufferTs + _gstBaseTime});
-                    MXL_INFO("VideoPipeline: Set internal offset to {} ns", *_internalOffset);
+                    MXL_INFO("AudioPipeline: Set internal offset to {} ns", *_internalOffset);
                 }
 
                 GST_BUFFER_PTS(buffer) = bufferTs + _gstBaseTime + *_internalOffset; // Change the PTS to TAI time and include preroll delay
@@ -421,6 +417,11 @@ public:
         }
     }
 
+    std::uint32_t maxSyncBatchSizeHint() const
+    {
+        return _configInfo.common.maxSyncBatchSizeHint;
+    }
+
     int run(GstreamerPipeline& gst_pipeline, std::int64_t offset)
     {
         gst_pipeline.start();
@@ -440,9 +441,7 @@ private:
     {
         std::optional<std::uint64_t> grainIndex;
 
-        auto slicesPerBatch = gst_pipeline._config.slicesPerBatch.value_or(
-            gst_pipeline._config.frame_height); // If slicesPerBatch is not set, we default to a full grain
-
+        auto slicesPerBatch = _configInfo.common.maxSyncBatchSizeHint;
         while (!g_exit_requested)
         {
             auto timeout = grainIndex ? mxlGetNsUntilIndex(*grainIndex + 1, &gst_pipeline._config.frame_rate)
@@ -579,7 +578,7 @@ private:
     {
         std::optional<std::uint64_t> sampleIndex;
 
-        auto samplesPerBatch = gst_pipeline._config.samplesPerBatch.value_or(AudioPipelineConfig::kSamplesPerBatchDefault);
+        auto samplesPerBatch = gst_pipeline._config.samplesPerBatch;
 
         while (!g_exit_requested)
         {
@@ -684,6 +683,7 @@ private:
                 gst_sample_unref(gstSample);
 
                 sampleIndex = *sampleIndex + samplesPerBatch;
+                mxlSleepForNs(mxlGetNsUntilIndex(*sampleIndex, &gst_pipeline._config.rate));
             }
         }
 
@@ -776,7 +776,6 @@ int main(int argc, char** argv)
 
                 auto frame_rate = flowNmos.getGrainRate();
 
-                std::optional<std::uint32_t> slicesPerBatch;
                 std::string flowOptions;
                 if (!videoFlowOptionFile.empty())
                 {
@@ -787,26 +786,27 @@ int main(int argc, char** argv)
                         return EXIT_FAILURE;
                     }
                     flowOptions = {std::istreambuf_iterator<char>(optionFile), std::istreambuf_iterator<char>()};
-                    auto flowOptionsParser = mxl::lib::FlowOptionsParser{flowOptions};
-                    if (auto maxSyncBatchSize = flowOptionsParser.getMaxSyncBatchSizeHint(); maxSyncBatchSize)
-                    {
-                        slicesPerBatch = maxSyncBatchSize;
-                    }
+                }
+
+                auto frameHeight = static_cast<uint64_t>(flowNmos.get<double>("frame_height"));
+
+                auto mxlWriter = MxlWriter(domain, flowNmosDesc, flowOptions);
+                if (mxlWriter.maxSyncBatchSizeHint() > frameHeight)
+                {
+                    throw std::invalid_argument{"slicesPerBatch cannot be greater than frame height."};
                 }
 
                 VideoPipelineConfig gst_config{
                     .frame_width = static_cast<uint64_t>(flowNmos.get<double>("frame_width")),
-                    .frame_height = static_cast<uint64_t>(flowNmos.get<double>("frame_height")),
+                    .frame_height = frameHeight,
                     .frame_rate = frame_rate,
                     .pattern = pattern_map.at(pattern),
                     .textoverlay = textOverlay,
-                    .slicesPerBatch = slicesPerBatch,
                     .sliceSize = flowNmos.getPayloadSliceLengths()[0],
                 };
 
                 VideoPipeline gst_pipeline(gst_config);
 
-                auto mxlWriter = MxlWriter(domain, flowNmosDesc, flowOptions);
                 mxlWriter.run(gst_pipeline, videoOffset);
 
                 MXL_INFO("Video pipeline finished");
@@ -828,7 +828,6 @@ int main(int argc, char** argv)
                 std::string flowNmosDesc{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
                 mxl::lib::FlowParser flowNmos{flowNmosDesc};
 
-                std::optional<std::uint32_t> samplesPerBatch;
                 std::string flowOptions;
                 if (!audioFlowOptionFile.empty())
                 {
@@ -839,23 +838,19 @@ int main(int argc, char** argv)
                         return EXIT_FAILURE;
                     }
                     flowOptions = {std::istreambuf_iterator<char>(optionFile), std::istreambuf_iterator<char>()};
-                    auto flowOptionsParser = mxl::lib::FlowOptionsParser{flowOptions};
-                    if (auto maxSyncBatchSize = flowOptionsParser.getMaxSyncBatchSizeHint(); maxSyncBatchSize)
-                    {
-                        samplesPerBatch = maxSyncBatchSize;
-                    }
                 }
+
+                auto mxlWriter = MxlWriter(domain, flowNmosDesc, flowOptions);
 
                 AudioPipelineConfig gst_config{
                     .rate = flowNmos.getGrainRate(),
                     .channelCount = flowNmos.getChannelCount(),
-                    .samplesPerBatch = samplesPerBatch,
+                    .samplesPerBatch = mxlWriter.maxSyncBatchSizeHint(),
                     .wave = wave_map.at("sine"),
                 };
 
                 AudioPipeline gst_pipeline(gst_config);
 
-                auto mxlWriter = MxlWriter(domain, flowNmosDesc, flowOptions);
                 mxlWriter.run(gst_pipeline, audioOffset);
 
                 MXL_INFO("Audio pipeline finished");
