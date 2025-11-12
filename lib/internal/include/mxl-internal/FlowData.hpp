@@ -30,6 +30,9 @@ namespace mxl::lib
         constexpr mxlFlowInfo* flowInfo() noexcept;
         constexpr mxlFlowInfo const* flowInfo() const noexcept;
 
+        constexpr FlowState* flowState() noexcept;
+        constexpr FlowState const* flowState() const noexcept;
+
         virtual ~FlowData();
 
     protected:
@@ -97,6 +100,24 @@ namespace mxl::lib
         if (auto const flow = _flow.get(); flow != nullptr)
         {
             return &flow->info;
+        }
+        return nullptr;
+    }
+
+    constexpr FlowState* FlowData::flowState() noexcept
+    {
+        if (auto const flow = _flow.get(); flow != nullptr)
+        {
+            return &flow->state;
+        }
+        return nullptr;
+    }
+
+    constexpr FlowState const* FlowData::flowState() const noexcept
+    {
+        if (auto const flow = _flow.get(); flow != nullptr)
+        {
+            return &flow->state;
         }
         return nullptr;
     }

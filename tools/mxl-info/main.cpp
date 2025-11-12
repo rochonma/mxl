@@ -36,25 +36,22 @@ namespace
         }
         return false; // treat all other ostreams as non-terminal
     }
-}
 
-std::ostream& operator<<(std::ostream& os, mxlFlowInfo const& info)
-{
-    auto const now = mxlGetTime();
-
-    if (mxlIsDiscreteDataFormat(info.common.format))
+    void outputLatency(std::ostream& os, std::uint64_t headIndex, mxlRational const& grainRate, std::uint64_t limit)
     {
-        auto const currentIndex = mxlTimestampToIndex(&info.discrete.grainRate, now);
-        auto const latency = currentIndex - info.discrete.headIndex;
+        auto const now = mxlGetTime();
+
+        auto const currentIndex = mxlTimestampToIndex(&grainRate, now);
+        auto const latency = currentIndex - headIndex;
 
         if (isTerminal(os))
         {
             auto color = fmt::color::green;
-            if (latency > static_cast<std::uint64_t>(info.discrete.grainCount))
+            if (latency > limit)
             {
                 color = fmt::color::red;
             }
-            else if (latency == static_cast<std::uint64_t>(info.discrete.grainCount))
+            else if (latency == limit)
             {
                 color = fmt::color::yellow;
             }
@@ -66,28 +63,17 @@ std::ostream& operator<<(std::ostream& os, mxlFlowInfo const& info)
             os << '\t' << fmt::format("{: >18}: {}", "Latency (grains)", latency) << std::endl;
         }
     }
-    else if (mxlIsContinuousDataFormat(info.common.format))
-    {
-        auto const currentIndex = mxlTimestampToIndex(&info.continuous.sampleRate, now);
-        auto const latency = currentIndex - info.continuous.headIndex;
+}
 
-        if (isTerminal(os))
-        {
-            auto color = fmt::color::green;
-            if (latency > static_cast<std::uint64_t>(info.continuous.bufferLength))
-            {
-                color = fmt::color::red;
-            }
-            else if (latency == static_cast<std::uint64_t>(info.continuous.bufferLength))
-            {
-                color = fmt::color::yellow;
-            }
-            os << '\t' << fmt::format(fmt::fg(color), "{: >18}: {}", "Latency (samples)", latency) << std::endl;
-        }
-        else
-        {
-            os << '\t' << fmt::format("{: >18}: {}", "Latency (samples)", latency) << std::endl;
-        }
+std::ostream& operator<<(std::ostream& os, mxlFlowInfo const& info)
+{
+    if (mxlIsDiscreteDataFormat(info.config.common.format))
+    {
+        outputLatency(os, info.runtime.headIndex, info.config.common.grainRate, info.config.discrete.grainCount);
+    }
+    else if (mxlIsContinuousDataFormat(info.config.common.format))
+    {
+        outputLatency(os, info.runtime.headIndex, info.config.common.grainRate, info.config.continuous.bufferLength);
     }
 
     return os;

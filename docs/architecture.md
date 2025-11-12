@@ -73,9 +73,9 @@ The following example demonstrates how a FlowWriter may write a grain as slices 
         gInfo.committedSize += sliceSize;
         REQUIRE( mxlFlowWriterCommitGrain( instanceWriter, writer, &gInfo ) == MXL_STATUS_OK );
 
-        mxlFlowInfo sliceFlowInfo;
-        REQUIRE( mxlFlowReaderGetInfo( instanceReader, reader, &sliceFlowInfo ) == MXL_STATUS_OK );
-        REQUIRE( sliceFlowInfo.headIndex == index );
+        mxlFlowRuntimeInfo sliceFlowRuntimeInfo;
+        REQUIRE( mxlFlowReaderGetRuntimeInfo( instanceReader, reader, &sliceFlowRuntimeInfo ) == MXL_STATUS_OK );
+        REQUIRE( sliceFlowRuntimeInfo.headIndex == index );
 
         /// Read back the partial grain using the flow reader.
         REQUIRE( mxlFlowReaderGetGrain( instanceReader, reader, index, 8, &gInfo, &buffer ) == MXL_STATUS_OK );

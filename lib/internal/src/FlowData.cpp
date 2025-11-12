@@ -13,12 +13,22 @@ namespace mxl::lib
             "mxlFlowInfo does not have a unique object representation, which means that its layout in memory can be different from how it is "
             "representetd in code. This was likely introduced by a change to the objects fields that introduced padding, or by adding non-trivial "
             "members to the object.");
-        static_assert(std::has_unique_object_representations_v<::mxlDiscreteFlowInfo>,
-            "mxlDiscreteFlowInfo does not have a unique object representation, which means that its layout in memory can be different from how it is "
+        static_assert(std::has_unique_object_representations_v<::mxlFlowConfigInfo>,
+            "mxlFlowConfigInfo does not have a unique object representation, which means that its layout in memory can be different from how it is "
             "representetd in code. This was likely introduced by a change to the objects fields that introduced padding, or by adding non-trivial "
             "members to the object.");
-        static_assert(std::has_unique_object_representations_v<::mxlContinuousFlowInfo>,
-            "mxlContinuousFlowInfo does not have a unique object representation, which means that its layout in memory can be different from how it "
+        static_assert(std::has_unique_object_representations_v<::mxlDiscreteFlowConfigInfo>,
+            "mxlDiscreteFlowConfigInfo does not have a unique object representation, which means that its layout in memory can be different from how "
+            "it is "
+            "representetd in code. This was likely introduced by a change to the objects fields that introduced padding, or by adding non-trivial "
+            "members to the object.");
+        static_assert(std::has_unique_object_representations_v<::mxlContinuousFlowConfigInfo>,
+            "mxlContinuousFlowConfigInfo does not have a unique object representation, which means that its layout in memory can be different from "
+            "how it "
+            "is representetd in code. This was likely introduced by a change to the objects fields that introduced padding, or by adding non-trivial "
+            "members to the object.");
+        static_assert(std::has_unique_object_representations_v<::mxlFlowRuntimeInfo>,
+            "mxlFlowRuntimeInfo does not have a unique object representation, which means that its layout in memory can be different from how it "
             "is representetd in code. This was likely introduced by a change to the objects fields that introduced padding, or by adding non-trivial "
             "members to the object.");
         static_assert(std::has_unique_object_representations_v<::mxlGrainInfo>,
@@ -26,10 +36,12 @@ namespace mxl::lib
             "is representetd in code. This was likely introduced by a change to the objects fields that introduced padding, or by adding non-trivial "
             "members to the object.");
 
-        static_assert(sizeof(::mxlCommonFlowInfo) == 128, "mxlCommonFlowInfo does not have a size of 128 bytes");
-        static_assert(sizeof(::mxlContinuousFlowInfo) == 128, "mxlContinuousFlowInfo does not have a size of 128 bytes");
-        static_assert(sizeof(::mxlDiscreteFlowInfo) == 128, "mxlDiscreteFlowInfo does not have a size of 128 bytes");
-        static_assert(sizeof(::mxlFlowInfo) == 4096, "mxlFlowInfo does not have a size of 4096 bytes");
+        static_assert(sizeof(::mxlCommonFlowConfigInfo) == 128, "mxlCommonFlowConfigInfo does not have a size of 128 bytes");
+        static_assert(sizeof(::mxlContinuousFlowConfigInfo) == 64, "mxlContinuousFlowConfigInfo does not have a size of 64 bytes");
+        static_assert(sizeof(::mxlDiscreteFlowConfigInfo) == 64, "mxlDiscreteFlowConfigInfo does not have a size of 64 bytes");
+        static_assert(sizeof(::mxlFlowConfigInfo) == 192, "mxlFlowConfigInfo does not have a size of 192 bytes");
+        static_assert(sizeof(::mxlFlowRuntimeInfo) == 64, "mxlFlowRuntimeInfo does not have a size of 64 bytes");
+        static_assert(sizeof(::mxlFlowInfo) == 2048, "mxlFlowInfo does not have a size of 2048 bytes");
         static_assert(sizeof(::mxlGrainInfo) == 4096, "mxlGrainInfo does not have a size of 4096 bytes");
     }
 

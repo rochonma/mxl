@@ -17,7 +17,7 @@ using namespace mxl::lib;
 
 extern "C"
 MXL_EXPORT
-mxlStatus mxlCreateFlow(mxlInstance instance, char const* flowDef, char const* options, mxlFlowInfo* flowInfo)
+mxlStatus mxlCreateFlow(mxlInstance instance, char const* flowDef, char const* options, mxlFlowConfigInfo* info)
 {
     try
     {
@@ -26,7 +26,7 @@ mxlStatus mxlCreateFlow(mxlInstance instance, char const* flowDef, char const* o
             if (auto const cppInstance = to_Instance(instance); cppInstance != nullptr)
             {
                 auto const flowData = cppInstance->createFlow(flowDef, options ? options : "");
-                *flowInfo = *flowData->flowInfo();
+                *info = flowData->flowInfo()->config;
                 return MXL_STATUS_OK;
             }
         }
@@ -292,6 +292,52 @@ mxlStatus mxlFlowReaderGetInfo(mxlFlowReader reader, mxlFlowInfo* info)
             if (auto const cppReader = to_FlowReader(reader); cppReader != nullptr)
             {
                 *info = cppReader->getFlowInfo();
+                return MXL_STATUS_OK;
+            }
+            return MXL_ERR_INVALID_FLOW_READER;
+        }
+        return MXL_ERR_INVALID_ARG;
+    }
+    catch (...)
+    {
+        return MXL_ERR_UNKNOWN;
+    }
+}
+
+extern "C"
+MXL_EXPORT
+mxlStatus mxlFlowReaderGetConfigInfo(mxlFlowReader reader, mxlFlowConfigInfo* info)
+{
+    try
+    {
+        if (info != nullptr)
+        {
+            if (auto const cppReader = to_FlowReader(reader); cppReader != nullptr)
+            {
+                *info = cppReader->getFlowInfo().config;
+                return MXL_STATUS_OK;
+            }
+            return MXL_ERR_INVALID_FLOW_READER;
+        }
+        return MXL_ERR_INVALID_ARG;
+    }
+    catch (...)
+    {
+        return MXL_ERR_UNKNOWN;
+    }
+}
+
+extern "C"
+MXL_EXPORT
+mxlStatus mxlFlowReaderGetRuntimeInfo(mxlFlowReader reader, mxlFlowRuntimeInfo* info)
+{
+    try
+    {
+        if (info != nullptr)
+        {
+            if (auto const cppReader = to_FlowReader(reader); cppReader != nullptr)
+            {
+                *info = cppReader->getFlowInfo().runtime;
                 return MXL_STATUS_OK;
             }
             return MXL_ERR_INVALID_FLOW_READER;

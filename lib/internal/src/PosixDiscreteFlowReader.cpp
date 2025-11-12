@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <array>
 #include <filesystem>
-#include <iostream>
 #include <mutex>
 #include <stdexcept>
 #include <fcntl.h>
@@ -77,22 +76,22 @@ namespace mxl::lib
 
         if (_flowData)
         {
-            auto const flowInfo = _flowData->flowInfo();
+            auto const flow = _flowData->flow();
             while (true)
             {
                 // We remember the sync counter before checking the head index, otherwise we would introduce a race condition:
                 // 1. We check the header index, data won't be available yet.
                 // 2. Writer writes the data and updates the counter.
                 // 3. If we used the current value of the counter for the futex, we would delay everything by 1 grain.
-                auto previousSyncCounter = flowInfo->discrete.syncCounter;
-                if (auto const headIndex = flowInfo->discrete.headIndex; in_index <= headIndex)
+                auto previousSyncCounter = flow->state.syncCounter;
+                if (auto const headIndex = flow->info.runtime.headIndex; in_index <= headIndex)
                 {
-                    auto const grainCount = flowInfo->discrete.grainCount;
+                    auto const grainCount = flow->info.config.discrete.grainCount;
                     auto const minIndex = (headIndex >= grainCount) ? (headIndex - grainCount + 1U) : std::uint64_t{0};
 
                     if (in_index >= minIndex)
                     {
-                        auto const offset = in_index % flowInfo->discrete.grainCount;
+                        auto const offset = in_index % flow->info.config.discrete.grainCount;
                         auto const grain = _flowData->grainAt(offset);
                         if (grain->header.info.validSlices >= std::min(in_minValidSlices, grain->header.info.totalSlices) ||
                             grain->header.info.flags & MXL_GRAIN_FLAG_INVALID)
@@ -111,10 +110,17 @@ namespace mxl::lib
                     }
                 }
 
-                if (!waitUntilChanged(&flowInfo->discrete.syncCounter, previousSyncCounter, deadline))
+                if (!waitUntilChanged(&flow->state.syncCounter, previousSyncCounter, deadline))
                 {
-                    status = MXL_ERR_TIMEOUT;
-                    break;
+                    if (waitUntilChanged(&flow->state.syncCounter, previousSyncCounter, deadline))
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        status = MXL_ERR_TIMEOUT;
+                        break;
+                    }
                 }
             }
 
@@ -139,10 +145,10 @@ namespace mxl::lib
         mxlStatus status = MXL_ERR_UNKNOWN;
         if (_flowData)
         {
-            auto const flowInfo = _flowData->flowInfo();
-            if (auto const headIndex = flowInfo->discrete.headIndex; in_index <= headIndex)
+            auto const flow = _flowData->flow();
+            if (auto const headIndex = flow->info.runtime.headIndex; in_index <= headIndex)
             {
-                auto const grainCount = flowInfo->discrete.grainCount;
+                auto const grainCount = flow->info.config.discrete.grainCount;
                 auto const minIndex = (headIndex >= grainCount) ? (headIndex - grainCount + 1U) : std::uint64_t{0};
                 if (in_index >= minIndex)
                 {
@@ -175,14 +181,15 @@ namespace mxl::lib
     {
         if (_flowData)
         {
-            auto const flowInfo = _flowData->flowInfo();
+            auto const flowState = _flowData->flowState();
             auto const flowDataPath = makeFlowDataFilePath(getDomain(), to_string(getId()));
+
             struct stat st;
-            if (stat(flowDataPath.string().c_str(), &st) != 0)
+            if (::stat(flowDataPath.string().c_str(), &st) != 0)
             {
                 return false;
             }
-            return (st.st_ino == flowInfo->common.inode);
+            return (st.st_ino == flowState->inode);
         }
         return false;
     }

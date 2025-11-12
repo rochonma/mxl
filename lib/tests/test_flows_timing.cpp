@@ -35,17 +35,17 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Wait fo
     REQUIRE(instanceWriter != nullptr);
 
     auto flowDef = mxl::tests::readFile("data/v210_flow.json");
-    mxlFlowInfo fInfo;
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
-    auto const flowId = uuids::to_string(fInfo.common.id);
+    mxlFlowConfigInfo configInfo;
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &configInfo) == MXL_STATUS_OK);
+    auto const flowId = uuids::to_string(configInfo.common.id);
 
     mxlFlowReader reader;
     REQUIRE(mxlCreateFlowReader(instanceReader, flowId.c_str(), "", &reader) == MXL_STATUS_OK);
     mxlFlowWriter writer;
     REQUIRE(mxlCreateFlowWriter(instanceWriter, flowId.c_str(), "", &writer) == MXL_STATUS_OK);
 
-    auto const readerGrainIndex = mxlGetCurrentIndex(&fInfo.discrete.grainRate);
-    auto const frameDurationNs = 1000000000 * fInfo.discrete.grainRate.denominator / fInfo.discrete.grainRate.numerator;
+    auto const readerGrainIndex = mxlGetCurrentIndex(&configInfo.common.grainRate);
+    auto const frameDurationNs = 1000000000 * configInfo.common.grainRate.denominator / configInfo.common.grainRate.numerator;
     auto writerThread = std::thread{[readerGrainIndex, frameDurationNs, writer]
         {
             constexpr auto writerLatencyGrains = 3;

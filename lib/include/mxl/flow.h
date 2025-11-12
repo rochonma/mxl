@@ -138,27 +138,32 @@ extern "C"
     typedef struct mxlFlowReader_t* mxlFlowReader;
     typedef struct mxlFlowWriter_t* mxlFlowWriter;
 
-    ///
-    /// Create a flow using a json flow definition
-    ///
-    /// \param[in] instance The mxl instance created using mxlCreateInstance
-    /// \param[in] flowDef A flow definition in the NMOS Flow json format.  The flow ID is read from the <id> field of this json object.
-    /// \param[in] options Additional options (undefined). \todo Specify and used the additional options.
-    /// \param[out] info A pointer to an mxlFlowInfo structure.  If not nullptr, this structure will be updated with the flow information after the
-    /// flow is created.
+    /**
+     * Create a flow using a json flow definition
+     *
+     * \param[in] instance The mxl instance created using mxlCreateInstance
+     * \param[in] flowDef A flow definition in the NMOS Flow json format.
+     *     The flow ID is read from the <id> field of this json object.
+     * \param[in] options Additional options (undefined).
+     *     \todo Specify and used the additional options.
+     * \param[out] info A pointer to an mxlFlowConfigInfo structure.
+     *     If not the nullptr, this structure will be updated with the flow
+     *     information after the flow is created.
+     */
     MXL_EXPORT
-    mxlStatus mxlCreateFlow(mxlInstance instance, char const* flowDef, char const* options, mxlFlowInfo* info);
+    mxlStatus mxlCreateFlow(mxlInstance instance, char const* flowDef, char const* options, mxlFlowConfigInfo* info);
 
     MXL_EXPORT
     mxlStatus mxlDestroyFlow(mxlInstance instance, char const* flowId);
 
-    ///
-    /// Verify if a flow has an active writer or not
-    ///
-    /// \param[in] instance The mxl instance created using mxlCreateInstance
-    /// \param[in] flowId The ID of the flow to check.
-    /// \param[out] isActive A pointer to a boolean that will be set to true if the flow has an active writer, false otherwise.
-    /// \return MXL_STATUS_OK if the flow exists and has been tested successfully, or an error code otherwise.
+    /**
+     * Verify if a flow has an active writer or not
+     *
+     * \param[in] instance The mxl instance created using mxlCreateInstance
+     * \param[in] flowId The ID of the flow to check.
+     * \param[out] isActive A pointer to a boolean that will be set to true if the flow has an active writer, false otherwise.
+     * \return MXL_STATUS_OK if the flow exists and has been tested successfully, or an error code otherwise.
+     */
     MXL_EXPORT
     mxlStatus mxlIsFlowActive(mxlInstance instance, char const* flowId, bool* isActive);
 
@@ -194,18 +199,43 @@ extern "C"
     mxlStatus mxlReleaseFlowWriter(mxlInstance instance, mxlFlowWriter writer);
 
     /**
-     * Get a copy of the current descriptive header of a Flow
+     * Get a copy of the header of a Flow
      *
      * \param[in] reader A valid flow reader
-     * \param[out] info A valid pointer to an mxlFlowInfo structure. on return, the structure will be updated with a copy of the current flow info
-     * value.
+     * \param[out] info A valid pointer to an mxlFlowInfo structure.
+     *      On return, the structure will be updated with a copy of the current
+     *      flow config info value.
      * \return The result code. \see mxlStatus
      */
     MXL_EXPORT
     mxlStatus mxlFlowReaderGetInfo(mxlFlowReader reader, mxlFlowInfo* info);
 
     /**
-     * Accessors for a flow grain at a specific index.
+     * Get a copy of the immutable descriptive header of a Flow
+     *
+     * \param[in] reader A valid flow reader
+     * \param[out] info A valid pointer to an mxlFlowConfigInfo structure.
+     *      On return, the structure will be updated with a copy of the current
+     *      flow config info value.
+     * \return The result code. \see mxlStatus
+     */
+    MXL_EXPORT
+    mxlStatus mxlFlowReaderGetConfigInfo(mxlFlowReader reader, mxlFlowConfigInfo* info);
+
+    /**
+     * Get a copy of the current runtime header of a Flow
+     *
+     * \param[in] reader A valid flow reader
+     * \param[out] info A valid pointer to an mxlFlowRuntimeInfo structure.
+     *      On return, the structure will be updated with a copy of the current
+     *      flow config info value.
+     * \return The result code. \see mxlStatus
+     */
+    MXL_EXPORT
+    mxlStatus mxlFlowReaderGetRuntimeInfo(mxlFlowReader reader, mxlFlowRuntimeInfo* info);
+
+    /**
+     * Accessors for a flow grain at a specific index
      * This method is expected to wait until the full grain is available (or the timeout expires). For partial grain access use
      * mxlFlowReaderGetGrainSlice()
      *

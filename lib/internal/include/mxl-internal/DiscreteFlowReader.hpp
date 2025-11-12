@@ -13,11 +13,11 @@ namespace mxl::lib
     public:
         ///
         /// Accessor for a specific grain at a specific index.
-        /// The index must be >= mxlFlowInfo.tailIndex.
+        /// The index must be greater than or equal to the current tail index of the flow.
         ///
         /// \param in_index The grain index.
         /// \param in_minValidSlices The expected number of valid slices in the returned mxlGrainInfo.
-        /// \param in_timeoutNs How long to wait in nanoseconds for the grain if in_index is > mxlFlowInfo.headIndex
+        /// \param in_timeoutNs How long to wait in nanoseconds for the grain if in_index is > mxlFlowRuntimeInfo.headIndex
         /// \param out_grainInfo A valid pointer to mxlGrainInfo that will be copied to
         /// \param out_payload A valid void pointer to pointer that will be set to the first byte of the grain payload.
         ///     Payload size is available in the mxlGrainInfo structure.
@@ -29,7 +29,7 @@ namespace mxl::lib
 
         ///
         /// Non-blocking accessor for a specific grain at a specific index.
-        /// The index must be >= mxlFlowInfo.tailIndex.
+        /// The index must be greater than or equal to the current tail index of the flow.
         ///
         /// \param in_index The grain index.
         /// \param out_grainInfo A valid pointer to mxlGrainInfo that will be copied to

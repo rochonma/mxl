@@ -43,7 +43,7 @@ namespace mxl::lib
 
         ///
         /// Accessor for a specific grain at a specific index.
-        /// The index must be >= mxlFlowInfo.tailIndex.
+        /// The index must be greater than or equal to the current tail index of the flow.
         ///
         /// A reading application should reopen the flow if this method returns MXL_ERR_FLOW_INVALID.
         ///
@@ -61,7 +61,7 @@ namespace mxl::lib
 
         ///
         /// Non-blocking accessor for a specific grain at a specific index.
-        /// The index must be >= mxlFlowInfo.tailIndex.
+        /// The index must be greater than or equal to the current tail index of the flow.
         ///
         /// A reading application should reopen the flow if this method returns MXL_ERR_FLOW_INVALID.
         ///

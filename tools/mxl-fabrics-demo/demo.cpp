@@ -188,8 +188,8 @@ public:
 
     mxlStatus run()
     { // Extract the FlowInfo structure.
-        mxlFlowInfo flow_info;
-        auto status = mxlFlowReaderGetInfo(_reader, &flow_info);
+        mxlFlowConfigInfo configInfo;
+        auto status = mxlFlowReaderGetConfigInfo(_reader, &configInfo);
         if (status != MXL_STATUS_OK)
         {
             MXL_ERROR("Failed to get flow info with status '{}'", static_cast<int>(status));
@@ -199,8 +199,7 @@ public:
         mxlGrainInfo grainInfo;
         uint8_t* payload;
 
-        // uint64_t grainIndex = flow_info.discrete.headIndex + 1;
-        uint64_t grainIndex = mxlGetCurrentIndex(&flow_info.discrete.grainRate);
+        uint64_t grainIndex = mxlGetCurrentIndex(&configInfo.common.grainRate);
 
         while (!g_exit_requested)
         {
@@ -208,7 +207,7 @@ public:
             if (ret == MXL_ERR_OUT_OF_RANGE_TOO_LATE)
             {
                 // We are too late.. time travel!
-                grainIndex = mxlGetCurrentIndex(&flow_info.discrete.grainRate);
+                grainIndex = mxlGetCurrentIndex(&configInfo.common.grainRate);
                 continue;
             }
             if (ret == MXL_ERR_OUT_OF_RANGE_TOO_EARLY)
@@ -375,8 +374,8 @@ public:
             return status;
         }
 
-        mxlFlowInfo flowInfo;
-        status = mxlCreateFlow(_instance, flowDescriptor.c_str(), nullptr, &flowInfo);
+        mxlFlowConfigInfo configInfo;
+        status = mxlCreateFlow(_instance, flowDescriptor.c_str(), nullptr, &configInfo);
         if (status != MXL_STATUS_OK)
         {
             MXL_ERROR("Failed to create flow with status '{}'", static_cast<int>(status));

@@ -41,8 +41,8 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Create/
     auto instanceWriter = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instanceWriter != nullptr);
 
-    mxlFlowInfo fInfo;
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
+    mxlFlowConfigInfo configInfo;
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &configInfo) == MXL_STATUS_OK);
 
     // We created the flow but it does not have a writer yet. The flow should not be active.
     bool active = true;
@@ -79,10 +79,10 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Create/
     constexpr auto h = 1080;
 
     auto fillPayloadStrideSize = mxl::lib::getV210LineLength(w);
-    REQUIRE(fInfo.discrete.sliceSizes[0] == fillPayloadStrideSize);
-    REQUIRE(fInfo.discrete.sliceSizes[1] == 0);
-    REQUIRE(fInfo.discrete.sliceSizes[2] == 0);
-    REQUIRE(fInfo.discrete.sliceSizes[3] == 0);
+    REQUIRE(configInfo.discrete.sliceSizes[0] == fillPayloadStrideSize);
+    REQUIRE(configInfo.discrete.sliceSizes[1] == 0);
+    REQUIRE(configInfo.discrete.sliceSizes[2] == 0);
+    REQUIRE(configInfo.discrete.sliceSizes[3] == 0);
 
     auto fillPayloadSize = fillPayloadStrideSize * h;
     REQUIRE(gInfo.grainSize == fillPayloadSize);
@@ -92,9 +92,9 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Create/
     buffer[gInfo.grainSize - 1] = 0xFE;
 
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
-    mxlFlowInfo fInfo1;
-    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
-    REQUIRE(fInfo1.discrete.headIndex == 0);
+    mxlFlowRuntimeInfo runtimeInfo1;
+    REQUIRE(mxlFlowReaderGetRuntimeInfo(reader, &runtimeInfo1) == MXL_STATUS_OK);
+    REQUIRE(runtimeInfo1.headIndex == 0);
 
     /// Mark the grain as invalid
     gInfo.flags |= MXL_GRAIN_FLAG_INVALID;
@@ -114,17 +114,17 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Create/
     REQUIRE(buffer[gInfo.grainSize - 1] == 0xFE);
 
     /// Get the updated flow info
-    mxlFlowInfo fInfo2;
-    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo2) == MXL_STATUS_OK);
+    mxlFlowRuntimeInfo runtimeInfo2;
+    REQUIRE(mxlFlowReaderGetRuntimeInfo(reader, &runtimeInfo2) == MXL_STATUS_OK);
 
     /// Confirm that that head has moved.
-    REQUIRE(fInfo2.discrete.headIndex == index);
+    REQUIRE(runtimeInfo2.headIndex == index);
 
     // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
-    REQUIRE(fInfo2.common.lastReadTime > fInfo1.common.lastReadTime);
+    REQUIRE(runtimeInfo2.lastReadTime > runtimeInfo1.lastReadTime);
 
     // We commited a new grain. This should have increased the lastWriteTime field.
-    REQUIRE(fInfo2.common.lastWriteTime > fInfo1.common.lastWriteTime);
+    REQUIRE(runtimeInfo2.lastWriteTime > runtimeInfo1.lastWriteTime);
 
     /// Release the reader
     REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
@@ -162,8 +162,8 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow (With Alp
     auto instanceWriter = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instanceWriter != nullptr);
 
-    mxlFlowInfo fInfo;
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
+    mxlFlowConfigInfo configInfo;
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &configInfo) == MXL_STATUS_OK);
 
     // We created the flow but it does not have a writer yet. The flow should not be active.
     bool active = true;
@@ -198,13 +198,13 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow (With Alp
 
     auto fillPayloadStrideSize = mxl::lib::getV210LineLength(w);
     auto fillPayloadSize = fillPayloadStrideSize * h;
-    REQUIRE(fInfo.discrete.sliceSizes[0] == fillPayloadStrideSize);
+    REQUIRE(configInfo.discrete.sliceSizes[0] == fillPayloadStrideSize);
 
     auto keyPayloadStrideSize = static_cast<std::size_t>((w + 2) / 3 * 4);
     auto keyPayloadSize = keyPayloadStrideSize * h;
-    REQUIRE(fInfo.discrete.sliceSizes[1] == keyPayloadStrideSize);
-    REQUIRE(fInfo.discrete.sliceSizes[2] == 0);
-    REQUIRE(fInfo.discrete.sliceSizes[3] == 0);
+    REQUIRE(configInfo.discrete.sliceSizes[1] == keyPayloadStrideSize);
+    REQUIRE(configInfo.discrete.sliceSizes[2] == 0);
+    REQUIRE(configInfo.discrete.sliceSizes[3] == 0);
 
     REQUIRE(gInfo.grainSize == (fillPayloadSize + keyPayloadSize));
 
@@ -213,9 +213,9 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow (With Alp
     buffer[gInfo.grainSize - 1] = 0xFE;
 
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
-    mxlFlowInfo fInfo1;
-    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
-    REQUIRE(fInfo1.discrete.headIndex == 0);
+    mxlFlowRuntimeInfo runtimeInfo1;
+    REQUIRE(mxlFlowReaderGetRuntimeInfo(reader, &runtimeInfo1) == MXL_STATUS_OK);
+    REQUIRE(runtimeInfo1.headIndex == 0);
 
     /// Mark the grain as invalid
     gInfo.flags |= MXL_GRAIN_FLAG_INVALID;
@@ -235,17 +235,17 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow (With Alp
     REQUIRE(buffer[gInfo.grainSize - 1] == 0xFE);
 
     /// Get the updated flow info
-    mxlFlowInfo fInfo2;
-    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo2) == MXL_STATUS_OK);
+    mxlFlowRuntimeInfo runtimeInfo2;
+    REQUIRE(mxlFlowReaderGetRuntimeInfo(reader, &runtimeInfo2) == MXL_STATUS_OK);
 
     /// Confirm that that head has moved.
-    REQUIRE(fInfo2.discrete.headIndex == index);
+    REQUIRE(runtimeInfo2.headIndex == index);
 
     // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
-    REQUIRE(fInfo2.common.lastReadTime > fInfo1.common.lastReadTime);
+    REQUIRE(runtimeInfo2.lastReadTime > runtimeInfo1.lastReadTime);
 
     // We commited a new grain. This should have increased the lastWriteTime field.
-    REQUIRE(fInfo2.common.lastWriteTime > fInfo1.common.lastWriteTime);
+    REQUIRE(runtimeInfo2.lastWriteTime > runtimeInfo1.lastWriteTime);
 
     /// Release the reader
     REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
@@ -283,8 +283,8 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Invalid
     auto instanceWriter = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instanceWriter != nullptr);
 
-    mxlFlowInfo fInfo;
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
+    mxlFlowConfigInfo configInfo;
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &configInfo) == MXL_STATUS_OK);
 
     mxlFlowReader reader;
     REQUIRE(mxlCreateFlowReader(instanceReader, flowId, "", &reader) == MXL_STATUS_OK);
@@ -298,7 +298,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Invalid
     REQUIRE(active == true);
 
     REQUIRE(mxlDestroyFlow(instanceWriter, flowId) == MXL_STATUS_OK);
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &configInfo) == MXL_STATUS_OK);
 
     /// Compute the grain index for the flow rate and current TAI time.
     auto const rate = mxlRational{60000, 1001};
@@ -333,36 +333,36 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Invalid flow definit
     REQUIRE(jsonValue.is<picojson::object>());
     auto const validFlowObj = jsonValue.get<picojson::object>();
 
-    mxlFlowInfo fInfo;
+    mxlFlowConfigInfo configInfo;
 
     // Create a flow definition with no grain rate
     auto noGrainRateObj = validFlowObj;
     noGrainRateObj.erase("grain_rate");
     auto const noGrainRate = picojson::value(noGrainRateObj).serialize();
-    REQUIRE(mxlCreateFlow(instance, noGrainRate.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, noGrainRate.c_str(), opts, &configInfo) != MXL_STATUS_OK);
 
     // Create a flow definition with no id
     auto noIdObj = validFlowObj;
     noIdObj.erase("id");
     auto const noId = picojson::value(noIdObj).serialize();
-    REQUIRE(mxlCreateFlow(instance, noId.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, noId.c_str(), opts, &configInfo) != MXL_STATUS_OK);
 
     // Create a flow definition with no media type
     auto noMediaTypeObj = validFlowObj;
     noMediaTypeObj.erase("media_type");
     auto const noMediaType = picojson::value(noMediaTypeObj).serialize();
-    REQUIRE(mxlCreateFlow(instance, noMediaType.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, noMediaType.c_str(), opts, &configInfo) != MXL_STATUS_OK);
 
     // Create a flow definition without label
     auto labelObj = validFlowObj;
     labelObj.erase("label");
     auto const noLabel = picojson::value(labelObj).serialize();
-    REQUIRE(mxlCreateFlow(instance, noLabel.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, noLabel.c_str(), opts, &configInfo) != MXL_STATUS_OK);
 
     // Create an invalid flow definition with an empty label
     labelObj["label"] = picojson::value{""};
     auto const emptyLabel = picojson::value(labelObj).serialize();
-    REQUIRE(mxlCreateFlow(instance, emptyLabel.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, emptyLabel.c_str(), opts, &configInfo) != MXL_STATUS_OK);
 
     // Create a flow definition with an invalid tag
     auto invalidTagObj = validFlowObj;
@@ -370,13 +370,13 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Invalid flow definit
     auto& tagArray = tagObj["urn:x-nmos:tag:grouphint/v1.0"].get<picojson::array>();
     tagArray.push_back(picojson::value{"a/b/c"});
     auto const invalidTag = picojson::value(invalidTagObj).serialize();
-    REQUIRE(mxlCreateFlow(instance, invalidTag.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, invalidTag.c_str(), opts, &configInfo) != MXL_STATUS_OK);
 
     // Create a flow definition without tags
     auto noTagsObj = validFlowObj;
     noTagsObj.erase("tags");
     auto const noTags = picojson::value(noTagsObj).serialize();
-    REQUIRE(mxlCreateFlow(instance, noTags.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, noTags.c_str(), opts, &configInfo) != MXL_STATUS_OK);
 
     // Create an interlaced flow definition with an invalid grain rate
     auto invalidInterlacedRateObj = validFlowObj;
@@ -384,18 +384,18 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Invalid flow definit
     auto& rate = invalidInterlacedRateObj.find("grain_rate")->second.get<picojson::object>();
     rate["numerator"] = picojson::value{60000.0};
     auto const invalidInterlaced = picojson::value(invalidInterlacedRateObj).serialize();
-    REQUIRE(mxlCreateFlow(instance, invalidInterlaced.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, invalidInterlaced.c_str(), opts, &configInfo) != MXL_STATUS_OK);
 
     // Create an interlaced flow definition with an invalid height
     auto invalidInterlacedHeightObj = validFlowObj;
     invalidInterlacedHeightObj["interlace_mode"] = picojson::value{"interlaced_tff"};
     invalidInterlacedHeightObj["frame_height"] = picojson::value{1081.0};
     auto const invalidInterlacedHeight = picojson::value(invalidInterlacedHeightObj).serialize();
-    REQUIRE(mxlCreateFlow(instance, invalidInterlacedHeight.c_str(), opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, invalidInterlacedHeight.c_str(), opts, &configInfo) != MXL_STATUS_OK);
 
     // Create a flow definition that is not json
     char const* malformed = "{ this is not json";
-    REQUIRE(mxlCreateFlow(instance, malformed, opts, &fInfo) != MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instance, malformed, opts, &configInfo) != MXL_STATUS_OK);
 
     // Create a flow definition that has a non-normalized grain rate. it creating the flow
     // should succeed but the grain rate should be normalized when we read the flow info back.
@@ -406,11 +406,11 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Invalid flow definit
         rate["numerator"] = picojson::value{100000.0};
         rate["denominator"] = picojson::value{2000.0};
         auto const nonNormalizedRate = picojson::value(nonNormalizedRateObj).serialize();
-        REQUIRE(mxlCreateFlow(instance, nonNormalizedRate.c_str(), opts, &fInfo) == MXL_STATUS_OK);
+        REQUIRE(mxlCreateFlow(instance, nonNormalizedRate.c_str(), opts, &configInfo) == MXL_STATUS_OK);
 
         // the rational value found in the json should be normalized to 50/1.
-        REQUIRE(fInfo.discrete.grainRate.numerator == 50);
-        REQUIRE(fInfo.discrete.grainRate.denominator == 1);
+        REQUIRE(configInfo.common.grainRate.numerator == 50);
+        REQUIRE(configInfo.common.grainRate.denominator == 1);
         REQUIRE(mxlDestroyFlow(instance, "5fbec3b1-1b0f-417d-9059-8b94a47197ed") == MXL_STATUS_OK);
     }
 
@@ -455,8 +455,8 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Data Flow : Create/D
     auto instanceWriter = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instanceWriter != nullptr);
 
-    mxlFlowInfo fInfo;
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
+    mxlFlowConfigInfo configInfo;
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &configInfo) == MXL_STATUS_OK);
 
     mxlFlowReader reader;
     REQUIRE(mxlCreateFlowReader(instanceReader, flowId, "", &reader) == MXL_STATUS_OK);
@@ -483,9 +483,9 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Data Flow : Create/D
     memcpy(buffer, rtpData, rtpSize);
 
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
-    mxlFlowInfo fInfo1;
-    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
-    REQUIRE(fInfo1.discrete.headIndex == 0);
+    mxlFlowRuntimeInfo runtimeInfo1;
+    REQUIRE(mxlFlowReaderGetRuntimeInfo(reader, &runtimeInfo1) == MXL_STATUS_OK);
+    REQUIRE(runtimeInfo1.headIndex == 0);
 
     /// Mark the grain as invalid
     gInfo.flags |= MXL_GRAIN_FLAG_INVALID;
@@ -504,17 +504,17 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Data Flow : Create/D
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
     /// Get the updated flow info
-    mxlFlowInfo fInfo2;
-    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo2) == MXL_STATUS_OK);
+    mxlFlowRuntimeInfo runtimeInfo2;
+    REQUIRE(mxlFlowReaderGetRuntimeInfo(reader, &runtimeInfo2) == MXL_STATUS_OK);
 
     /// Confirm that that head has moved.
-    REQUIRE(fInfo2.discrete.headIndex == index);
+    REQUIRE(runtimeInfo2.headIndex == index);
 
     // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
-    REQUIRE(fInfo2.common.lastReadTime > fInfo1.common.lastReadTime);
+    REQUIRE(runtimeInfo2.lastReadTime > runtimeInfo1.lastReadTime);
 
     // We commited a new grain. This should have increased the lastWriteTime field.
-    REQUIRE(fInfo2.common.lastWriteTime > fInfo1.common.lastWriteTime);
+    REQUIRE(runtimeInfo2.lastWriteTime > runtimeInfo1.lastWriteTime);
 
     /// Delete the reader
     REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
@@ -540,38 +540,38 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Options
     auto instanceWriter = mxlCreateInstance(domain.string().c_str(), instanceOpts);
     REQUIRE(instanceWriter != nullptr);
 
-    mxlFlowInfo fInfo;
+    mxlFlowConfigInfo configInfo;
 
     picojson::object optsObj;
     optsObj["maxCommitBatchSizeHint"] = picojson::value{0.0}; // Invalid value
 
     auto optsStr = picojson::value(optsObj).serialize();
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &fInfo) == MXL_ERR_UNKNOWN);
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &configInfo) == MXL_ERR_UNKNOWN);
 
     optsObj.clear();
     optsObj["maxSyncBatchSizeHint"] = picojson::value{-1.0}; // Invalid value
     optsStr = picojson::value(optsObj).serialize();
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &fInfo) == MXL_ERR_UNKNOWN);
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &configInfo) == MXL_ERR_UNKNOWN);
 
     optsObj.clear();
     optsObj["maxCommitBatchSizeHint"] = picojson::value{5.0};
     optsObj["maxSyncBatchSizeHint"] = picojson::value{6.0}; // Not a multiple of maxCommitBatchSizeHint
     optsStr = picojson::value(optsObj).serialize();
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &fInfo) == MXL_ERR_UNKNOWN);
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &configInfo) == MXL_ERR_UNKNOWN);
 
     optsObj.clear();
     optsObj["maxCommitBatchSizeHint"] = picojson::value{5.0};
     optsObj["maxSyncBatchSizeHint"] = picojson::value{10.0};
     optsStr = picojson::value(optsObj).serialize();
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &fInfo) == MXL_STATUS_OK);
-    REQUIRE(fInfo.common.maxCommitBatchSizeHint == 5U);
-    REQUIRE(fInfo.common.maxSyncBatchSizeHint == 10U);
-    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(fInfo.common.id).c_str()) == MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &configInfo) == MXL_STATUS_OK);
+    REQUIRE(configInfo.common.maxCommitBatchSizeHint == 5U);
+    REQUIRE(configInfo.common.maxSyncBatchSizeHint == 10U);
+    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(configInfo.common.id).c_str()) == MXL_STATUS_OK);
 
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), NULL, &fInfo) == MXL_STATUS_OK);
-    REQUIRE(fInfo.common.maxCommitBatchSizeHint == 1U);
-    REQUIRE(fInfo.common.maxSyncBatchSizeHint == 1U);
-    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(fInfo.common.id).c_str()) == MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), NULL, &configInfo) == MXL_STATUS_OK);
+    REQUIRE(configInfo.common.maxCommitBatchSizeHint == 1U);
+    REQUIRE(configInfo.common.maxSyncBatchSizeHint == 1U);
+    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(configInfo.common.id).c_str()) == MXL_STATUS_OK);
     REQUIRE(mxlDestroyInstance(instanceWriter) == MXL_STATUS_OK);
 }
 
@@ -587,8 +587,8 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Slices"
     auto instanceWriter = mxlCreateInstance(domain.string().c_str(), opts);
     REQUIRE(instanceWriter != nullptr);
 
-    mxlFlowInfo fInfo;
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &fInfo) == MXL_STATUS_OK);
+    mxlFlowConfigInfo configInfo;
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &configInfo) == MXL_STATUS_OK);
 
     mxlFlowReader reader;
     REQUIRE(mxlCreateFlowReader(instanceReader, flowId, "", &reader) == MXL_STATUS_OK);
@@ -608,13 +608,14 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Slices"
     REQUIRE(mxlFlowWriterOpenGrain(writer, index, &gInfo, &buffer) == MXL_STATUS_OK);
 
     /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
-    mxlFlowInfo fInfo1;
-    REQUIRE(mxlFlowReaderGetInfo(reader, &fInfo1) == MXL_STATUS_OK);
-    REQUIRE(fInfo1.discrete.headIndex == 0);
+    mxlFlowInfo flowInfo1;
+    REQUIRE(mxlFlowReaderGetInfo(reader, &flowInfo1) == MXL_STATUS_OK);
+    REQUIRE(flowInfo1.runtime.headIndex == 0);
 
     // Total number of batches that will be written
-    auto const numBatches = (gInfo.totalSlices + fInfo1.common.maxCommitBatchSizeHint - 1U) / fInfo1.common.maxCommitBatchSizeHint;
-    std::size_t defaultBatchSize = fInfo1.common.maxCommitBatchSizeHint;
+    auto const numBatches =
+        (gInfo.totalSlices + flowInfo1.config.common.maxCommitBatchSizeHint - 1U) / flowInfo1.config.common.maxCommitBatchSizeHint;
+    auto defaultBatchSize = std::size_t{flowInfo1.config.common.maxCommitBatchSizeHint};
 
     for (auto batchIndex = std::size_t{0}; batchIndex < numBatches; batchIndex++)
     {
@@ -631,12 +632,12 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Slices"
         gInfo.validSlices += batchSize;
         REQUIRE(mxlFlowWriterCommitGrain(writer, &gInfo) == MXL_STATUS_OK);
 
-        mxlFlowInfo sliceFlowInfo;
-        REQUIRE(mxlFlowReaderGetInfo(reader, &sliceFlowInfo) == MXL_STATUS_OK);
-        REQUIRE(sliceFlowInfo.discrete.headIndex == index);
+        mxlFlowRuntimeInfo sliceRuntimeInfo;
+        REQUIRE(mxlFlowReaderGetRuntimeInfo(reader, &sliceRuntimeInfo) == MXL_STATUS_OK);
+        REQUIRE(sliceRuntimeInfo.headIndex == index);
 
         // We commited data to a grain. This should have increased the lastWriteTime field.
-        REQUIRE(sliceFlowInfo.common.lastWriteTime > fInfo1.common.lastWriteTime);
+        REQUIRE(sliceRuntimeInfo.lastWriteTime > flowInfo1.runtime.lastWriteTime);
 
         /// Read back the partial grain using the flow reader.
         std::uint8_t* readBuffer = nullptr;
@@ -650,8 +651,8 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Video Flow : Slices"
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
         // We accessed the grain using mxlFlowReaderGetGrain. This should have increased the lastReadTime field.
-        REQUIRE(mxlFlowReaderGetInfo(reader, &sliceFlowInfo) == MXL_STATUS_OK);
-        REQUIRE(sliceFlowInfo.common.lastReadTime > fInfo1.common.lastReadTime);
+        REQUIRE(mxlFlowReaderGetRuntimeInfo(reader, &sliceRuntimeInfo) == MXL_STATUS_OK);
+        REQUIRE(sliceRuntimeInfo.lastReadTime > flowInfo1.runtime.lastReadTime);
     }
 
     REQUIRE(mxlReleaseFlowReader(instanceReader, reader) == MXL_STATUS_OK);
@@ -677,13 +678,13 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Create/
     REQUIRE(instanceWriter != nullptr);
 
     {
-        mxlFlowInfo flowInfo;
-        REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &flowInfo) == MXL_STATUS_OK);
+        mxlFlowConfigInfo configInfo;
+        REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &configInfo) == MXL_STATUS_OK);
 
-        REQUIRE(flowInfo.continuous.sampleRate.numerator == 48000U);
-        REQUIRE(flowInfo.continuous.sampleRate.denominator == 1U);
-        REQUIRE(flowInfo.continuous.channelCount == 2U);
-        REQUIRE(flowInfo.continuous.bufferLength > 128U);
+        REQUIRE(configInfo.common.grainRate.numerator == 48000U);
+        REQUIRE(configInfo.common.grainRate.denominator == 1U);
+        REQUIRE(configInfo.continuous.channelCount == 2U);
+        REQUIRE(configInfo.continuous.bufferLength > 128U);
     }
 
     mxlFlowReader reader;
@@ -718,11 +719,11 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Create/
         }
 
         /// Get some info about the freshly created flow.  Since no grains have been commited, the head should still be at 0.
-        mxlFlowInfo flowInfo;
-        REQUIRE(mxlFlowReaderGetInfo(reader, &flowInfo) == MXL_STATUS_OK);
+        mxlFlowRuntimeInfo runtimeInfo;
+        REQUIRE(mxlFlowReaderGetRuntimeInfo(reader, &runtimeInfo) == MXL_STATUS_OK);
 
         // Verify that the headindex is yet to be modified
-        REQUIRE(flowInfo.continuous.headIndex == 0);
+        REQUIRE(runtimeInfo.headIndex == 0);
 
         /// Commit the sample range
         REQUIRE(mxlFlowWriterCommitSamples(writer) == MXL_STATUS_OK);
@@ -748,11 +749,11 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Create/
         }
 
         // Get the updated flow info
-        mxlFlowInfo flowInfo;
-        REQUIRE(mxlFlowReaderGetInfo(reader, &flowInfo) == MXL_STATUS_OK);
+        mxlFlowRuntimeInfo runtimeInfo;
+        REQUIRE(mxlFlowReaderGetRuntimeInfo(reader, &runtimeInfo) == MXL_STATUS_OK);
 
         // Confirm that that head has moved.
-        REQUIRE(flowInfo.continuous.headIndex == index);
+        REQUIRE(runtimeInfo.headIndex == index);
     }
 
     /// Release the reader
@@ -791,13 +792,13 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Invalid
     REQUIRE(instanceWriter != nullptr);
 
     {
-        mxlFlowInfo flowInfo;
-        REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &flowInfo) == MXL_STATUS_OK);
+        mxlFlowConfigInfo configInfo;
+        REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &configInfo) == MXL_STATUS_OK);
 
-        REQUIRE(flowInfo.continuous.sampleRate.numerator == 48000U);
-        REQUIRE(flowInfo.continuous.sampleRate.denominator == 1U);
-        REQUIRE(flowInfo.continuous.channelCount == 2U);
-        REQUIRE(flowInfo.continuous.bufferLength > 128U);
+        REQUIRE(configInfo.common.grainRate.numerator == 48000U);
+        REQUIRE(configInfo.common.grainRate.denominator == 1U);
+        REQUIRE(configInfo.continuous.channelCount == 2U);
+        REQUIRE(configInfo.continuous.bufferLength > 128U);
     }
 
     mxlFlowReader reader;
@@ -816,8 +817,8 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Invalid
     REQUIRE(index != MXL_UNDEFINED_INDEX);
 
     // Recreate the flow with the same id.
-    mxlFlowInfo flowInfo;
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &flowInfo) == MXL_STATUS_OK);
+    mxlFlowConfigInfo configInfo;
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), opts, &configInfo) == MXL_STATUS_OK);
 
     {
         /// Open a range of samples for reading. This should detect that the flow is invalid.
@@ -868,15 +869,16 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Differe
     REQUIRE(instance != nullptr);
 
     auto flowDef = mxl::tests::readFile("data/audio_flow.json");
-    mxlFlowInfo flowInfo;
-    REQUIRE(mxlCreateFlow(instance, flowDef.c_str(), opts, &flowInfo) == MXL_STATUS_OK);
-    auto const flowId = uuids::to_string(flowInfo.common.id);
-    REQUIRE(flowInfo.continuous.bufferLength > 11U); // To have at least 2 samples per batch in our second part of the test with reading in 3 batches.
+    mxlFlowConfigInfo configInfo;
+    REQUIRE(mxlCreateFlow(instance, flowDef.c_str(), opts, &configInfo) == MXL_STATUS_OK);
+    auto const flowId = uuids::to_string(configInfo.common.id);
+    REQUIRE(
+        configInfo.continuous.bufferLength > 11U); // To have at least 2 samples per batch in our second part of the test with reading in 3 batches.
 
     // We write the whole buffer worth of data in 4 batches, and then we try to read the second half back in both equally-sized batches and in
     // different-sized batches.
-    auto const lastIndex = mxlGetCurrentIndex(&flowInfo.continuous.sampleRate);
-    auto writeBatches = planAudioBatches(4, flowInfo.continuous.bufferLength, lastIndex);
+    auto const lastIndex = mxlGetCurrentIndex(&configInfo.common.grainRate);
+    auto writeBatches = planAudioBatches(4, configInfo.continuous.bufferLength, lastIndex);
 
     mxlFlowWriter writer;
     REQUIRE(mxlCreateFlowWriter(instance, flowId.c_str(), "", &writer) == MXL_STATUS_OK);
@@ -923,7 +925,7 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Differe
     // When checking the batches, we can only check the second half of the buffer (this is what mxlFlowReaderGetSamples allows us).
     writeBatches.erase(writeBatches.begin(), writeBatches.begin() + writeBatches.size() / 2);
     readCheckFn(reader, writeBatches);
-    auto const readBatches = planAudioBatches(writeBatches.size() + 1, flowInfo.continuous.bufferLength / 2, lastIndex);
+    auto const readBatches = planAudioBatches(writeBatches.size() + 1, configInfo.continuous.bufferLength / 2, lastIndex);
     readCheckFn(reader, readBatches);
     REQUIRE(mxlReleaseFlowReader(instance, reader) == MXL_STATUS_OK);
 
@@ -939,38 +941,38 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "Audio Flow : Options
     auto instanceWriter = mxlCreateInstance(domain.string().c_str(), instanceOpts);
     REQUIRE(instanceWriter != nullptr);
 
-    mxlFlowInfo fInfo;
+    mxlFlowConfigInfo configInfo;
 
     picojson::object optsObj;
     optsObj["maxCommitBatchSizeHint"] = picojson::value{-1.0}; // Invalid value
 
     auto optsStr = picojson::value(optsObj).serialize();
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &fInfo) == MXL_ERR_UNKNOWN);
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &configInfo) == MXL_ERR_UNKNOWN);
 
     optsObj.clear();
     optsObj["maxSyncBatchSizeHint"] = picojson::value{0.0}; // Invalid value
     optsStr = picojson::value(optsObj).serialize();
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &fInfo) == MXL_ERR_UNKNOWN);
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &configInfo) == MXL_ERR_UNKNOWN);
 
     optsObj.clear();
     optsObj["maxCommitBatchSizeHint"] = picojson::value{10.0};
     optsObj["maxSyncBatchSizeHint"] = picojson::value{2.0}; // Not a multiple of maxCommitBatchSizeHint
     optsStr = picojson::value(optsObj).serialize();
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &fInfo) == MXL_ERR_UNKNOWN);
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &configInfo) == MXL_ERR_UNKNOWN);
 
     optsObj.clear();
     optsObj["maxCommitBatchSizeHint"] = picojson::value{5.0};
     optsObj["maxSyncBatchSizeHint"] = picojson::value{10.0};
     optsStr = picojson::value(optsObj).serialize();
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &fInfo) == MXL_STATUS_OK);
-    REQUIRE(fInfo.common.maxCommitBatchSizeHint == 5U);
-    REQUIRE(fInfo.common.maxSyncBatchSizeHint == 10U);
-    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(fInfo.common.id).c_str()) == MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), optsStr.c_str(), &configInfo) == MXL_STATUS_OK);
+    REQUIRE(configInfo.common.maxCommitBatchSizeHint == 5U);
+    REQUIRE(configInfo.common.maxSyncBatchSizeHint == 10U);
+    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(configInfo.common.id).c_str()) == MXL_STATUS_OK);
 
-    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), NULL, &fInfo) == MXL_STATUS_OK);
-    REQUIRE(fInfo.common.maxCommitBatchSizeHint == 1U);
-    REQUIRE(fInfo.common.maxSyncBatchSizeHint == 1U);
-    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(fInfo.common.id).c_str()) == MXL_STATUS_OK);
+    REQUIRE(mxlCreateFlow(instanceWriter, flowDef.c_str(), NULL, &configInfo) == MXL_STATUS_OK);
+    REQUIRE(configInfo.common.maxCommitBatchSizeHint == 1U);
+    REQUIRE(configInfo.common.maxSyncBatchSizeHint == 1U);
+    REQUIRE(mxlDestroyFlow(instanceWriter, uuids::to_string(configInfo.common.id).c_str()) == MXL_STATUS_OK);
     REQUIRE(mxlDestroyInstance(instanceWriter) == MXL_STATUS_OK);
 }
 
@@ -981,9 +983,9 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "mxlGetFlowDef", "[mx
     REQUIRE(instance != nullptr);
 
     auto flowDef = mxl::tests::readFile("data/v210_flow.json");
-    mxlFlowInfo flowInfo;
-    REQUIRE(mxlCreateFlow(instance, flowDef.c_str(), opts, &flowInfo) == MXL_STATUS_OK);
-    auto const flowId = uuids::to_string(flowInfo.common.id);
+    mxlFlowConfigInfo configInfo;
+    REQUIRE(mxlCreateFlow(instance, flowDef.c_str(), opts, &configInfo) == MXL_STATUS_OK);
+    auto const flowId = uuids::to_string(configInfo.common.id);
 
     char fourKBuffer[4096];
     auto fourKBufferSize = sizeof(fourKBuffer);
@@ -1028,8 +1030,8 @@ TEST_CASE_PERSISTENT_FIXTURE(mxl::tests::mxlDomainFixture, "mxlCreateFlow: unwri
     REQUIRE(instance != nullptr);
 
     auto flowDef = mxl::tests::readFile("data/v210_flow.json");
-    mxlFlowInfo flowInfo;
-    REQUIRE(mxlCreateFlow(instance, flowDef.c_str(), opts, &flowInfo) == MXL_ERR_PERMISSION_DENIED);
+    mxlFlowConfigInfo configInfo;
+    REQUIRE(mxlCreateFlow(instance, flowDef.c_str(), opts, &configInfo) == MXL_ERR_PERMISSION_DENIED);
 
     // restore perms so we can clean up
     permissions(domain, std::filesystem::perms::owner_all, std::filesystem::perm_options::add);

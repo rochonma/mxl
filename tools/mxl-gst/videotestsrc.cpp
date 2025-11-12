@@ -366,14 +366,14 @@ public:
         mxlStatus ret;
 
         // Create the flow
-        ret = mxlCreateFlow(_instance, flow_descriptor.c_str(), nullptr, &_flowInfo);
+        ret = mxlCreateFlow(_instance, flow_descriptor.c_str(), nullptr, &_configInfo);
         if (ret != MXL_STATUS_OK)
         {
             throw std::runtime_error("Failed to create flow with status '" + std::to_string(static_cast<int>(ret)) + "'");
         }
         _flowOpened = true;
 
-        auto flowID = uuids::to_string(uuids::uuid(_flowInfo.common.id));
+        auto flowID = uuids::to_string(uuids::uuid(_configInfo.common.id));
 
         // Create the flow writer
         if (mxlCreateFlowWriter(_instance, flowID.c_str(), "", &_writer) != MXL_STATUS_OK)
@@ -391,7 +391,7 @@ public:
 
         if (_flowOpened)
         {
-            auto flowID = uuids::to_string(uuids::uuid(_flowInfo.common.id));
+            auto flowID = uuids::to_string(uuids::uuid(_configInfo.common.id));
             MXL_INFO("Destroying flow -> {}", flowID);
             mxlDestroyFlow(_instance, flowID.c_str());
         }
@@ -406,7 +406,7 @@ public:
     {
         gst_pipeline.start();
 
-        if (mxlIsDiscreteDataFormat(_flowInfo.common.format))
+        if (mxlIsDiscreteDataFormat(_configInfo.common.format))
         {
             return runDiscreteFlow(dynamic_cast<VideoPipeline&>(gst_pipeline), offset);
         }
@@ -591,7 +591,7 @@ private:
                     GstMapInfo map_info;
                     if (gst_buffer_map(gstBuffer, &map_info, GST_MAP_READ))
                     {
-                        auto nbSamplesPerChan = map_info.size / (4 * _flowInfo.continuous.channelCount);
+                        auto nbSamplesPerChan = map_info.size / (4 * _configInfo.continuous.channelCount);
 
                         mxlMutableWrappedMultiBufferSlice payloadBuffersSlices;
                         if (mxlFlowWriterOpenSamples(_writer, actualSampleIndex, nbSamplesPerChan, &payloadBuffersSlices))
@@ -639,7 +639,7 @@ private:
     mxlInstance _instance;
 
     mxlFlowWriter _writer;
-    mxlFlowInfo _flowInfo;
+    mxlFlowConfigInfo _configInfo;
     bool _flowOpened;
 
     std::optional<std::uint64_t> _internalOffset{std::nullopt};

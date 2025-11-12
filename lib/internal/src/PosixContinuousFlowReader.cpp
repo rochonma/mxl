@@ -37,7 +37,7 @@ namespace mxl::lib
     {
         if (_flowData)
         {
-            if (auto const headIndex = _flowData->flowInfo()->continuous.headIndex; index <= headIndex)
+            if (auto const headIndex = _flowData->flowInfo()->runtime.headIndex; index <= headIndex)
             {
                 auto const minIndex = (headIndex >= (_bufferLength / 2U)) ? (headIndex - (_bufferLength / 2U)) : std::uint64_t{0};
 
@@ -93,14 +93,15 @@ namespace mxl::lib
     {
         if (_flowData)
         {
-            auto const flowInfo = _flowData->flowInfo();
+            auto const flowState = _flowData->flowState();
             auto const flowDataPath = makeFlowDataFilePath(getDomain(), to_string(getId()));
+
             struct stat st;
-            if (stat(flowDataPath.string().c_str(), &st) != 0)
+            if (::stat(flowDataPath.string().c_str(), &st) != 0)
             {
                 return false;
             }
-            return (st.st_ino == flowInfo->common.inode);
+            return (st.st_ino == flowState->inode);
         }
         return false;
     }
