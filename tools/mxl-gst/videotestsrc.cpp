@@ -417,9 +417,9 @@ public:
         }
     }
 
-    std::uint32_t maxSyncBatchSizeHint() const
+    std::uint32_t maxCommitBatchSizeHint() const
     {
-        return _configInfo.common.maxSyncBatchSizeHint;
+        return _configInfo.common.maxCommitBatchSizeHint;
     }
 
     int run(GstreamerPipeline& gst_pipeline, std::int64_t offset)
@@ -441,7 +441,7 @@ private:
     {
         std::optional<std::uint64_t> grainIndex;
 
-        auto slicesPerBatch = _configInfo.common.maxSyncBatchSizeHint;
+        auto slicesPerBatch = _configInfo.common.maxCommitBatchSizeHint;
         while (!g_exit_requested)
         {
             auto timeout = grainIndex ? mxlGetNsUntilIndex(*grainIndex + 1, &gst_pipeline._config.frame_rate)
@@ -791,7 +791,7 @@ int main(int argc, char** argv)
                 auto frameHeight = static_cast<uint64_t>(flowNmos.get<double>("frame_height"));
 
                 auto mxlWriter = MxlWriter(domain, flowNmosDesc, flowOptions);
-                if (mxlWriter.maxSyncBatchSizeHint() > frameHeight)
+                if (mxlWriter.maxCommitBatchSizeHint() > frameHeight)
                 {
                     throw std::invalid_argument{"slicesPerBatch cannot be greater than frame height."};
                 }
@@ -845,7 +845,7 @@ int main(int argc, char** argv)
                 AudioPipelineConfig gst_config{
                     .rate = flowNmos.getGrainRate(),
                     .channelCount = flowNmos.getChannelCount(),
-                    .samplesPerBatch = mxlWriter.maxSyncBatchSizeHint(),
+                    .samplesPerBatch = mxlWriter.maxCommitBatchSizeHint(),
                     .wave = wave_map.at("sine"),
                 };
 

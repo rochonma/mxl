@@ -161,6 +161,7 @@ video_options.json
 
 ```video_options.json
 {
+  "maxCommitBatchSizeHint": 60,
   "maxSyncBatchSizeHint": 60
 }
 ```
@@ -169,6 +170,7 @@ audio_options.json
 
 ```audio_options.json
 {
+  "maxCommitBatchSizeHint": 512,
   "maxSyncBatchSizeHint": 512
 }
 ```
