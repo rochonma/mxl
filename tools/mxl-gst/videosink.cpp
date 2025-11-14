@@ -43,7 +43,6 @@ namespace
     {
         mxlRational rate;
         std::size_t channelCount;
-        std::size_t nbSamplesPerBatch;
         std::int64_t offset;
         std::vector<size_t> spkrEnabled;
     };
@@ -369,17 +368,40 @@ namespace
         int runDiscreteFlow(GstreamerVideoPipeline& gstPipeline, std::int64_t readDelay, bool timeoutMode)
         {
             auto rate = _flowInfo.config.common.grainRate;
-            MXL_INFO("Starting discrete flow reading at rate {}/{}", rate.numerator, rate.denominator);
+            auto slicesPerBatch = _flowInfo.config.common.maxSyncBatchSizeHint;
+            if (slicesPerBatch > gstPipeline._config.frame_height)
+            {
+                throw std::invalid_argument{"slicesPerBatch cannot be greater than frame height."};
+            }
+
+            auto sliceReadMode = slicesPerBatch < gstPipeline._config.frame_height;
+
+            MXL_INFO("Starting discrete flow reading at rate {}/{} and slices per batch {}", rate.numerator, rate.denominator, slicesPerBatch);
             auto timeoutNs = discreteFlowTimeout(timeoutMode, gstPipeline._config.offset);
 
             auto index = mxlGetCurrentIndex(&rate);
+            mxlStatus ret;
+            std::uint16_t validSlices = slicesPerBatch;
             while (!g_exit_requested)
             {
                 mxlGrainInfo grainInfo;
                 uint8_t* payload;
 
                 auto requestedIndex = requestIndex(index, readDelay, timeoutMode);
-                auto ret = mxlFlowReaderGetGrain(_reader, requestedIndex, timeoutNs, &grainInfo, &payload);
+                if (sliceReadMode)
+                {
+                    // Slice mode is not really useful here since gstreamer needs the full grain to push to the pipeline. But for educational
+                    // purposes, here's how you can wait for slices to be available.
+                    ret = mxlFlowReaderGetGrainSlice(_reader, requestedIndex, validSlices, timeoutNs, &grainInfo, &payload);
+                    validSlices = std::min<std::uint16_t>(gstPipeline._config.frame_height,
+                        grainInfo.validSlices + slicesPerBatch); // calculate up to how many valid slices to wait for the next iteration
+                }
+                else
+                {
+                    // Use this function to wait for a full grain
+                    ret = mxlFlowReaderGetGrain(_reader, requestedIndex, timeoutNs, &grainInfo, &payload);
+                }
+
                 if (ret == MXL_ERR_OUT_OF_RANGE_TOO_EARLY)
                 {
                     // We are too early somehow, keep trying the same grain index
@@ -421,9 +443,8 @@ namespace
                     // We've validated the grain. Invalid grains are skipped rather than pushed to GStreamer. Since we provide PTS values based on MXL
                     // timestamps, GStreamer automatically handles missing grains by repeating the last valid frame. Consuming applications should
                     // implement similar logic for invalid grain handling.                    if (timeoutMode)
-                    {
-                        updateHighestLatency(mxlIndexToTimestamp(&rate, requestedIndex), mxlGetTime());
-                    }
+
+                    updateHighestLatency(mxlIndexToTimestamp(&rate, requestedIndex), mxlGetTime());
 
                     // If we got here, we can push the grain to the gstreamer pipeline
                     GstBuffer* buffer = gst_buffer_new_allocate(nullptr, grainInfo.grainSize, nullptr);
@@ -438,6 +459,7 @@ namespace
                 }
 
                 index++;
+                validSlices = slicesPerBatch;
                 mxlSleepForNs(mxlGetNsUntilIndex(index, &rate));
             }
 
@@ -447,9 +469,9 @@ namespace
         int runContinuousFlow(GstreamerAudioPipeline& gstPipeline, std::int64_t readDelay)
         {
             auto rate = _flowInfo.config.common.grainRate;
-            MXL_INFO("Starting continuous flow reading at rate {}/{}", rate.numerator, rate.denominator);
+            auto const windowSize = _flowInfo.config.common.maxSyncBatchSizeHint; // samples per read
+            MXL_INFO("Starting continuous flow reading at rate {}/{} and batch size {}", rate.numerator, rate.denominator, windowSize);
 
-            auto const windowSize = gstPipeline._config.nbSamplesPerBatch; // samples per read
             mxlWrappedMultiBufferSlice payload;
 
             auto index = mxlGetCurrentIndex(&rate);
@@ -632,12 +654,6 @@ namespace
             "this mode and --video-offset is used for both the timeout value and playback offset.");
         timeoutModeOpt->default_val(false);
 
-        uint64_t samplesPerBatch;
-        auto samplesPerBatchOpt = app.add_option("-s, --samples-per-batch",
-            samplesPerBatch,
-            "Number of audio samples per batch when reading. Should be the same or bigger than the videotestsrc setting.");
-        samplesPerBatchOpt->default_val(512);
-
         CLI11_PARSE(app, argc, argv);
 
         gst_init(nullptr, nullptr);
@@ -687,7 +703,6 @@ namespace
                     GstreamerAudioPipelineConfig audioConfig{
                         .rate = parser.getGrainRate(),
                         .channelCount = parser.getChannelCount(),
-                        .nbSamplesPerBatch = samplesPerBatch,
                         .offset = audioOffset,
                         .spkrEnabled = listenChannels,
                     };
