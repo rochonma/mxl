@@ -77,7 +77,7 @@ namespace mxl::lib
     mxlStatus PosixDiscreteFlowReader::getGrain(std::uint64_t in_index, std::uint16_t in_minValidSlices, std::uint64_t in_timeoutNs,
         mxlGrainInfo* out_grainInfo, std::uint8_t** out_payload)
     {
-        auto result = MXL_ERR_TIMEOUT;
+        auto result = MXL_ERR_UNKNOWN;
         if (_flowData)
         {
             auto const deadline = currentTime(Clock::Realtime) + Duration{static_cast<std::int64_t>(in_timeoutNs)};

@@ -22,7 +22,10 @@ namespace mxl::lib
          * \param out_payload A valid void pointer to pointer that will be set to the first byte of the grain payload.
          *     Payload size is available in the mxlGrainInfo structure.
          *
-         * \return A status code describing the outcome of the call.
+         * \return A status code describing the outcome of the call. Please note
+         *      that this method will never return MXL_ERR_TIMEOUT, because the
+         *      actual error that is being encountered in this case is
+         *      MXL_ERR_OUT_OF_RANGE_TOO_EARLY, even after waiting.
          */
         virtual mxlStatus getGrain(std::uint64_t in_index, std::uint16_t in_minValidSlices, std::uint64_t in_timeoutNs, mxlGrainInfo* out_grainInfo,
             std::uint8_t** out_payload) = 0;
