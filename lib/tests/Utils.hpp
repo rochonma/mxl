@@ -11,6 +11,7 @@
 
 #ifdef __APPLE__
 #   include <stdexcept>
+#   include <unistd.h> // For mkdtemp
 #endif
 
 namespace mxl::tests
@@ -99,7 +100,13 @@ namespace mxl::tests
 
     inline std::filesystem::path makeTempDomain()
     {
+#ifdef __linux__
         char tmpl[] = "/dev/shm/mxl_test_domainXXXXXX";
+#elif __APPLE__
+        char tmpl[] = "/tmp/mxl_test_domainXXXXXX";
+#else
+#   error "Unsupported platform. This is only implemented for Linux and macOS."
+#endif
         if (::mkdtemp(tmpl) == nullptr)
         {
             throw std::runtime_error("Failed to create temporary directory");
