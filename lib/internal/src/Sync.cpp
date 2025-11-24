@@ -69,7 +69,12 @@ namespace mxl::lib
     {
         static_assert(valid_specialization_v<T>, "Only 32 bit types with natural alignment are supported.");
 
+#if _LIBCPP_VERSION
+        // libc++ limitation due to: https://github.com/llvm/llvm-project/issues/118378
+        auto syncObject = std::atomic_ref{*const_cast<T*>(in_addr)};
+#else
         auto syncObject = std::atomic_ref{*in_addr};
+#endif
         while (syncObject.load(std::memory_order_acquire) == in_expected)
         {
             auto const now = currentTime(Clock::Realtime);
