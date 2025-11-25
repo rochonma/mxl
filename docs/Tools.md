@@ -201,28 +201,15 @@ OPTIONS:
   -a,     --audio-flow-id TEXT
                               The audio flow ID
   -d,     --domain TEXT:DIR REQUIRED
-                              The MXL domain directory
-  -t,     --timeout UINT      The read timeout in ns, frame interval + 1 ms used if not
-                              specified
+                              The MXL domain directory.
   -l,     --listen-channels UINT [[0,1]]  ...
-                              Audio channels to listen
-          --audio-offset INT [150000000]
-                              Audio playback offset in nanoseconds. Positive value means you
-                              are delaying the playback
-          --video-offset INT [150000000]
-                              Video plaback offset in nanoseconds. Positive value means you are
-                              delaying the playback
-          --audio-read-delay INT [768]
-                              How far in the past/future to read (in audio samples). Positive
-                              value means you are delaying the read
-          --video-read-delay INT [1]
-                              How far in the past/future to read (in video frames). Positive
-                              value means you are delaying the read
-          --timeout-mode [0]  In timeout mode, the sink uses blocking methods with timeout
-                              instead of reading with a defined delay. Currently only video
-                              supports this mode and --video-offset is used for both the
-                              timeout value and playback offset.
-
+                              Audio channels to listen.
+          --av-delay INT [0]  The time in nanoseconds, by which to delay the audio relative to
+                              video. A positive value means you are delaying audio, a negative
+                              value means you are delaying video.
+          --read-delay INT [1]
+                              How far in the past/future to read (in nanoseconds). A positive
+                              values means you are delaying the read.
 ```
 
 Example to run with video only:
@@ -248,16 +235,4 @@ Example to run with both video and audio:
   -d /dev/shm \
   -v 5fbec3b1-1b0f-417d-9059-8b94a47197ed \
   -a b3bb5be7-9fe9-4324-a5bb-4c70e1084449
-```
-
-If you experience audio artifacts, try increasing the --audio-offset value. On some systems running a type-2 hypervisor with a host VM, audio glitches have been observed with default settings. Increasing the buffer size can resolve this issue.
-
-```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-sink \
-  -d /dev/shm \
-  -v 5fbec3b1-1b0f-417d-9059-8b94a47197ed \
-  --video-offset 1000000000 \
-  -a b3bb5be7-9fe9-4324-a5bb-4c70e1084449 \
-  --audio-offset 1000000000
-
 ```
