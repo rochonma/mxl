@@ -73,3 +73,10 @@ void mxlSleepForNs(uint64_t ns)
 {
     mxl::lib::this_thread::sleep(mxl::lib::Duration(ns), mxl::lib::Clock::TAI);
 }
+
+extern "C"
+MXL_EXPORT
+void mxlSleepUntil(uint64_t timestamp)
+{
+    mxl::lib::this_thread::sleepUntil(mxl::lib::Timepoint(timestamp), mxl::lib::Clock::TAI);
+}

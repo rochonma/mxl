@@ -52,6 +52,7 @@ namespace mxl::lib
             return (result == 0) ? Duration{} : asDuration(remainder);
         }
 
+        MXL_EXPORT
         int sleepUntil(Timepoint timepoint, Clock clock) noexcept
         {
 #if defined(__linux__)

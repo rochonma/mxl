@@ -68,6 +68,13 @@ extern "C"
     void mxlSleepForNs(uint64_t ns);
 
     /**
+     * Sleep until the specified timestamp is reached.
+     * \param[in] timestamp The time stamp in nanoseconds since the epoch.
+     */
+    MXL_EXPORT
+    void mxlSleepUntil(uint64_t timestamp);
+
+    /**
      * Get the current time using the most appropriate clock for the platform.
      *
      * \return The current time in nanoseconds since the epoch.
