@@ -56,13 +56,15 @@ TEST_CASE("Index <-> Timestamp roundtrip (current)", "[time]")
     auto const rate = mxlRational{30000, 1001};
 
     auto const currentTime = mxlGetTime();
-    auto const currentIndex = mxlGetCurrentIndex(&rate);
+    auto const currentIndex = mxlTimestampToIndex(&rate, currentTime);
+
     auto const timestamp = mxlIndexToTimestamp(&rate, currentIndex);
     auto const calculatedIndex = mxlTimestampToIndex(&rate, timestamp);
 
     auto const timeDelta = (currentTime > timestamp) ? currentTime - timestamp : timestamp - currentTime;
-    REQUIRE(timeDelta < 500'000'000U);
+    REQUIRE(timeDelta < 33'366'667LL);
     REQUIRE(calculatedIndex == currentIndex);
+
     REQUIRE(mxlGetNsUntilIndex(currentIndex + 33, &rate) > 0);
 }
 
