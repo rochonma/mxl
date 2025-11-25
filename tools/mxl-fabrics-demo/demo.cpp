@@ -215,11 +215,6 @@ public:
                 // We are too early somehow.. retry the same grain later.
                 continue;
             }
-            if (ret == MXL_ERR_TIMEOUT)
-            {
-                // No grains available before a timeout was triggered.. most likely a problem upstream.
-                continue;
-            }
             if (ret != MXL_STATUS_OK)
             {
                 // Something  unexpected occured, not much we can do, but log and retry
