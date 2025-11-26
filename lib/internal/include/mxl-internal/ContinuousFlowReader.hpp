@@ -7,7 +7,7 @@
 
 namespace mxl::lib
 {
-    class ContinuousFlowReader : public FlowReader
+    class MXL_EXPORT ContinuousFlowReader : public FlowReader
     {
     public:
         /**
