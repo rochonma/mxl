@@ -20,9 +20,69 @@
 
 #include <spdlog/spdlog.h>
 
-#define MXL_TRACE    SPDLOG_TRACE
-#define MXL_DEBUG    SPDLOG_DEBUG
-#define MXL_INFO     SPDLOG_INFO
-#define MXL_WARN     SPDLOG_WARN
-#define MXL_ERROR    SPDLOG_ERROR
-#define MXL_CRITICAL SPDLOG_CRITICAL
+#define MXL_TRACE(...)                 \
+    do                                 \
+    {                                  \
+        try                            \
+        {                              \
+            SPDLOG_TRACE(__VA_ARGS__); \
+        }                              \
+        catch (...)                    \
+        {}                             \
+    }                                  \
+    while (false)
+#define MXL_DEBUG(...)                 \
+    do                                 \
+    {                                  \
+        try                            \
+        {                              \
+            SPDLOG_DEBUG(__VA_ARGS__); \
+        }                              \
+        catch (...)                    \
+        {}                             \
+    }                                  \
+    while (false)
+#define MXL_INFO(...)                 \
+    do                                \
+    {                                 \
+        try                           \
+        {                             \
+            SPDLOG_INFO(__VA_ARGS__); \
+        }                             \
+        catch (...)                   \
+        {}                            \
+    }                                 \
+    while (false)
+#define MXL_WARN(...)                 \
+    do                                \
+    {                                 \
+        try                           \
+        {                             \
+            SPDLOG_WARN(__VA_ARGS__); \
+        }                             \
+        catch (...)                   \
+        {}                            \
+    }                                 \
+    while (false)
+#define MXL_ERROR(...)                 \
+    do                                 \
+    {                                  \
+        try                            \
+        {                              \
+            SPDLOG_ERROR(__VA_ARGS__); \
+        }                              \
+        catch (...)                    \
+        {}                             \
+    }                                  \
+    while (false)
+#define MXL_CRITICAL(...)                 \
+    do                                    \
+    {                                     \
+        try                               \
+        {                                 \
+            SPDLOG_CRITICAL(__VA_ARGS__); \
+        }                                 \
+        catch (...)                       \
+        {}                                \
+    }                                     \
+    while (false)
