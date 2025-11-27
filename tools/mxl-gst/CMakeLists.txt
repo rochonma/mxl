@@ -116,14 +116,6 @@ if (gstreamer_FOUND)
                 PkgConfig::gstreamer-video
         )
 
-
-    # Not really a fan of having this relative to the binary,
-    # we should leave this at the default.
-    set_target_properties(mxl-gst-sink mxl-gst-testsrc mxl-gst-looping-filesrc
-            PROPERTIES
-                INSTALL_RPATH "$ORIGIN/../lib"
-        )
-
     # Install targets
     install(TARGETS mxl-gst-sink mxl-gst-testsrc mxl-gst-looping-filesrc
             COMPONENT ${PROJECT_NAME}-tools
