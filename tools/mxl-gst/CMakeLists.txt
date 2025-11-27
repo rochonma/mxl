@@ -54,12 +54,12 @@ if (gstreamer_FOUND)
             )
 
 
-    add_executable(mxl-gst-videosink)
-    target_compile_features(mxl-gst-videosink
+    add_executable(mxl-gst-sink)
+    target_compile_features(mxl-gst-sink
             PRIVATE
                 cxx_std_20
         )
-    set_target_properties(mxl-gst-videosink
+    set_target_properties(mxl-gst-sink
             PROPERTIES
                 POSITION_INDEPENDENT_CODE   ON
                 VISIBILITY_INLINES_HIDDEN   ON
@@ -68,12 +68,12 @@ if (gstreamer_FOUND)
                 C_EXTENSIONS                OFF
                 CXX_EXTENSIONS              OFF
         )
-    target_sources(mxl-gst-videosink
+    target_sources(mxl-gst-sink
             PRIVATE
-                videosink.cpp
+                sink.cpp
         )
 
-    target_link_libraries(mxl-gst-videosink
+    target_link_libraries(mxl-gst-sink
             PRIVATE
                 mxl
                 mxl-internal-headers
@@ -119,13 +119,13 @@ if (gstreamer_FOUND)
 
     # Not really a fan of having this relative to the binary,
     # we should leave this at the default.
-    set_target_properties(mxl-gst-videosink mxl-gst-testsrc mxl-gst-looping-filesrc
+    set_target_properties(mxl-gst-sink mxl-gst-testsrc mxl-gst-looping-filesrc
             PROPERTIES
                 INSTALL_RPATH "$ORIGIN/../lib"
         )
 
     # Install targets
-    install(TARGETS mxl-gst-videosink mxl-gst-testsrc mxl-gst-looping-filesrc
+    install(TARGETS mxl-gst-sink mxl-gst-testsrc mxl-gst-looping-filesrc
             COMPONENT ${PROJECT_NAME}-tools
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         )

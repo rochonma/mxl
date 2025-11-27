@@ -608,7 +608,7 @@ namespace
         std::signal(SIGINT, &signal_handler);
         std::signal(SIGTERM, &signal_handler);
 
-        CLI::App app("mxl-gst-videosink");
+        CLI::App app("mxl-gst-sink");
 
         std::string videoFlowID;
         app.add_option("-v, --video-flow-id", videoFlowID, "The video flow ID");

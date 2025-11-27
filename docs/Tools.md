@@ -186,12 +186,12 @@ You can run the full example with:
   --audio-options-file audio_options.json
 ```
 
-## mxl-gst-videosink
+## mxl-gst-sink
 
 A binary that reads from a MXL Flow and display the flow using the gstreamer element 'autovideosink'.
 
 ```bash
-./build/Linux-GCC-Release/tools/mxl-gst/mxl-gst-videosink [OPTIONS]
+./build/Linux-GCC-Release/tools/mxl-gst/mxl-gst-sink [OPTIONS]
 
 
 OPTIONS:
@@ -228,7 +228,7 @@ OPTIONS:
 Example to run with video only:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videosink \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-sink \
   -d /dev/shm \
   -v 5fbec3b1-1b0f-417d-9059-8b94a47197ed
 ```
@@ -236,7 +236,7 @@ Example to run with video only:
 Example to run with audio only:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videosink \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-sink \
   -d /dev/shm \
   -a b3bb5be7-9fe9-4324-a5bb-4c70e1084449
 ```
@@ -244,7 +244,7 @@ Example to run with audio only:
 Example to run with both video and audio:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videosink \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-sink \
   -d /dev/shm \
   -v 5fbec3b1-1b0f-417d-9059-8b94a47197ed \
   -a b3bb5be7-9fe9-4324-a5bb-4c70e1084449
@@ -253,7 +253,7 @@ Example to run with both video and audio:
 If you experience audio artifacts, try increasing the --audio-offset value. On some systems running a type-2 hypervisor with a host VM, audio glitches have been observed with default settings. Increasing the buffer size can resolve this issue.
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videosink \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-sink \
   -d /dev/shm \
   -v 5fbec3b1-1b0f-417d-9059-8b94a47197ed \
   --video-offset 1000000000 \
