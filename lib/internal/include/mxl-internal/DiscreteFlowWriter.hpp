@@ -7,7 +7,7 @@
 
 namespace mxl::lib
 {
-    class DiscreteFlowWriter : public FlowWriter
+    class MXL_EXPORT DiscreteFlowWriter : public FlowWriter
     {
     public:
         /**
