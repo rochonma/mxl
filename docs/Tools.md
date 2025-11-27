@@ -54,9 +54,9 @@ watch -n 1 -p ./mxl-info -d ~/mxl_domain/ -f 5fbec3b1-1b0f-417d-9059-8b94a47197e
 
 TODO. A generic GUI application based on gstreamer or ffmpeg to display flow(s).
 
-## mxl-gst-videotestsrc
+## mxl-gst-testsrc
 
-A binary that uses the gstreamer element 'videotestsrc' to produce video grains and/or audio samples which will be pushed to a MXL Flow. The flow is configured from a NMOS Flow json file. Here's an example of such file :
+A binary that uses the gstreamer 'videotestsrc' and 'audiotestsrc' elements to produce video grains and/or audio samples which will be pushed to a MXL Flow. The flow is configured from a NMOS Flow json file. Here's an example of such file :
 
 ```json
 {
@@ -98,10 +98,10 @@ A binary that uses the gstreamer element 'videotestsrc' to produce video grains 
 ```
 
 ```bash
-mxl-gst-videotestsrc
+mxl-gst-testsrc
 
 
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videotestsrc [OPTIONS]
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-testsrc [OPTIONS]
 
 
 OPTIONS:
@@ -132,7 +132,7 @@ OPTIONS:
 Example to run with video only:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videotestsrc \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-testsrc \
   -d /dev/shm \
   -v lib/tests/data/v210_flow.json
 ```
@@ -140,7 +140,7 @@ Example to run with video only:
 Example to run with audio only:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videotestsrc \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-testsrc \
   -d /dev/shm \
   -a lib/tests/data/audio_flow.json
 ```
@@ -148,7 +148,7 @@ Example to run with audio only:
 Example to run with both video and audio:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videotestsrc \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-testsrc \
   -d /dev/shm \
   -v lib/tests/data/v210_flow.json \
   -a lib/tests/data/audio_flow.json
@@ -178,7 +178,7 @@ audio_options.json
 You can run the full example with:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videotestsrc \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-testsrc \
   -d /dev/shm \
   -v lib/tests/data/v210_flow.json \
   --video-options-file video_options.json \

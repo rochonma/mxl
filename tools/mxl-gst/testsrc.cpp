@@ -703,7 +703,7 @@ int main(int argc, char** argv)
     std::signal(SIGINT, &signal_handler);
     std::signal(SIGTERM, &signal_handler);
 
-    CLI::App app("mxl-gst-videotestsrc");
+    CLI::App app("mxl-gst-testsrc");
 
     std::string videoFlowConfigFile;
     auto videoFlowConfigFileOpt = app.add_option(
