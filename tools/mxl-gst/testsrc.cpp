@@ -294,10 +294,20 @@ namespace
                 throw std::runtime_error{"Well-known application sink element could not be found in the gstreamer pipeline."};
             }
 
-            if (auto const clock = ::gst_pipeline_get_clock(GST_PIPELINE(_pipeline)); clock != nullptr)
+            // The clock returned by gst_pipeline_get_clock() is not guaranteed to be of type
+            // GstSystemClock, which would make setting the clock-type a noop. So we create a
+            // new clock with the necessary type and make the pipeline use that.
+            if (auto const clock = GST_CLOCK(::g_object_new(GST_TYPE_SYSTEM_CLOCK, "name", "mxl-tai-clock", nullptr)); clock != nullptr)
             {
+                ::gst_object_ref_sink(clock);
                 ::g_object_set(G_OBJECT(clock), "clock-type", GST_CLOCK_TYPE_TAI, nullptr);
+                ::gst_clock_wait_for_sync(clock, GST_CLOCK_TIME_NONE);
+                ::gst_pipeline_use_clock(GST_PIPELINE(_pipeline), clock);
                 ::gst_object_unref(clock);
+            }
+            else
+            {
+                throw std::runtime_error{"Could not create pipeline TAI clock."};
             }
         }
 
