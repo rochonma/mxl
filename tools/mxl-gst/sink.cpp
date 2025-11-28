@@ -668,17 +668,22 @@ namespace
         auto listenChanOpt = app.add_option("-l, --listen-channels", listenChannels, "Audio channels to listen.");
         listenChanOpt->default_val(std::vector<std::size_t>{0, 1});
 
+        auto readDelay = std::int64_t{};
+        auto readDelayOpt = app.add_option(
+            "--read-delay", readDelay, "How far in the past/future to read (in nanoseconds). A positive values means you are delaying the read.");
+        readDelayOpt->default_val(40'000'000);
+
+        auto playbackDelay = std::int64_t{};
+        auto playbackDelayOpt = app.add_option(
+            "--playback-delay", playbackDelay, "The time in nanoseconds, by which to delay playback of audio and/or video.");
+        playbackDelayOpt->default_val(0);
+
         auto audioVideoOffset = std::int64_t{};
         auto audioVideoOffsetOpt = app.add_option("--av-delay",
             audioVideoOffset,
             "The time in nanoseconds, by which to delay the audio relative to video. A positive value means you are delaying audio, a negative value "
             "means you are delaying video.");
         audioVideoOffsetOpt->default_val(0);
-
-        auto readDelay = std::int64_t{};
-        auto readDelayOpt = app.add_option(
-            "--read-delay", readDelay, "How far in the past/future to read (in nanoseconds). A positive values means you are delaying the read.");
-        readDelayOpt->default_val(1);
 
         CLI11_PARSE(app, argc, argv);
 
@@ -707,7 +712,7 @@ namespace
                             .frameRate = parser.getGrainRate(),
                             .frameWidth = static_cast<std::uint64_t>(parser.get<double>("frame_width")),
                             .frameHeight = static_cast<std::uint64_t>(parser.get<double>("frame_height")),
-                            .offset = (audioVideoOffset < 0) ? -audioVideoOffset : 0LL,
+                            .offset = playbackDelay + ((audioVideoOffset < 0) ? -audioVideoOffset : 0LL),
                         };
 
                         auto pipeline = VideoPipeline{videoConfig};
@@ -741,7 +746,7 @@ namespace
                         auto audioConfig = AudioPipelineConfig{
                             .sampleRate = parser.getGrainRate(),
                             .channelCount = parser.getChannelCount(),
-                            .offset = (audioVideoOffset > 0) ? audioVideoOffset : 0LL,
+                            .offset = playbackDelay + ((audioVideoOffset > 0) ? audioVideoOffset : 0LL),
                             .speakerChannels = listenChannels,
                         };
 

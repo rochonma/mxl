@@ -204,12 +204,15 @@ OPTIONS:
                               The MXL domain directory.
   -l,     --listen-channels UINT [[0,1]]  ...
                               Audio channels to listen.
+          --read-delay INT [40000000]
+                              How far in the past/future to read (in nanoseconds). A positive
+                              values means you are delaying the read.
+          --playback-delay INT [0]
+                              The time in nanoseconds, by which to delay playback of audio
+                              and/or video.
           --av-delay INT [0]  The time in nanoseconds, by which to delay the audio relative to
                               video. A positive value means you are delaying audio, a negative
                               value means you are delaying video.
-          --read-delay INT [1]
-                              How far in the past/future to read (in nanoseconds). A positive
-                              values means you are delaying the read.
 ```
 
 Example to run with video only:
