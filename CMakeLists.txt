@@ -109,7 +109,7 @@ if(EXISTS "/etc/os-release")
 
     if(DISTRO_ID MATCHES "ubuntu|debian")
         set(IS_DEBIAN TRUE)
-    elseif(DISTRO_ID MATCHES "amzn|rocky|rhel|fedora|centos")
+    elseif(DISTRO_ID MATCHES "alma|amzn|rocky|rhel|fedora|centos")
         set(IS_RPM TRUE)
     endif()
 
