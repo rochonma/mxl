@@ -50,13 +50,6 @@ enable_testing()
 if(APPLE)
     # Add the official GStreamer framework paths to the PKG_CONFIG_PATH
     set(ENV{PKG_CONFIG_PATH} "/Library/Frameworks/GStreamer.framework/Versions/1.0/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-
-    # Configure threads
-    set(CMAKE_THREAD_LIBS_INIT "-lpthread")
-    set(CMAKE_HAVE_THREADS_LIBRARY 1)
-    set(CMAKE_USE_WIN32_THREADS_INIT 0)
-    set(CMAKE_USE_PTHREADS_INIT 1)
-    set(THREADS_PREFER_PTHREAD_FLAG ON)
 endif()
 
 add_subdirectory(lib)

@@ -59,10 +59,13 @@ set_target_properties(mxl
             VERSION                   "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
             SOVERSION                 "${PROJECT_VERSION_MAJOR}"
     )
-target_link_options(mxl
-        PRIVATE
-            "-Wl,--exclude-libs,ALL"
-    )
+
+if (NOT APPLE)
+    target_link_options(mxl
+            PRIVATE
+                "-Wl,--exclude-libs,ALL"
+        )
+endif()
 
 target_sources(mxl
         PRIVATE
