@@ -6,7 +6,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Unknown error: {0}")]
-    Unknown(mxl_sys::mxlStatus),
+    Unknown(mxl_sys::Status),
     #[error("Flow not found")]
     FlowNotFound,
     #[error("Out of range - too late")]
@@ -27,15 +27,15 @@ pub enum Error {
     #[error("Other error: {0}")]
     Other(String),
 
-    #[error("dlopen: {0}")]
-    DlOpen(#[from] dlopen2::Error),
-
     #[error("Null string: {0}")]
     NulString(#[from] std::ffi::NulError),
+
+    #[error("Loading library: {0}")]
+    LibLoading(#[from] libloading::Error),
 }
 
 impl Error {
-    pub fn from_status(status: mxl_sys::mxlStatus) -> Result<()> {
+    pub fn from_status(status: mxl_sys::Status) -> Result<()> {
         match status {
             mxl_sys::MXL_STATUS_OK => Ok(()),
             mxl_sys::MXL_ERR_UNKNOWN => Err(Error::Unknown(mxl_sys::MXL_ERR_UNKNOWN)),
