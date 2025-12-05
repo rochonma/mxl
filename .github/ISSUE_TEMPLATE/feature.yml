@@ -8,7 +8,7 @@ body:
   - type: input
     id: requirement_link
     attributes:
-      label: Requirement Issue Link
+      label: Requirement Link
       description: Link to the related issue in MXL Requirements repo (e.g., `dmf-mxl/mxl-requirements#99999` or full URL)
       placeholder: "dmf-mxl/mxl-requirements#99999"
     validations:

@@ -6,6 +6,11 @@ on:
   issues:
     types: [opened]
 
+permissions:
+  contents: read
+  issues: write
+  repository-projects: write
+
 jobs:
   link-requirement:
     runs-on: ubuntu-latest
@@ -39,36 +44,46 @@ jobs:
             echo "Invalid requirement_link format: $LINK"
           fi
           
+      # This uses the GitHub App created and installed for our purpose
+      - name: Create cross-repo token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.CROSS_REPO_ISSUE_ACCESS_APP_ID }}
+          private-key: ${{ secrets.CROSS_REPO_ISSUE_ACCESS_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}  # token can access repos in this owner installation
+
+      - name: Export GH_TOKEN for subsequent steps
+        run: |
+          echo "GH_TOKEN=${{ steps.app-token.outputs.token }}" >> "$GITHUB_ENV"
+          
       - name: Debug token presence
         run: |
-          if [ -z "${{ secrets.GH_TOKEN }}" ]; then
+          if [ -z "${GH_TOKEN}" ]; then
             echo "GH_TOKEN is empty or not set!"
             exit 1
           else
             echo "GH_TOKEN is set."
           fi
 
-      - name: Comment on parent issue
-        if: steps.extract.outputs.issue_num != ''
-        run: |
-          curl -X POST \
-            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ steps.extract.outputs.owner_repo }}/issues/${{ steps.extract.outputs.issue_num }}/comments \
-            -d "{\"body\": \"Linked feature: ${{ github.repository }}#${{ github.event.issue.number }}\"}"
+      # - name: Comment on parent issue
+      #   if: steps.extract.outputs.issue_num != ''
+      #   run: |
+      #     curl -X POST \
+      #       -H "Authorization: token $GH_TOKEN" \
+      #       -H "Accept: application/vnd.github.v3+json" \
+      #       https://api.github.com/repos/${{ steps.extract.outputs.owner_repo }}/issues/${{ steps.extract.outputs.issue_num }}/comments \
+      #       -d "{\"body\": \"Linked feature: ${{ github.repository }}#${{ github.event.issue.number }}\"}"
 
-      - name: Set 'Type' field to 'Feature' in GitHub Project
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN}}
-        run: |
-          curl -X POST -H "Authorization: bearer $GH_TOKEN" -H "Content-Type: application/json" \
-          -d '{
-            "query": "mutation { updateProjectV2ItemFieldValue(input: {projectId: \"PROJECT_ID\", itemId: \"ITEM_ID\", fieldId: \"TYPE_FIELD_ID\", value: { singleSelectOptionId: \"FEATURE_OPTION_ID\" }}) { projectV2Item { id } } }"
-          }' https://api.github.com/graphql
+      # - name: Set 'Type' field to 'Feature' in GitHub Project
+      #   run: |
+      #     curl -X POST -H "Authorization: bearer $GH_TOKEN" -H "Content-Type: application/json" \
+      #     -d '{
+      #       "query": "mutation { updateProjectV2ItemFieldValue(input: {projectId: \"PROJECT_ID\", itemId: \"ITEM_ID\", fieldId: \"TYPE_FIELD_ID\", value: { singleSelectOptionId: \"FEATURE_OPTION_ID\" }}) { projectV2Item { id } } }"
+      #     }' https://api.github.com/graphql
           
       - name: Link as sub-issue using gh CLI
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           PARENT_REPO: ${{ steps.extract.outputs.owner_repo }}
           PARENT_NUMBER: ${{ steps.extract.outputs.issue_num }}
           CHILD_REPO: ${{ github.repository }}
