@@ -54,9 +54,9 @@ watch -n 1 -p ./mxl-info -d ~/mxl_domain/ -f 5fbec3b1-1b0f-417d-9059-8b94a47197e
 
 TODO. A generic GUI application based on gstreamer or ffmpeg to display flow(s).
 
-## mxl-gst-videotestsrc
+## mxl-gst-testsrc
 
-A binary that uses the gstreamer element 'videotestsrc' to produce video grains and/or audio samples which will be pushed to a MXL Flow. The flow is configured from a NMOS Flow json file. Here's an example of such file :
+A binary that uses the gstreamer 'videotestsrc' and 'audiotestsrc' elements to produce video grains and/or audio samples which will be pushed to a MXL Flow. The flow is configured from a NMOS Flow json file. Here's an example of such file :
 
 ```json
 {
@@ -98,10 +98,10 @@ A binary that uses the gstreamer element 'videotestsrc' to produce video grains 
 ```
 
 ```bash
-mxl-gst-videotestsrc
+mxl-gst-testsrc
 
 
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videotestsrc [OPTIONS]
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-testsrc [OPTIONS]
 
 
 OPTIONS:
@@ -132,7 +132,7 @@ OPTIONS:
 Example to run with video only:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videotestsrc \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-testsrc \
   -d /dev/shm \
   -v lib/tests/data/v210_flow.json
 ```
@@ -140,7 +140,7 @@ Example to run with video only:
 Example to run with audio only:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videotestsrc \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-testsrc \
   -d /dev/shm \
   -a lib/tests/data/audio_flow.json
 ```
@@ -148,7 +148,7 @@ Example to run with audio only:
 Example to run with both video and audio:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videotestsrc \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-testsrc \
   -d /dev/shm \
   -v lib/tests/data/v210_flow.json \
   -a lib/tests/data/audio_flow.json
@@ -178,7 +178,7 @@ audio_options.json
 You can run the full example with:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videotestsrc \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-testsrc \
   -d /dev/shm \
   -v lib/tests/data/v210_flow.json \
   --video-options-file video_options.json \
@@ -186,12 +186,12 @@ You can run the full example with:
   --audio-options-file audio_options.json
 ```
 
-## mxl-gst-videosink
+## mxl-gst-sink
 
 A binary that reads from a MXL Flow and display the flow using the gstreamer element 'autovideosink'.
 
 ```bash
-./build/Linux-GCC-Release/tools/mxl-gst/mxl-gst-videosink [OPTIONS]
+./build/Linux-GCC-Release/tools/mxl-gst/mxl-gst-sink [OPTIONS]
 
 
 OPTIONS:
@@ -201,34 +201,24 @@ OPTIONS:
   -a,     --audio-flow-id TEXT
                               The audio flow ID
   -d,     --domain TEXT:DIR REQUIRED
-                              The MXL domain directory
-  -t,     --timeout UINT      The read timeout in ns, frame interval + 1 ms used if not
-                              specified
+                              The MXL domain directory.
   -l,     --listen-channels UINT [[0,1]]  ...
-                              Audio channels to listen
-          --audio-offset INT [150000000]
-                              Audio playback offset in nanoseconds. Positive value means you
-                              are delaying the playback
-          --video-offset INT [150000000]
-                              Video plaback offset in nanoseconds. Positive value means you are
-                              delaying the playback
-          --audio-read-delay INT [768]
-                              How far in the past/future to read (in audio samples). Positive
-                              value means you are delaying the read
-          --video-read-delay INT [1]
-                              How far in the past/future to read (in video frames). Positive
-                              value means you are delaying the read
-          --timeout-mode [0]  In timeout mode, the sink uses blocking methods with timeout
-                              instead of reading with a defined delay. Currently only video
-                              supports this mode and --video-offset is used for both the
-                              timeout value and playback offset.
-
+                              Audio channels to listen.
+          --read-delay INT [40000000]
+                              How far in the past/future to read (in nanoseconds). A positive
+                              values means you are delaying the read.
+          --playback-delay INT [0]
+                              The time in nanoseconds, by which to delay playback of audio
+                              and/or video.
+          --av-delay INT [0]  The time in nanoseconds, by which to delay the audio relative to
+                              video. A positive value means you are delaying audio, a negative
+                              value means you are delaying video.
 ```
 
 Example to run with video only:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videosink \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-sink \
   -d /dev/shm \
   -v 5fbec3b1-1b0f-417d-9059-8b94a47197ed
 ```
@@ -236,7 +226,7 @@ Example to run with video only:
 Example to run with audio only:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videosink \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-sink \
   -d /dev/shm \
   -a b3bb5be7-9fe9-4324-a5bb-4c70e1084449
 ```
@@ -244,20 +234,8 @@ Example to run with audio only:
 Example to run with both video and audio:
 
 ```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videosink \
+./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-sink \
   -d /dev/shm \
   -v 5fbec3b1-1b0f-417d-9059-8b94a47197ed \
   -a b3bb5be7-9fe9-4324-a5bb-4c70e1084449
-```
-
-If you experience audio artifacts, try increasing the --audio-offset value. On some systems running a type-2 hypervisor with a host VM, audio glitches have been observed with default settings. Increasing the buffer size can resolve this issue.
-
-```bash
-./build/Linux-Clang-Debug/tools/mxl-gst/mxl-gst-videosink \
-  -d /dev/shm \
-  -v 5fbec3b1-1b0f-417d-9059-8b94a47197ed \
-  --video-offset 1000000000 \
-  -a b3bb5be7-9fe9-4324-a5bb-4c70e1084449 \
-  --audio-offset 1000000000
-
 ```
