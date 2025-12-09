@@ -10,7 +10,7 @@ The following addressing scheme allows applications to refer to one or multiple 
 An MXL flow or group of flows can be addressed using this RFC 3986 compatible format:  
 
 ```
-mxl://<authority>/<domain-path>?id=<flow1>&<flow2>
+mxl://<authority>/<domain-path>?id=<flow1>&id=<flow2>
 ```
 
 
