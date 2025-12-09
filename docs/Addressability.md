@@ -45,7 +45,7 @@ mxl:///domain/path?id=<flowId1>&id=<flowId2>
 <domain-path> = "/" <segment> *( "/" <segment> )
 ```
 
-The ```domain-path``` part of the URI is required and refers to that on disk *in the context of the media function* of the MXL domain.  The domain path may need to be translated by media functions or orchestration layer(s). For example, an MXL domain may live on ```/dev/shm/domain1``` on a host but is mapped inside a container to ```/dev/shm/mxl```.  This translation is outside the scope of the MXL project.  
+The ```domain-path``` part of the URI is required and refers to the file system path *in the context of the media function* of the MXL domain.  The domain path may need to be translated by media functions or orchestration layer(s). For example, an MXL domain may live on ```/dev/shm/domain1``` on a host but is mapped inside a container to ```/dev/shm/mxl```.  This translation is outside the scope of the MXL project.  
 
 
 
