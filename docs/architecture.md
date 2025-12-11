@@ -143,7 +143,9 @@ Key points:
 
 ### audio/float32
 
-The `audio/float32` format has audio stored as 32 bit [IEEE 754](https://standards.ieee.org/ieee/754/6210/) float values with a full-scale range of \[−1.0 ; +1.0]\. This is the same audio representation as in RIFF/WAV files with `<wFormatTag>` 0x0003 WAVE_FORMAT_IEEE_FLOAT.
+The `audio/float32` format has audio stored as 32 bit [IEEE 754](https://standards.ieee.org/ieee/754/6210/) float values with a full-scale range of \[−1.0 ; +1.0]\. This is the same audio representation as in RIFF/WAV files with `<wFormatTag>` `0x0003` `WAVE_FORMAT_IEEE_FLOAT`.
+
+Please note that flow producing media functions are not required to stay within the full-scale range and *should not* artificially clamp values to that range. Instead flow consuming media functions that are sensitive to levels exceeding 0 dbFS should, as a fail-safe measure clamp the sample values read to the supported range. This gives operators increased freedom in architecting their processing pipelines and retaining maximum fidelity.
 
 ## Ancillary Data
 
