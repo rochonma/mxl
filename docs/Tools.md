@@ -101,7 +101,8 @@ A binary that uses the gstreamer 'videotestsrc' and 'audiotestsrc' elements to p
   ]
 }
 ```
-And here is an example of the NMOS FLow json file for an audio flow. To modify the number of audio channels present in a flow, modify the *"channel_count"* parameter to the desired value.
+Below is an example of an **augmented NMOS Flow JSON** for audio.  
+&emsp; **Note:** The *channel_count* property is a mandatory MXL requirement (not found in standard NMOS definition). To adjust the number of audio channels, simply update the *channel_count* value.
 
 ```json
 {
