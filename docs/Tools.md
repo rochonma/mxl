@@ -60,19 +60,24 @@ A binary that uses the gstreamer 'videotestsrc' and 'audiotestsrc' elements to p
 
 ```json
 {
-  "description": "MXL Test File",
-  "id": "5fbec3b1-1b0f-417d-9059-8b94a47197ef",
-  "tags": {},
+  "description": "MXL Test Flow, 1080p29",
+  "id": "5fbec3b1-1b0f-417d-9059-8b94a47197ed",
+  "tags": {
+    "urn:x-nmos:tag:grouphint/v1.0": [
+      "Media Function XYZ:Video"
+    ]
+  },
   "format": "urn:x-nmos:format:video",
-  "label": "MXL Test File",
+  "label": "MXL Test Flow, 1080p29",
   "parents": [],
   "media_type": "video/v210",
   "grain_rate": {
-    "numerator": 50,
-    "denominator": 1
+    "numerator": 30000,
+    "denominator": 1001
   },
   "frame_width": 1920,
   "frame_height": 1080,
+  "interlace_mode": "progressive",
   "colorspace": "BT709",
   "components": [
     {
@@ -94,6 +99,32 @@ A binary that uses the gstreamer 'videotestsrc' and 'audiotestsrc' elements to p
       "bit_depth": 10
     }
   ]
+}
+```
+Below is an example of an **augmented NMOS Flow JSON** for audio.  
+&emsp; **Note:** The *channel_count* property is a mandatory MXL requirement (not found in standard NMOS definition). To adjust the number of audio channels, simply update the *channel_count* value.
+
+```json
+{
+  "description": "MXL Audio Flow",
+  "format": "urn:x-nmos:format:audio",
+  "tags": {
+    "urn:x-nmos:tag:grouphint/v1.0": [
+      "Media Function XYZ:Audio"
+    ]
+  },
+  "label": "MXL Audio Flow",
+  "version": "1441812152:154331951",
+  "id": "b3bb5be7-9fe9-4324-a5bb-4c70e1084449",
+  "media_type": "audio/float32",
+  "sample_rate": {
+    "numerator": 48000
+  },
+  "channel_count": 2,
+  "bit_depth": 32,
+  "parents": [],
+  "source_id": "2aa143ac-0ab7-4d75-bc32-5c00c13d186f",
+  "device_id": "169feb2c-3fae-42a5-ae2e-f6f8cbce29cf"
 }
 ```
 
