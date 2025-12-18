@@ -127,6 +127,8 @@ OPTIONS:
                               https://gstreamer.freedesktop.org/documentation/videotestsrc/index.html?gi-language=c#GstVideoTestSrcPattern
   -t,     --overlay-text TEXT [EBU DMF MXL]
                               Change the text overlay of the test source
+  -g,     --group-hint TEXT [mxl-gst-testsrc-group]  
+                              The group-hint value to use in the flow json definition                               
 ```
 
 Example to run with video only:
