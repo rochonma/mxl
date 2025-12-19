@@ -135,6 +135,9 @@ The workflow followed by the RC and TSC to manage Requirements, create Features,
 # Definition of Done
 The Definition of Done for Requirements, Features and BUg fixes as described in the [Project Workflow](#project-workflow) is maintained [here](DoD.md)
 
+# Release Process
+The project release process is documented [here](Release%20Process.md)
+
 # Licensing
 
 - All code contributions must be under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
