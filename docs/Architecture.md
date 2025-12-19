@@ -43,7 +43,7 @@ An _mxlFlowReader_ will only _mmap_ flow resources in readonly mode (PROT_READ),
 
 ## Timing model
 
-See [timing model](./timing.md)
+See [timing model](./Timing.md)
 
 ## Discrete Grain I/O
 
