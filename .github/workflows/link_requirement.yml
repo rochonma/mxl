@@ -10,9 +10,9 @@ on:
   workflow_dispatch:
     inputs:
       issue_number:
-        description: "Feature issue number to test with"
-        type: number
         required: true
+        type: number
+        description: "Feature issue number to test with"
 
 permissions:
   contents: read
@@ -22,7 +22,6 @@ permissions:
 jobs:
   link-requirement:
 
-    # Run for Issue Type = Feature OR workflow_dispatch
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event.issue.type == 'Feature' ||
@@ -37,19 +36,17 @@ jobs:
     steps:
 
       ###########################################################################
-      # 0. TOKEN INITIALIZATION — MUST RUN BEFORE ANY gh COMMANDS
+      # 0. TOKEN INITIALISATION
       ###########################################################################
       - name: Determine token mode
         id: token_mode
         run: |
-          echo "Event=${{ github.event_name }}"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "mode=dispatch" >> "$GITHUB_OUTPUT"
           else
             echo "mode=real" >> "$GITHUB_OUTPUT"
           fi
 
-      # Real GitHub issue → GitHub App token
       - name: Create GitHub App token
         if: ${{ steps.token_mode.outputs.mode == 'real' }}
         id: app_token
@@ -61,16 +58,11 @@ jobs:
 
       - name: Export GH_TOKEN (real)
         if: ${{ steps.token_mode.outputs.mode == 'real' }}
-        run: |
-          echo "Using GitHub App token"
-          echo "GH_TOKEN=${{ steps.app_token.outputs.token }}" >> "$GITHUB_ENV"
+        run: echo "GH_TOKEN=${{ steps.app_token.outputs.token }}" >> "$GITHUB_ENV"
 
-      # Test mode → GitHub-provided GITHUB_TOKEN
       - name: Export GH_TOKEN (dispatch)
         if: ${{ steps.token_mode.outputs.mode == 'dispatch' }}
-        run: |
-          echo "Using GITHUB_TOKEN (dispatch mode)"
-          echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
+        run: echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
 
       - name: Verify GH_TOKEN
         run: |
@@ -82,46 +74,53 @@ jobs:
 
 
       ###########################################################################
-      # 1. FETCH FIRST COMMENT (Issue Form output lives here!)
+      # 1. FETCH ISSUE TIMELINE — the *real* source of Issue Form content
       ###########################################################################
-      - name: Fetch first comment (form contents)
-        id: fetch_comment
+      - name: Fetch timeline
+        id: fetch_timeline
         run: |
-          echo "Fetching comments for issue #${ISSUE_NUMBER}"
-          COMMENTS=$(gh api "repos/${{ github.repository }}/issues/${ISSUE_NUMBER}/comments" || echo "[]")
+          echo "Fetching timeline for issue #${ISSUE_NUMBER}"
 
-          FIRST=$(echo "$COMMENTS" | jq -r '.[0].body // ""')
+          # Timeline requires preview header
+          TIMELINE=$(gh api \
+            -H "Accept: application/vnd.github.mockingbird-preview+json" \
+            "repos/${{ github.repository }}/issues/${ISSUE_NUMBER}/timeline" || echo "[]")
 
-          echo "--- First comment (truncated) ---"
-          echo "$FIRST" | head -c 300
+          echo "$TIMELINE" > timeline.json
+
+          echo "--- Timeline snippet ---"
+          head -c 500 timeline.json
           echo
-          echo "-------------------------------"
+          echo "------------------------"
 
+          # Export to environment variable
           {
-            echo "FORM_BODY<<EOF"
-            echo "$FIRST"
+            echo "ISSUE_TIMELINE<<EOF"
+            cat timeline.json
             echo "EOF"
           } >> "$GITHUB_ENV"
 
 
-
       ###########################################################################
-      # 2. Extract requirement_link from FIRST COMMENT — Unicode‑safe
+      # 2. EXTRACT REQUIREMENT LINK FROM TIMELINE
       ###########################################################################
-      - name: Extract requirement_link from first comment
+      - name: Extract requirement_link from timeline
         id: extract_raw
         run: |
-          echo "=== Extracting requirement_link from FIRST COMMENT ==="
+          echo "=== Extracting from TIMELINE ==="
 
-          # Remove zero-width and other invisible unicode garbage
+          # Look for any timeline item body containing "Requirement Link"
+          FORM_BODY=$(echo "$ISSUE_TIMELINE" | jq -r \
+            '.[] | select(.body != null) | .body' | tr -d '\u200B\u200C\u200D' )
+
+          echo "--- First matching form body (200 chars) ---"
+          echo "$FORM_BODY" | head -c 200
+          echo
+          echo "-------------------------------------------"
+
+          # Sanitize and extract line after heading
           SANITISED=$(printf "%s\n" "$FORM_BODY" | sed 's/[^[:print:]\t]//g')
 
-          echo "--- Sanitised snippet ---"
-          echo "$SANITISED" | head -c 200
-          echo
-          echo "-------------------------"
-
-          # Find line after heading containing "Requirement Link"
           REQ_LINE=$(
             printf "%s\n" "$SANITISED" |
             awk 'tolower($0) ~ /requirement[[:space:]]+link/ {getline; print}' |
@@ -133,31 +132,28 @@ jobs:
           echo "requirement_link=$REQ_LINE" >> "$GITHUB_OUTPUT"
 
 
-
       ###########################################################################
-      # 3. Guard requirement link presence
+      # 3. GUARD REQUIREMENT LINK
       ###########################################################################
       - name: Guard requirement_link exists
         id: guard
         run: |
           LINK="${{ steps.extract_raw.outputs.requirement_link }}"
-          echo "LINK='$LINK'"
           if [ -z "$LINK" ]; then
             if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-              echo "Test mode: continuing"
+              echo "Test mode: continue"
               echo "has=true" >> "$GITHUB_OUTPUT"
             else
-              echo "Missing requirement_link — skipping"
+              echo "Missing requirement link — skipping"
               echo "has=false" >> "$GITHUB_OUTPUT"
             fi
           else
-            echo "Requirement link OK"
+            echo "Found requirement link: $LINK"
             echo "has=true" >> "$GITHUB_OUTPUT"
 
 
-
       ###########################################################################
-      # 4. Normalise requirement link
+      # 4. NORMALIZE requirement_link
       ###########################################################################
       - name: Normalize requirement_link
         if: ${{ steps.guard.outputs.has == 'true' }}
@@ -166,9 +162,6 @@ jobs:
           RAW_LINK: ${{ steps.extract_raw.outputs.requirement_link }}
           DEFAULT: ${{ env.DEFAULT_REQUIREMENTS_REPO }}
         run: |
-          set -euo pipefail
-          echo "Normalising '$RAW_LINK'"
-
           LINK="$(echo "$RAW_LINK" | xargs)"
           OWNER_REPO=""
           ISSUE_NUM=""
@@ -192,9 +185,8 @@ jobs:
           echo "requirement_url=$FULL_URL" >> "$GITHUB_OUTPUT"
 
 
-
       ###########################################################################
-      # 5. Create parent → child sub‑issue link
+      # 5. CREATE SUB-ISSUE LINK
       ###########################################################################
       - name: Link as sub-issue
         if: ${{ steps.extract.outputs.issue_num != '' }}
@@ -204,12 +196,12 @@ jobs:
           CHILD_REPO: ${{ github.repository }}
           CHILD_NUMBER: ${{ env.ISSUE_NUMBER }}
         run: |
-          set -euo pipefail
+          set -e
 
-          echo "Linking child issue #$CHILD_NUMBER → parent #$PARENT_NUMBER"
-
-          PARENT_NODE=$(gh issue view "https://github.com/$PARENT_REPO/issues/$PARENT_NUMBER" --json id --jq .id)
-          CHILD_NODE=$(gh issue view "https://github.com/$CHILD_REPO/issues/$CHILD_NUMBER" --json id --jq .id)
+          PARENT_NODE=$(gh issue view "https://github.com/$PARENT_REPO/issues/$PARENT_NUMBER" \
+            --json id --jq .id)
+          CHILD_NODE=$(gh issue view "https://github.com/$CHILD_REPO/issues/$CHILD_NUMBER" \
+            --json id --jq .id)
 
           gh api graphql \
             -H "GraphQL-Features: sub_issues" \
@@ -226,9 +218,8 @@ jobs:
             "
 
 
-
       ###########################################################################
-      # 6. Append requirement URL to issue body
+      # 6. APPEND NORMALIZED URL TO ISSUE BODY
       ###########################################################################
       - name: Append requirement URL to issue body
         if: ${{ steps.extract.outputs.issue_num != '' }}
@@ -237,16 +228,13 @@ jobs:
           CHILD_REPO: ${{ github.repository }}
           CHILD_NUMBER: ${{ env.ISSUE_NUMBER }}
         run: |
-          echo "Patching issue #${CHILD_NUMBER}"
-
           gh api "repos/$CHILD_REPO/issues/$CHILD_NUMBER" --jq .body > body_current.txt
 
           sed -e '/<!--mxl:requirement:start-->/,/<!--mxl:requirement:end-->/d' \
             body_current.txt > body_clean.txt
 
           printf "\n\n<!--mxl:requirement:start-->\n%s\n<!--mxl:requirement:end-->\n" \
-            "$REQUIRE_URL" \
-            >> body_clean.txt
+            "$REQUIRE_URL" >> body_clean.txt
 
           NEW_BODY="$(cat body_clean.txt)"
 
@@ -257,13 +245,11 @@ jobs:
             -f body="$NEW_BODY"
 
 
-
       ###########################################################################
-      # 7. Final summary
+      # 7. SUMMARY
       ###########################################################################
-      - name: DEBUG — Final summary
+      - name: Final summary
         run: |
-          echo "Event:             ${{ github.event_name }}"
           echo "Issue Number:      ${{ env.ISSUE_NUMBER }}"
           echo "Owner Repo:        ${{ steps.extract.outputs.owner_repo }}"
           echo "Requirement Issue: ${{ steps.extract.outputs.issue_num }}"
