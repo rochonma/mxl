@@ -23,6 +23,9 @@ permissions:
 jobs:
   link-requirement:
 
+    # Run for:
+    # 1) Issue Type = Feature
+    # 2) workflow_dispatch (test mode)
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event.issue.type == 'Feature' ||
@@ -31,13 +34,62 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      # Default repo for number-only requirement links
       DEFAULT_REQUIREMENTS_REPO: ${{ vars.DEFAULT_REQUIREMENTS_REPO || 'dmf-mxl/mxl-requirements' }}
+      # Unified ISSUE_NUMBER:
+      # • issues event → github.event.issue.number
+      # • dispatch event → inputs.issue_number
       ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
 
     steps:
+      # =============================================================
+      # 0. Resolve GH_TOKEN BEFORE any gh commands run (critical)
+      # =============================================================
+      - name: Determine token mode
+        id: token-mode
+        run: |
+          echo "=== TOKEN MODE ==="
+          echo "Event name: ${{ github.event_name }}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=dispatch" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=real" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Real GitHub Issue event → GitHub App token
+      - name: Create GitHub App token (org)
+        if: ${{ steps.token-mode.outputs.mode == 'real' }}
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.CROSS_REPO_ISSUE_ACCESS_APP_ID }}
+          private-key: ${{ secrets.CROSS_REPO_ISSUE_ACCESS_PRIVATE_KEY }}
+          owner: dmf-mxl
+
+      - name: Export GH_TOKEN (real mode)
+        if: ${{ steps.token-mode.outputs.mode == 'real' }}
+        run: |
+          echo "GH_TOKEN=${{ steps.app-token.outputs.token }}" >> "$GITHUB_ENV"
+          echo "=== TOKEN: Using GitHub App token (real mode) ==="
+
+      # workflow_dispatch → GITHUB_TOKEN (safe for read/limited test)
+      - name: Export GH_TOKEN (dispatch mode)
+        if: ${{ steps.token-mode.outputs.mode == 'dispatch' }}
+        run: |
+          echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
+          echo "=== TOKEN: Using GITHUB_TOKEN (test mode) ==="
+
+      - name: Verify GH_TOKEN early
+        run: |
+          echo "=== TOKEN CHECK ==="
+          if [ -z "$GH_TOKEN" ]; then
+            echo "!! GH_TOKEN missing — cannot continue"
+            exit 1
+          fi
+          echo "GH_TOKEN present."
 
       # =============================================================
-      # 0. Print basic job context
+      # A. Debug high-level context
       # =============================================================
       - name: DEBUG — Dump event information
         run: |
@@ -48,28 +100,31 @@ jobs:
           echo "Ref:                ${{ github.ref }}"
           echo "Workflow:           ${{ github.workflow }}"
           echo "Issue number logic: ${{ env.ISSUE_NUMBER }}"
-          echo "------------------------------"
-          echo "Issue type fields (raw):"
-          echo "github.event.issue.type      = '${{ github.event.issue.type }}'"
-          echo "github.event.issue.type.name = '${{ github.event.issue.type.name }}'"
-          echo "------------------------------"
-          echo "Full event payload snippet:"
-          echo '${{ toJson(github.event) }}'
+          echo "Issue type (string): '${{ github.event.issue.type }}'"
+          echo "Issue type (object): '${{ github.event.issue.type.name }}'"
 
       # =============================================================
-      # 1. Fetch issue body
+      # 1. Fetch issue body (as output)
       # =============================================================
       - name: Fetch issue body
         id: fetch
         run: |
           echo "=== STEP 1: Fetching issue body ==="
           echo "Fetching body for ISSUE_NUMBER=${ISSUE_NUMBER}"
-          gh api "repos/${{ github.repository }}/issues/${ISSUE_NUMBER}" --jq .body > issue_body.txt
-          echo "Fetched issue body:"
-          cat issue_body.txt
+          gh api "repos/${{ github.repository }}/issues/${ISSUE_NUMBER}" --jq .body > issue_body.txt || true
+
+          # Expose as a multiline step output
+          echo "body<<'EOF'" >> "$GITHUB_OUTPUT"
+          cat issue_body.txt >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+          echo "--- fetched body (truncated to 400 chars) ---"
+          head -c 400 issue_body.txt || true
+          echo
+          echo "--- end fetched body ---"
 
       # =============================================================
-      # 2. Parse form
+      # 2. Parse issue form (best effort)
       # =============================================================
       - name: Parse issue form (best effort)
         id: parse
@@ -82,10 +137,9 @@ jobs:
         run: |
           echo "=== STEP 2: PARSED FORM FIELDS ==="
           echo "requirement_link: '${{ steps.parse.outputs.requirement_link }}'"
-          echo "(If blank, likely workflow_dispatch test mode or edit event.)"
 
       # =============================================================
-      # 3. Guard check
+      # 3. Guard — ensure requirement_link exists
       # =============================================================
       - name: Guard – ensure requirement_link exists
         id: guard
@@ -96,14 +150,14 @@ jobs:
           if [ -z "$LINK" ]; then
             if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
               echo "No requirement_link → continuing (test mode)"
-              echo "has=true" >> $GITHUB_OUTPUT
+              echo "has=true" >> "$GITHUB_OUTPUT"
             else
               echo "No requirement_link → skipping workflow"
-              echo "has=false" >> $GITHUB_OUTPUT
+              echo "has=false" >> "$GITHUB_OUTPUT"
             fi
           else
             echo "Requirement link found."
-            echo "has=true" >> $GITHUB_OUTPUT
+            echo "has=true" >> "$GITHUB_OUTPUT"
           fi
 
       # =============================================================
@@ -155,9 +209,9 @@ jobs:
             FULL_URL="https://github.com/${OWNER_REPO}/issues/${ISSUE_NUM}"
             echo "Final normalised FULL_URL: $FULL_URL"
 
-            echo "owner_repo=$OWNER_REPO"     >> $GITHUB_OUTPUT
-            echo "issue_num=$ISSUE_NUM"      >> $GITHUB_OUTPUT
-            echo "requirement_url=$FULL_URL" >> $GITHUB_OUTPUT
+            echo "owner_repo=$OWNER_REPO"     >> "$GITHUB_OUTPUT"
+            echo "issue_num=$ISSUE_NUM"      >> "$GITHUB_OUTPUT"
+            echo "requirement_url=$FULL_URL" >> "$GITHUB_OUTPUT"
           fi
 
       - name: DEBUG — Extract outputs
@@ -168,47 +222,7 @@ jobs:
           echo "requirement_url= '${{ steps.extract.outputs.requirement_url }}'"
 
       # =============================================================
-      # 5. Token Logic (bullet‑proof)
-      # =============================================================
-      - name: Create GitHub App token (org)
-        if: ${{ github.event_name != 'workflow_dispatch' && steps.extract.outputs.issue_num != '' }}
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ vars.CROSS_REPO_ISSUE_ACCESS_APP_ID }}
-          private-key: ${{ secrets.CROSS_REPO_ISSUE_ACCESS_PRIVATE_KEY }}
-          owner: dmf-mxl
-
-      - name: DEBUG — Show app-token output
-        if: ${{ github.event_name != 'workflow_dispatch' && steps.extract.outputs.issue_num != '' }}
-        run: |
-          echo "=== TOKEN: GitHub App token created ==="
-          echo "app-token.outputs.token length: ${#{{ steps.app-token.outputs.token }} }"
-
-      - name: Export GH_TOKEN from GitHub App
-        if: ${{ github.event_name != 'workflow_dispatch' && steps.extract.outputs.issue_num != '' }}
-        run: |
-          echo "=== TOKEN: Assigning GitHub App token to GH_TOKEN ==="
-          echo "GH_TOKEN=${{ steps.app-token.outputs.token }}" >> "$GITHUB_ENV"
-
-      - name: Export GH_TOKEN for test mode
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: |
-          echo "=== TOKEN: Using GITHUB_TOKEN in test mode ==="
-          echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
-
-      - name: Verify GH_TOKEN
-        if: ${{ steps.extract.outputs.issue_num != '' }}
-        run: |
-          echo "=== TOKEN: Verifying GH_TOKEN ==="
-          if [ -z "$GH_TOKEN" ]; then
-            echo "!! ERROR: GH_TOKEN empty"
-            exit 1
-          fi
-          echo "GH_TOKEN present."
-
-      # =============================================================
-      # 6. Parent → child sub‑issue link
+      # 5. Parent → child sub‑issue link
       # =============================================================
       - name: Link as sub-issue
         if: ${{ steps.extract.outputs.issue_num != '' }}
@@ -218,7 +232,7 @@ jobs:
           CHILD_REPO: ${{ github.repository }}
           CHILD_NUMBER: ${{ env.ISSUE_NUMBER }}
         run: |
-          echo "=== STEP 6: Linking child to parent ==="
+          echo "=== STEP 5: Linking child to parent ==="
           echo "PARENT_REPO=$PARENT_REPO"
           echo "PARENT_NUMBER=$PARENT_NUMBER"
           echo "CHILD_REPO=$CHILD_REPO"
@@ -247,7 +261,7 @@ jobs:
             "
 
       # =============================================================
-      # 7. Append clickable URL to bottom of body
+      # 6. Append clickable URL to bottom of body (idempotent)
       # =============================================================
       - name: Append normalized URL to issue body (idempotent)
         if: ${{ steps.extract.outputs.issue_num != '' }}
@@ -256,25 +270,29 @@ jobs:
           CHILD_NUMBER: ${{ env.ISSUE_NUMBER }}
           REQUIRE_URL: ${{ steps.extract.outputs.requirement_url }}
         run: |
-          echo "=== STEP 7: Updating Issue Body ==="
+          echo "=== STEP 6: Updating Issue Body ==="
           echo "CHILD_REPO=$CHILD_REPO"
           echo "CHILD_NUMBER=$CHILD_NUMBER"
           echo "Appending: $REQUIRE_URL"
 
-          gh api "repos/$CHILD_REPO/issues/$CHILD_NUMBER" --jq .body > body_current.txt
+          gh api "repos/$CHILD_REPO/issues/$CHILD_NUMBER" --jq .body > body_current.txt || echo -n > body_current.txt
 
-          echo "--- existing body ---"
-          cat body_current.txt
+          echo "--- existing body (truncated to 400 chars) ---"
+          head -c 400 body_current.txt || true
+          echo
           echo "--- end existing body ---"
 
+          # Remove previous block between markers (if any)
           sed -e '/<!--mxl:requirement:start-->/,/<!--mxl:requirement:end-->/d' body_current.txt > body_clean.txt
 
+          # Append new normalized URL wrapped in invisible markers
           printf "\n\n<!--mxl:requirement:start-->\n%s\n<!--mxl:requirement:end-->\n" "$REQUIRE_URL" >> body_clean.txt
 
           NEW_BODY="$(cat body_clean.txt)"
 
-          echo "--- new body ---"
-          echo "$NEW_BODY"
+          echo "--- new body (truncated to 400 chars) ---"
+          echo "$NEW_BODY" | head -c 400 || true
+          echo
           echo "--- end new body ---"
 
           gh api \
@@ -284,7 +302,7 @@ jobs:
             -f body="$NEW_BODY"
 
       # =============================================================
-      # 8. Final summary
+      # 7. Final summary
       # =============================================================
       - name: DEBUG — Final summary
         run: |
@@ -294,5 +312,4 @@ jobs:
           echo "Owner Repo:        ${{ steps.extract.outputs.owner_repo }}"
           echo "Requirement Issue: ${{ steps.extract.outputs.issue_num }}"
           echo "Requirement URL:   ${{ steps.extract.outputs.requirement_url }}"
-          echo "GH_TOKEN length:   ${#GH_TOKEN}"
           echo "Workflow completed."
