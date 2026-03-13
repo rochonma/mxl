@@ -35,11 +35,23 @@ jobs:
 
     steps:
 
-      - name: DEBUG — dump complete event to file
+      - name: DEBUG — capture raw event payload
         run: |
-          echo '${{ toJson(github.event) }}' > event.json
-          echo "=== DEBUG: event.json written ==="
-          head -n 50 event.json
+          cp "$GITHUB_EVENT_PATH" event.json
+          echo "Wrote $(wc -c < event.json) bytes to event.json"
+          echo "First 40 lines:"
+          head -n 40 event.json
+
+      - name: Upload event.json as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: event-payload
+          path: event.json
+          retention-days: 7
+
+      - name: Add a summary note
+        run: |
+          echo "Event payload saved as artifact **event-payload**." >> "$GITHUB_STEP_SUMMARY"
 
       ###########################################################################
       # 0. TOKEN INITIALISATION
