@@ -9,7 +9,7 @@ on:
       - main
       - docs-action # for testing
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -27,7 +27,8 @@ jobs:
         with:
           python-version: 3.x
 
-      - run: pip install zensical mike
+      - run: pip install zensical
+      - run: pip install git+https://github.com/squidfunk/mike.git
 
       - run: zensical build --clean
 
