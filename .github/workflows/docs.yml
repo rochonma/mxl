@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the Media eXchange Layer project.
+# SPDX-License-Identifier: CC-BY-4.0
+
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+      - docs-action # for testing
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Fetch gh-pages branch
+        run: git fetch origin gh-pages --depth=1 || true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+
+      - run: pip install zensical
+      - run: pip install git+https://github.com/squidfunk/mike.git
+
+      - name: Prepare docs/ tree for site build
+        run: ./.github/scripts/prepare-docs.sh
+
+      - run: zensical build --clean
+
+      - name: Check for broken links with lychee
+        uses: lycheeverse/lychee-action@v1.8.0
+        with:
+          args: ./site/**/*.html -- --root-dir ./site
+
+      # Configure git for mike to push to gh-pages
+      - name: Configure git for mike
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # Deploy docs with mike using branch or tag as version
+      - name: Deploy docs with mike (branch or tag)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "branch" ]]; then
+            mike deploy --push --update-aliases "${GITHUB_REF_NAME}" latest
+          elif [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            mike deploy --push --update-aliases "${GITHUB_REF_NAME}"
+          fi
