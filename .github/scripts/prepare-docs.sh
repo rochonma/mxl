@@ -22,9 +22,9 @@
 set -euo pipefail
 
 REPO_SLUG="dmf-mxl/mxl"
-# Use the ref we're building from when available (so tag builds link to the
-# matching tag), otherwise fall back to main.
-REF="${GITHUB_REF_NAME:-main}"
+# Use BUILD_REF if the workflow set one (covers dispatch with an input ref),
+# else the ref the run was triggered on, else fall back to main.
+REF="${BUILD_REF:-${GITHUB_REF_NAME:-main}}"
 REPO_URL="https://github.com/${REPO_SLUG}/blob/${REF}"
 
 if [[ ! -f README.md ]]; then
