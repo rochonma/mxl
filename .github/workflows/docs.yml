@@ -35,8 +35,8 @@ jobs:
       - run: pip install zensical
       - run: pip install git+https://github.com/squidfunk/mike.git
 
-      - name: Generate docs/index.md landing page from README.md
-        run: ./.github/scripts/generate-docs-index.sh
+      - name: Prepare docs/ tree for site build
+        run: ./.github/scripts/prepare-docs.sh
 
       - run: zensical build --clean
 
