@@ -58,12 +58,3 @@ jobs:
           elif [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
             mike deploy --push --update-aliases "${GITHUB_REF_NAME}"
           fi
-
-      # Upload built site as GitHub Pages artifact (optional, for GitHub Pages integration)
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: site
-
-      # Deploy to GitHub Pages (if using GitHub Pages deployment)
-      - uses: actions/deploy-pages@v4
-        id: deployment
