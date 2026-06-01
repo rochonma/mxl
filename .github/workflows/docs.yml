@@ -35,6 +35,9 @@ jobs:
       - run: pip install zensical
       - run: pip install git+https://github.com/squidfunk/mike.git
 
+      - name: Generate docs/index.md landing page from README.md
+        run: ./.github/scripts/generate-docs-index.sh
+
       - run: zensical build --clean
 
       - name: Check for broken links with lychee
