@@ -83,7 +83,7 @@ jobs:
       - name: Check for broken links with lychee
         uses: lycheeverse/lychee-action@v2.0.2
         with:
-          args: ./site/**/*.html -- --root-dir ./site
+          args: "./site/**/*.html --root-dir ./site"
 
       # Configure git for mike to push to gh-pages
       - name: Configure git for mike
