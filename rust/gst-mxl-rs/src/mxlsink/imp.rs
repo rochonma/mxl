@@ -87,6 +87,30 @@ impl ObjectImpl for MxlSink {
                     .default_value(DEFAULT_DOMAIN)
                     .mutable_ready()
                     .build(),
+                glib::ParamSpecString::builder("description")
+                    .nick("Description")
+                    .blurb(
+                        "Description of the created MXL flow \
+                         (default: auto-generated per media type)",
+                    )
+                    .mutable_ready()
+                    .build(),
+                glib::ParamSpecString::builder("label")
+                    .nick("Label")
+                    .blurb(
+                        "Label of the created MXL flow \
+                         (default: auto-generated per media type)",
+                    )
+                    .mutable_ready()
+                    .build(),
+                glib::ParamSpecString::builder("group-hint")
+                    .nick("GroupHint")
+                    .blurb(
+                        "NMOS grouphint group name; the role (Video/Audio/Data) is \
+                         appended automatically (default: 'Media Function <pid>')",
+                    )
+                    .mutable_ready()
+                    .build(),
             ]
         });
 
@@ -144,6 +168,27 @@ impl ObjectImpl for MxlSink {
                         gst::error!(CAT, imp = self, "Invalid type for domain property");
                     }
                 }
+                "description" => {
+                    if let Ok(description) = value.get::<Option<String>>() {
+                        settings.description = description;
+                    } else {
+                        gst::error!(CAT, imp = self, "Invalid type for description property");
+                    }
+                }
+                "label" => {
+                    if let Ok(label) = value.get::<Option<String>>() {
+                        settings.label = label;
+                    } else {
+                        gst::error!(CAT, imp = self, "Invalid type for label property");
+                    }
+                }
+                "group-hint" => {
+                    if let Ok(group_hint) = value.get::<Option<String>>() {
+                        settings.group_hint = group_hint;
+                    } else {
+                        gst::error!(CAT, imp = self, "Invalid type for group-hint property");
+                    }
+                }
                 other => {
                     gst::error!(CAT, imp = self, "Unknown property '{}'", other);
                 }
@@ -162,6 +207,9 @@ impl ObjectImpl for MxlSink {
             match pspec.name() {
                 "flow-id" => settings.flow_id.to_value(),
                 "domain" => settings.domain.to_value(),
+                "description" => settings.description.to_value(),
+                "label" => settings.label.to_value(),
+                "group-hint" => settings.group_hint.to_value(),
                 _ => {
                     gst::error!(CAT, imp = self, "Unknown property {}", pspec.name());
                     glib::Value::from(&"")
@@ -385,16 +433,16 @@ impl BaseSinkImpl for MxlSink {
             .ok_or_else(|| gst::loggable_error!(CAT, "No structure in caps {}", caps))?;
         let name = structure.name();
         if name == "video/x-raw" {
-            init_state_with_video(state, structure, &settings.flow_id)?;
+            init_state_with_video(state, structure, &settings)?;
             Ok(())
         } else if name == "audio/x-raw" {
             let info = gst_audio::AudioInfo::from_caps(caps)
                 .map_err(|e| gst::loggable_error!(CAT, "Invalid audio caps: {}", e))?;
 
-            init_state_with_audio(state, info, &settings.flow_id)?;
+            init_state_with_audio(state, info, &settings)?;
             Ok(())
         } else if name == "meta/x-st-2038" {
-            init_state_with_data(state, structure, &settings.flow_id)?;
+            init_state_with_data(state, structure, &settings)?;
             Ok(())
         } else {
             Err(gst::loggable_error!(CAT, "Unknown caps: {}", caps))

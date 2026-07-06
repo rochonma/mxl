@@ -39,6 +39,9 @@ const MAX_CHANNEL_SIZE: usize = 50;
 pub(crate) struct Settings {
     pub flow_id: String,
     pub domain: String,
+    pub description: Option<String>,
+    pub label: Option<String>,
+    pub group_hint: Option<String>,
 }
 
 impl Default for Settings {
@@ -46,8 +49,26 @@ impl Default for Settings {
         Settings {
             flow_id: DEFAULT_FLOW_ID.to_owned(),
             domain: DEFAULT_DOMAIN.to_owned(),
+            description: None,
+            label: None,
+            group_hint: None,
         }
     }
+}
+
+/// NMOS grouphint tag: `<group-name>:<role-in-group>`, where the group name
+/// comes from the `group-hint` property or defaults to the process id.
+pub(crate) fn group_hint_tags(settings: &Settings, role: &str) -> HashMap<String, Vec<String>> {
+    let group_name = settings
+        .group_hint
+        .clone()
+        .unwrap_or_else(|| format!("Media Function {}", process::id()));
+    let mut tags = HashMap::new();
+    tags.insert(
+        "urn:x-nmos:tag:grouphint/v1.0".to_string(),
+        vec![format!("{}:{}", group_name, role)],
+    );
+    tags
 }
 
 pub(crate) struct State {
@@ -129,7 +150,7 @@ pub struct InitialTime {
 pub(crate) fn init_state_with_video(
     state: &mut State,
     structure: &StructureRef,
-    flow_id: &str,
+    settings: &Settings,
 ) -> Result<(), gst::LoggableError> {
     let format = structure
         .get::<String>("format")
@@ -147,12 +168,7 @@ pub(crate) fn init_state_with_video(
     let colorimetry = structure
         .get::<String>("colorimetry")
         .unwrap_or_else(|_| "BT709".to_string());
-    let pid = process::id();
-    let mut tags = HashMap::new();
-    tags.insert(
-        "urn:x-nmos:tag:grouphint/v1.0".to_string(),
-        vec![format!("Media Function {}:Video", pid).to_string()],
-    );
+    let tags = group_hint_tags(settings, "Video");
     let flow_def_details = FlowDefVideo {
         grain_rate: Rate {
             numerator: framerate.numer(),
@@ -183,21 +199,21 @@ pub(crate) fn init_state_with_video(
             },
         ],
     };
+    let default_name = format!(
+        "MXL Test Flow, {}p{}",
+        height,
+        framerate.numer() / framerate.denom()
+    );
     let flow_def = FlowDef {
-        id: Uuid::parse_str(flow_id)
+        id: Uuid::parse_str(&settings.flow_id)
             .map_err(|e| gst::loggable_error!(CAT, "Flow ID is invalid: {}", e))?,
-        description: format!(
-            "MXL Test Flow, {}p{}",
-            height,
-            framerate.numer() / framerate.denom()
-        ),
+        description: settings
+            .description
+            .clone()
+            .unwrap_or_else(|| default_name.clone()),
         tags,
         format: "urn:x-nmos:format:video".into(),
-        label: format!(
-            "MXL Test Flow, {}p{}",
-            height,
-            framerate.numer() / framerate.denom()
-        ),
+        label: settings.label.clone().unwrap_or(default_name),
         parents: vec![],
         media_type: format!("video/{}", format),
         details: mxl::flowdef::FlowDefDetails::Video(flow_def_details),
@@ -257,18 +273,13 @@ pub(crate) fn init_state_with_video(
 pub(crate) fn init_state_with_audio(
     state: &mut State,
     info: AudioInfo,
-    flow_id: &str,
+    settings: &Settings,
 ) -> Result<(), gst::LoggableError> {
     let channels = info.channels() as i32;
     let rate = info.rate() as i32;
     let bit_depth = info.depth() as u8;
     let format = info.format().to_string();
-    let pid = process::id();
-    let mut tags = HashMap::new();
-    tags.insert(
-        "urn:x-nmos:tag:grouphint/v1.0".to_string(),
-        vec![format!("Media Function {}:Audio", pid).to_string()],
-    );
+    let tags = group_hint_tags(settings, "Audio");
 
     let flow_def_details = FlowDefAudio {
         sample_rate: Rate {
@@ -280,12 +291,18 @@ pub(crate) fn init_state_with_audio(
     };
 
     let flow_def = FlowDef {
-        id: Uuid::parse_str(flow_id)
+        id: Uuid::parse_str(&settings.flow_id)
             .map_err(|e| gst::loggable_error!(CAT, "Flow ID is invalid: {}", e))?,
-        description: "MXL Audio Flow".into(),
+        description: settings
+            .description
+            .clone()
+            .unwrap_or_else(|| "MXL Audio Flow".into()),
         format: "urn:x-nmos:format:audio".into(),
         tags,
-        label: "MXL Audio Flow".into(),
+        label: settings
+            .label
+            .clone()
+            .unwrap_or_else(|| "MXL Audio Flow".into()),
         media_type: "audio/float32".to_string(),
         parents: vec![],
         details: FlowDefDetails::Audio(flow_def_details.clone()),
@@ -350,17 +367,12 @@ pub(crate) fn init_state_with_audio(
 pub(crate) fn init_state_with_data(
     state: &mut State,
     structure: &StructureRef,
-    flow_id: &str,
+    settings: &Settings,
 ) -> Result<(), gst::LoggableError> {
     let framerate = structure
         .get::<gst::Fraction>("framerate")
         .unwrap_or_else(|_| gst::Fraction::new(30000, 1001));
-    let pid = process::id();
-    let mut tags = HashMap::new();
-    tags.insert(
-        "urn:x-nmos:tag:grouphint/v1.0".to_string(),
-        vec![format!("Media Function {}:Data", pid).to_string()],
-    );
+    let tags = group_hint_tags(settings, "Data");
     let flow_def_details = FlowDefData {
         grain_rate: Rate {
             numerator: framerate.numer(),
@@ -368,12 +380,18 @@ pub(crate) fn init_state_with_data(
         },
     };
     let flow_def = FlowDef {
-        id: Uuid::parse_str(flow_id)
+        id: Uuid::parse_str(&settings.flow_id)
             .map_err(|e| gst::loggable_error!(CAT, "Flow ID is invalid: {}", e))?,
-        description: "MXL SMPTE 291 data flow".into(),
+        description: settings
+            .description
+            .clone()
+            .unwrap_or_else(|| "MXL SMPTE 291 data flow".into()),
         tags,
         format: "urn:x-nmos:format:data".into(),
-        label: "MXL data flow".into(),
+        label: settings
+            .label
+            .clone()
+            .unwrap_or_else(|| "MXL data flow".into()),
         parents: vec![],
         media_type: "video/smpte291".into(),
         details: FlowDefDetails::Data(flow_def_details),

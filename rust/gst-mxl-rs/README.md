@@ -33,10 +33,13 @@ The following elements are included:
 
 ### mxlsink
 
-| Property  | Description                                                |
-| --------- | ---------------------------------------------------------- |
-| `flow-id` | UUID of the flow to create.                                |
-| `domain`  | Filesystem path to the MXL domain directory.               |
+| Property      | Description                                                                                                             |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `flow-id`     | UUID of the flow to create.                                                                                               |
+| `domain`      | Filesystem path to the MXL domain directory.                                                                              |
+| `description` | Description of the created flow. Defaults to an auto-generated value per media type.                                       |
+| `label`       | Label of the created flow. Defaults to an auto-generated value per media type.                                             |
+| `group-hint`  | NMOS grouphint group name; the role (`Video`/`Audio`/`Data`) is appended automatically. Defaults to `Media Function <pid>`. |
 
 The flow's media type is based on the upstream caps.
 `video/x-raw, format=v210` results in a `video/v210` video flow.
@@ -121,7 +124,7 @@ gst-launch-1.0 filesrc location="$VIDEO_FILE" ! decodebin name=dv ! videoconvert
 ### Create video/audio flows from GStreamer test sources
 
 ```sh
-gst-launch-1.0 videotestsrc ! timeoverlay valignment=center ! clockoverlay time-format=\"%F %H:%M:%S %Z\" ! video/x-raw,width=1920,height=1080,framerate=25/1,format=v216 ! videoconvert ! queue ! mxlsink flow-id="$VIDEO_FLOW_ID" domain="$MXL_DOMAIN" audiotestsrc wave=ticks ! audioconvert ! queue ! mxlsink flow-id="$AUDIO_FLOW_ID" domain="$MXL_DOMAIN"
+gst-launch-1.0 videotestsrc ! timeoverlay valignment=center ! clockoverlay time-format=\"%F %H:%M:%S %Z\" ! video/x-raw,width=1920,height=1080,framerate=25/1,format=v216 ! videoconvert ! queue ! mxlsink flow-id="$VIDEO_FLOW_ID" domain="$MXL_DOMAIN" description="Test video flow" label="Test video" group-hint="Media Function Test" audiotestsrc wave=ticks ! audioconvert ! queue ! mxlsink flow-id="$AUDIO_FLOW_ID" domain="$MXL_DOMAIN"
 ```
 
 ### Round-trip CEA-608 closed captions over a data flow

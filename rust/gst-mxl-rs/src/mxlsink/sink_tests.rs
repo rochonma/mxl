@@ -6,11 +6,70 @@ mod tests {
     use std::collections::HashMap;
 
     use crate::mxlsink::imp::*;
+    use crate::mxlsink::state::{Settings, group_hint_tags};
     use glib::subclass::types::ObjectSubclassType;
     use gst::{CoreError, Fraction, prelude::*};
     use gstreamer as gst;
     use mxl::flowdef::*;
     use uuid::Uuid;
+
+    #[test]
+    fn set_properties() -> Result<(), glib::Error> {
+        gst::init()?;
+        gst::Element::register(None, "mxlsink", gst::Rank::NONE, MxlSink::type_())
+            .map_err(|e| glib::Error::new(CoreError::Failed, &e.message))?;
+
+        let element = gst::ElementFactory::make("mxlsink")
+            .build()
+            .map_err(|e| glib::Error::new(CoreError::Failed, &e.message))?;
+
+        assert_eq!(element.property::<Option<String>>("description"), None);
+        assert_eq!(element.property::<Option<String>>("label"), None);
+        assert_eq!(element.property::<Option<String>>("group-hint"), None);
+
+        let element = gst::ElementFactory::make("mxlsink")
+            .property("flow-id", "test_flow")
+            .property("domain", "mydomain")
+            .property("description", "My description")
+            .property("label", "My label")
+            .property("group-hint", "My Function")
+            .build()
+            .map_err(|e| glib::Error::new(CoreError::Failed, &e.message))?;
+
+        assert_eq!(element.property::<String>("flow-id"), "test_flow");
+        assert_eq!(element.property::<String>("domain"), "mydomain");
+        assert_eq!(
+            element.property::<Option<String>>("description").as_deref(),
+            Some("My description")
+        );
+        assert_eq!(
+            element.property::<Option<String>>("label").as_deref(),
+            Some("My label")
+        );
+        assert_eq!(
+            element.property::<Option<String>>("group-hint").as_deref(),
+            Some("My Function")
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn group_hint_tag_fallback_and_override() {
+        let tag_key = "urn:x-nmos:tag:grouphint/v1.0";
+
+        let tags = group_hint_tags(&Settings::default(), "Video");
+        assert_eq!(
+            tags[tag_key],
+            vec![format!("Media Function {}:Video", std::process::id())]
+        );
+
+        let settings = Settings {
+            group_hint: Some("My Function".to_string()),
+            ..Settings::default()
+        };
+        let tags = group_hint_tags(&settings, "Audio");
+        assert_eq!(tags[tag_key], vec!["My Function:Audio".to_string()]);
+    }
 
     #[test]
     #[cfg_attr(feature = "tracing", tracing_test::traced_test)]
