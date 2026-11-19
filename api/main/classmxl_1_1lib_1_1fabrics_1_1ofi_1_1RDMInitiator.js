@@ -5,13 +5,15 @@ var classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator =
     [ "addTarget", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a23772741c9b54c7962cfcd20ff14a8cf", null ],
     [ "afterProgressResult", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a21d55a4108d34e7b92a9805f864d8fea", null ],
     [ "blockOnCQ", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a3e248c37975b3b2d95798f274e6f5a04", null ],
+    [ "drainCQ", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a8b273a72872365f850916f188854583d", null ],
+    [ "evictRemovedTargets", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a44027006733b22949a62824900877c4e", null ],
     [ "findRemoteByEndpoint", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a88c4339502aca74f595628b723111fd2", null ],
     [ "findRemoteByToken", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#aea6f17376174bb0a99940777b0360305", null ],
+    [ "forEachTarget", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#ac39c1dc65105fa7bee25df975cd6ec98", null ],
     [ "handleCompletionData", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a6caaee2f9640a6e3cbf6b9d7c4227bb8", null ],
     [ "handleCompletionError", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a4b91878316c0e19ab595a4207231127d", null ],
     [ "makeProgress", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a9077906eb81fe427268f7c65160b5c66", null ],
     [ "makeProgressBlocking", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a552ca59bd4e84e809ce1e5d6d4b270fd", null ],
-    [ "pollCQ", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a4260730968b3776af6aaf9c03129f8c3", null ],
     [ "processCompletion", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a3028c93e8d885b99aa67f91b44f29874", null ],
     [ "removeTarget", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a0f3e3170f2dc1059ff82b74b502ad891", null ],
     [ "setup", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a6a46b00c551738a0f8462ede338cb7bf", null ],
@@ -22,5 +24,7 @@ var classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator =
     [ "_endpoint", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a16e95043dfc14f0ba48c681fa51739fa", null ],
     [ "_proto", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a140d6f4c253ef6f557f2e399b95db112", null ],
     [ "_remoteEndpoints", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a1e06b9d04756568fcb67198834002be3", null ],
-    [ "_targets", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a093504aae7ab231f1e901ce7539c71c4", null ]
+    [ "_targets", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a093504aae7ab231f1e901ce7539c71c4", null ],
+    [ "ShutdownPollInterval", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a315ba354878a1a00056fc29205a0a990", null ],
+    [ "ShutdownTimeout", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1RDMInitiator.html#a77f953c514f1fe04457e8b5b997be4d9", null ]
 ];

@@ -1,7 +1,9 @@
 <map id="mxl::lib::fabrics::ofi::RCTarget" name="mxl::lib::fabrics::ofi::RCTarget">
-<area shape="rect" id="Node000001" title="Reliable Connected (RC) Target implementation." alt="" coords="93,108,224,148"/>
-<area shape="rect" id="Node000002" href="$classmxl_1_1lib_1_1fabrics_1_1ofi_1_1Target.html" title="Abstract base class for Target implementations." alt="" coords="5,5,136,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,54,144,106,140,110,94,58"/>
-<area shape="rect" id="Node000003" href="$structmxl_1_1lib_1_1fabrics_1_1ofi_1_1TargetSetupOptions.html" title="Provider&#45;independent tuning options for target setup." alt="" coords="160,5,333,45"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="223,58,177,110,173,106,219,54"/>
+<area shape="rect" id="Node000001" title="Reliable Connected (RC) Target implementation." alt="" coords="327,75,457,119"/>
+<area shape="rect" id="Node000002" href="$classmxl_1_1lib_1_1fabrics_1_1ofi_1_1Target.html" title="Abstract base class for Target implementations." alt="" coords="26,5,157,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="172,37,303,64,331,74,326,74,302,69,172,42"/>
+<area shape="rect" id="Node000003" href="$classmxl_1_1lib_1_1fabrics_1_1ofi_1_1PassiveEndpoint.html" title="RAII Wrapper around a libfabric passive endpoint (fid_pep)." alt="" coords="16,75,167,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="183,94,329,95,324,99,183,100"/>
+<area shape="rect" id="Node000004" href="$structmxl_1_1lib_1_1fabrics_1_1ofi_1_1TargetSetupOptions.html" title="Provider&#45;independent tuning options for target setup." alt="" coords="5,144,178,189"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="192,148,302,125,325,120,331,119,303,130,193,153"/>
 </map>

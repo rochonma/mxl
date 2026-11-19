@@ -1,11 +1,14 @@
 var annotated_dup =
 [
     [ "fmt", null, [
-      [ "formatter< mxlFabricsProvider >", "structfmt_1_1formatter_3_01mxlFabricsProvider_01_4.html", "structfmt_1_1formatter_3_01mxlFabricsProvider_01_4" ],
-      [ "formatter< ofi::Provider >", "structfmt_1_1formatter_3_01ofi_1_1Provider_01_4.html", "structfmt_1_1formatter_3_01ofi_1_1Provider_01_4" ]
+      [ "formatter&lt; mxlFabricsProvider &gt;", "structfmt_1_1formatter_3_01mxlFabricsProvider_01_4.html", "structfmt_1_1formatter_3_01mxlFabricsProvider_01_4" ],
+      [ "formatter&lt; ofi::Provider &gt;", "structfmt_1_1formatter_3_01ofi_1_1Provider_01_4.html", "structfmt_1_1formatter_3_01ofi_1_1Provider_01_4" ]
     ] ],
     [ "mxl", "namespacemxl.html", [
       [ "lib", "namespacemxl_1_1lib.html", [
+        [ "detail", "namespacemxl_1_1lib_1_1detail.html", [
+          [ "LimitedJsonParseContext", "classmxl_1_1lib_1_1detail_1_1LimitedJsonParseContext.html", "classmxl_1_1lib_1_1detail_1_1LimitedJsonParseContext" ]
+        ] ],
         [ "fabrics", "namespacemxl_1_1lib_1_1fabrics.html", [
           [ "ofi", "namespacemxl_1_1lib_1_1fabrics_1_1ofi.html", [
             [ "AddressVector", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1AddressVector.html", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1AddressVector" ],
@@ -26,7 +29,6 @@ var annotated_dup =
             [ "Fabric", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1Fabric.html", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1Fabric" ],
             [ "FabricAddress", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1FabricAddress.html", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1FabricAddress" ],
             [ "FabricException", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1FabricException.html", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1FabricException" ],
-            [ "FabricInfo", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1FabricInfo.html", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1FabricInfo" ],
             [ "FabricInfoIterator", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1FabricInfoIterator.html", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1FabricInfoIterator" ],
             [ "FabricInfoList", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1FabricInfoList.html", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1FabricInfoList" ],
             [ "FabricInfoView", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1FabricInfoView.html", "classmxl_1_1lib_1_1fabrics_1_1ofi_1_1FabricInfoView" ],
@@ -82,7 +84,6 @@ var annotated_dup =
         [ "DiscreteFlowData", "classmxl_1_1lib_1_1DiscreteFlowData.html", "classmxl_1_1lib_1_1DiscreteFlowData" ],
         [ "DiscreteFlowReader", "classmxl_1_1lib_1_1DiscreteFlowReader.html", "classmxl_1_1lib_1_1DiscreteFlowReader" ],
         [ "DiscreteFlowWriter", "classmxl_1_1lib_1_1DiscreteFlowWriter.html", "classmxl_1_1lib_1_1DiscreteFlowWriter" ],
-        [ "DomainWatcher", "classmxl_1_1lib_1_1DomainWatcher.html", "classmxl_1_1lib_1_1DomainWatcher" ],
         [ "DomainWatcherRecord", "structmxl_1_1lib_1_1DomainWatcherRecord.html", "structmxl_1_1lib_1_1DomainWatcherRecord" ],
         [ "Duration", "structmxl_1_1lib_1_1Duration.html", "structmxl_1_1lib_1_1Duration" ],
         [ "Event", "structmxl_1_1lib_1_1Event.html", "structmxl_1_1lib_1_1Event" ],
@@ -107,6 +108,7 @@ var annotated_dup =
         [ "Grain", "structmxl_1_1lib_1_1Grain.html", "structmxl_1_1lib_1_1Grain" ],
         [ "GrainHeader", "structmxl_1_1lib_1_1GrainHeader.html", "structmxl_1_1lib_1_1GrainHeader" ],
         [ "Instance", "classmxl_1_1lib_1_1Instance.html", "classmxl_1_1lib_1_1Instance" ],
+        [ "JsonLimits", "structmxl_1_1lib_1_1JsonLimits.html", "structmxl_1_1lib_1_1JsonLimits" ],
         [ "PosixContinuousFlowReader", "classmxl_1_1lib_1_1PosixContinuousFlowReader.html", "classmxl_1_1lib_1_1PosixContinuousFlowReader" ],
         [ "PosixContinuousFlowWriter", "classmxl_1_1lib_1_1PosixContinuousFlowWriter.html", "classmxl_1_1lib_1_1PosixContinuousFlowWriter" ],
         [ "PosixDiscreteFlowReader", "classmxl_1_1lib_1_1PosixDiscreteFlowReader.html", "classmxl_1_1lib_1_1PosixDiscreteFlowReader" ],
@@ -125,6 +127,7 @@ var annotated_dup =
       ] ]
     ] ],
     [ "BatchIndexAndSize", "structBatchIndexAndSize.html", "structBatchIndexAndSize" ],
+    [ "JsonLimits", "structJsonLimits.html", "structJsonLimits" ],
     [ "MockFlowFiles", "structMockFlowFiles.html", "structMockFlowFiles" ],
     [ "MockWriter", "structMockWriter.html", "structMockWriter" ],
     [ "mxlBufferSlice_t", "structmxlBufferSlice__t.html", "structmxlBufferSlice__t" ],
